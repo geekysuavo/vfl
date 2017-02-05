@@ -27,11 +27,15 @@ again: clean all
 lines:
 	@echo " WC lib"
 	@$(WC) lib/*.[ch]
+	@echo " WC vfl"
+	@$(WC) vfl/*.[ch]
 
 # fixme statement reporting target.
 fixme:
 	@echo " FIXME lib"
 	@$(GREP) fixme lib/*.[ch] || echo " None found"
+	@echo " FIXME vfl"
+	@$(GREP) fixme vfl/*.[ch] || echo " None found"
 
 # tarball creation target.
 dist: clean
