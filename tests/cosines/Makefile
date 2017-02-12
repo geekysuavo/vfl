@@ -1,0 +1,16 @@
+
+# BIN: test executable filename.
+BIN=cosines
+
+# SRC: source filenames.
+SRC=cosines.c
+
+# DAT: output data filenames.
+DAT=meas.dat mean.dat var.dat
+
+# TESTFLAGS: environment variables to set during testing.
+TESTFLAGS=RNG_SEED=7321
+
+# include the testing base makefile.
+include ../tests.mk
+

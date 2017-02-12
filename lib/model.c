@@ -127,9 +127,6 @@ void model_free (model_t *mdl) {
   free(mdl->factors);
   free(mdl->priors);
 
-  /* free the associated dataset. */
-  data_free(mdl->dat);
-
   /* free the temporary vector. */
   vector_free(mdl->tmp);
 
