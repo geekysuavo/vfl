@@ -25,23 +25,23 @@ int main (int argc, char **argv) {
   data_fread(dat, "sinc.dat");
 
   /* set up a regression model. */
-  model_t *mdl = model_vfr(1000.0, 10.0, 1.0e-3);
+  model_t *mdl = model_vfr(1000.0, 2.5, 1.0e-3);
   model_set_data(mdl, dat);
 
   /* add factors to the model. */
   const unsigned int M = 10;
   for (unsigned int i = 0; i < M; i++) {
-    factor_t *f = factor_impulse(0.0, 0.001);
+    factor_t *f = factor_impulse(0.0, 0.01);
     model_add_factor(mdl, f);
   }
 
   /* randomly initialize the factor means. */
   for (unsigned int j = 0; j < mdl->M; j++)
-    factor_set(mdl->factors[j], 0, 10.0 * rng_normal(R));
+    factor_set(mdl->factors[j], 0, 2.5 * rng_normal(R));
 
   /* set up an optimizer. */
   optim_t *opt = optim_fg(mdl);
-  opt->l0 = 0.001;
+  opt->l0 = 0.0001;
   opt->dl = 0.1;
   unsigned int iter;
   double bound;
