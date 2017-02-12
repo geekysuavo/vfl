@@ -20,6 +20,8 @@ all:
 clean:
 	@$(MAKE) -sC lib clean
 	@$(MAKE) -sC tests/cosines clean
+	@$(MAKE) -sC tests/sinc clean
+	@$(MAKE) -sC tests/sinc-fixed clean
 
 # full recompilation target.
 again: clean all
