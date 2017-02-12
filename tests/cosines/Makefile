@@ -6,7 +6,7 @@ BIN=cosines
 SRC=cosines.c
 
 # DAT: output data filenames.
-DAT=meas.dat mean.dat var.dat
+DAT=mean.dat var.dat model.dat
 
 # TESTFLAGS: environment variables to set during testing.
 TESTFLAGS=RNG_SEED=7321

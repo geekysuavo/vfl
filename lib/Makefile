@@ -17,21 +17,19 @@ LIB=libvfl.so
 C_UTIL=rng specfun vector matrix blas chol eigen data
 
 # basenames of C factor source files.
-C_FACTOR=factor
-C_FACTOR+= factor-cosine
-C_FACTOR+= factor-impulse
-C_FACTOR+= factor-fixed-impulse
+C_FACTOR=cosine impulse fixed-impulse
 
 # basenames of C model source files.
-C_MODEL=model
-C_MODEL+= model-vfr
+C_MODEL=vfr
 
 # basenames of C optimizer source files.
-C_OPTIM=optim
-C_OPTIM+= optim-fg
+C_OPTIM=fg
 
 # basenames of all C source files.
-C=$(C_UTIL) $(C_FACTOR) $(C_MODEL) $(C_OPTIM)
+C=$(C_UTIL)
+C+= factor $(addprefix factor/,$(C_FACTOR))
+C+= model $(addprefix model/,$(C_MODEL))
+C+= optim $(addprefix optim/,$(C_OPTIM))
 
 # filenames of C sources.
 SRC=$(addsuffix .c,$(C))

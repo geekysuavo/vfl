@@ -25,6 +25,32 @@ data_t *data_alloc (void) {
   return dat;
 }
 
+/* data_alloc_from_grid(): allocate a new dataset, filled with
+ * a regular grid of zero-valued observations.
+ *
+ * arguments:
+ *  @grid: matrix of gridding information.
+ *
+ * returns:
+ *  newly allocated and initialized dataset structure pointer.
+ */
+data_t *data_alloc_from_grid (const matrix_t *grid) {
+  /* allocate the structure pointer. */
+  data_t *dat = data_alloc();
+  if (!dat)
+    return NULL;
+
+  /* augment the dataset with a grid. */
+  if (!data_augment_from_grid(dat, grid)) {
+    /* free the dataset and return. */
+    data_free(dat);
+    return NULL;
+  }
+
+  /* return the new dataset. */
+  return dat;
+}
+
 /* data_free(): free an allocated dataset.
  *
  * arguments:
@@ -117,6 +143,11 @@ int data_set (data_t *dat, const unsigned int i,
  *  integer indicating whether (1) or not (0) the augmentation succeeded.
  */
 int data_augment (data_t *dat, const vector_t *x, const double y) {
+  /* declare required variables:
+   *  @N, @D: new observation and dimension counts.
+   *  @Xnew: new observation matrix.
+   *  @ynew: new observed vector.
+   */
   unsigned int N, D;
   matrix_t *Xnew;
   vector_t *ynew;
@@ -173,6 +204,82 @@ int data_augment (data_t *dat, const vector_t *x, const double y) {
   dat->D = D;
 
   /* return success. */
+  return 1;
+}
+
+/* augment_from_grid(): recursive function used by data_alloc_from_grid()
+ * to augment a dataset with a regular grid of observations.
+ *
+ * arguments:
+ *  @dat: dataset structure pointer to access.
+ *  @grid: matrix of gridding information.
+ *  @x: vector of observation values.
+ *  @d: current recursion dimension.
+ *
+ * returns:
+ *  integer indicating augmentation success (1) or failure (0).
+ */
+static int augment_from_grid (data_t *dat, const matrix_t *grid,
+                              vector_t *x, const unsigned int d) {
+  /* initialize the current dimension. */
+  vector_set(x, d, matrix_get(grid, d, 0));
+
+  /* loop over the current dimension values. */
+  while (vector_get(x, d) <= matrix_get(grid, d, 2)) {
+    /* either augment or recurse. */
+    if (d == x->len - 1) {
+      /* current dimension is last => augment. */
+      if (!data_augment(dat, x, 0.0))
+        return 0;
+    }
+    else {
+      /* current dimension is not last => recurse. */
+      if (!augment_from_grid(dat, grid, x, d + 1))
+        return 0;
+    }
+
+    /* increment the current dimension. */
+    vector_set(x, d, vector_get(x, d) + matrix_get(grid, d, 1));
+  }
+
+  /* return success. */
+  return 1;
+}
+
+/* data_augment_from_grid(): add a regular grid of zero-valued
+ * observations into a dataset.
+ *
+ * arguments:
+ *  @dat: dataset structure pointer to access.
+ *  @grid: matrix of gridding information.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int data_augment_from_grid (data_t *dat, const matrix_t *grid) {
+  /* check the input pointers. */
+  if (!dat || !grid)
+    return 0;
+
+  /* check the gridding matrix. */
+  if (grid->cols != 3)
+    return 0;
+
+  /* allocate a vector for holding observations. */
+  const unsigned int D = grid->rows;
+  vector_t *x = vector_alloc(D);
+  if (!x)
+    return 0;
+
+  /* recursively augment the dataset. */
+  if (!augment_from_grid(dat, grid, x, 0)) {
+    /* free the observation vector and return failure. */
+    vector_free(x);
+    return 0;
+  }
+
+  /* free the observation vector and return success. */
+  vector_free(x);
   return 1;
 }
 

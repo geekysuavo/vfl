@@ -55,7 +55,8 @@ optim_t *optim_alloc (model_t *mdl, const unsigned int bytes) {
   }
 
   /* initialize the search parameters. */
-  opt->L0 = 1.0;
+  opt->l0 = 1.0;
+  opt->dl = 0.1;
 
   /* return the new optimizer. */
   return opt;

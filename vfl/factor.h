@@ -220,9 +220,9 @@ int factor_diff_var (const factor_t *f,
 double factor_div (const factor_t *f, const factor_t *f2);
 
 /* derived factor headers: */
-#include <vfl/factor-cosine.h>
-#include <vfl/factor-impulse.h>
-#include <vfl/factor-fixed-impulse.h>
+#include <vfl/factor/cosine.h>
+#include <vfl/factor/impulse.h>
+#include <vfl/factor/fixed-impulse.h>
 
 #endif /* !__VFL_FACTOR_H__ */
 

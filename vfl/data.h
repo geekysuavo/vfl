@@ -33,6 +33,8 @@ data_t;
 
 data_t *data_alloc (void);
 
+data_t *data_alloc_from_grid (const matrix_t *grid);
+
 void data_free (data_t *dat);
 
 int data_get (const data_t *dat, const unsigned int i,
@@ -42,6 +44,8 @@ int data_set (data_t *dat, const unsigned int i,
               const vector_t *x, const double y);
 
 int data_augment (data_t *dat, const vector_t *x, const double y);
+
+int data_augment_from_grid (data_t *dat, const matrix_t *grid);
 
 int data_fread (data_t *dat, const char *fname);
 

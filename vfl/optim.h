@@ -52,10 +52,11 @@ struct optim {
    *  @xb: final point, gamma --> inf.
    *  @x: intermediate point.
    *  @g: step vector.
-   *  @L0: initial lipschitz constant.
+   *  @l0: initial lipschitz constant.
+   *  @dl: lipschitz step factor.
    */
   vector_t *xa, *xb, *x, *g;
-  double L0;
+  double l0, dl;
 
   /* temporary structures:
    *  @Fs: spectrally-shifted fisher information matrix.
@@ -70,7 +71,7 @@ optim_t *optim_alloc (model_t *mdl, const unsigned int bytes);
 void optim_free (optim_t *opt);
 
 /* derived optimizer headers. */
-#include <vfl/optim-fg.h>
+#include <vfl/optim/fg.h>
 
 #endif /* !__VFL_OPTIM_H__ */
 

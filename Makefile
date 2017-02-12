@@ -19,6 +19,7 @@ all:
 # intermediate file cleanup target.
 clean:
 	@$(MAKE) -sC lib clean
+	@$(MAKE) -sC tests/cosines clean
 
 # full recompilation target.
 again: clean all

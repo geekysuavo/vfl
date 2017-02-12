@@ -189,6 +189,10 @@ double model_bound (const model_t *mdl);
 int model_predict (const model_t *mdl, const vector_t *x,
                    double *mean, double *var);
 
+int model_predict_all (const model_t *mdl,
+                       data_t *mean,
+                       data_t *var);
+
 int model_infer (model_t *mdl);
 
 int model_update (model_t *mdl, const unsigned int j);
@@ -201,7 +205,7 @@ unsigned int model_weight_idx (const model_t *mdl,
                                const unsigned int k);
 
 /* derived model headers: */
-#include <vfl/model-vfr.h>
+#include <vfl/model/vfr.h>
 
 #endif /* !__VFL_MODEL_H__ */
 

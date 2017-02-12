@@ -89,7 +89,7 @@ int fg_iterate (optim_t *opt) {
      * the fisher information matrix.
      */
     gamma = eigen_minev(factors[j]->inf, &Fs, &g, &x);
-    gamma /= opt->L0;
+    gamma /= opt->l0;
 
     /* perform a back-tracking line search. */
     unsigned int valid = 0, steps = 0;
@@ -119,7 +119,7 @@ int fg_iterate (optim_t *opt) {
       /* in case the step was invalid, update the step length and
        * increment the step count.
        */
-      gamma *= 0.1;
+      gamma *= opt->dl;
       steps++;
     }
     while (!valid && steps < 10);

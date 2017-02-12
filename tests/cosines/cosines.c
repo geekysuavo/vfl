@@ -39,8 +39,10 @@ int main (int argc, char **argv) {
   for (unsigned int j = 0; j < mdl->M; j++)
     factor_set(mdl->factors[j], 0, 300.0 * rng_normal(R));
 
-  /* initialize the optimizer. */
+  /* set up an optimizer. */
   optim_t *opt = optim_fg(mdl);
+  opt->l0 = 0.001;
+  opt->dl = 0.1;
   unsigned int iter;
   double bound;
 
@@ -53,19 +55,24 @@ int main (int argc, char **argv) {
     if (!mod) break;
   }
 
-  /* FIXME: move this to gridded evaluations. */
-  vector_t *x = vector_alloc(dat->D);
-  for (double xd = 0.0; xd <= 0.5; xd += 0.001) {
-    double mean, var;
-    vector_set(x, 0, xd);
-    model_predict(mdl, x, &mean, &var);
-    printf("%le %le %le\n", xd, mean, var);
-  }
+  /* allocate datasets for prediction. */
+  double grid_values[] = { 0.0, 1.0e-3, 0.5 };
+  matrix_view_t grid = matrix_view_array(grid_values, 1, 3);
+  data_t *mean = data_alloc_from_grid(&grid);
+  data_t *var = data_alloc_from_grid(&grid);
+
+  /* compute the prediction. */
+  model_predict_all(mdl, mean, var);
+
+  /* output the prediction. */
+  data_fwrite(mean, "mean.dat");
+  data_fwrite(var, "var.dat");
 
   /* free the structures. */
-  vector_free(x);
   optim_free(opt);
   model_free(mdl);
+  data_free(mean);
+  data_free(var);
   data_free(dat);
   rng_free(R);
 

@@ -440,6 +440,53 @@ int model_predict (const model_t *mdl, const vector_t *x,
   return mdl->predict(mdl, x, mean, var);
 }
 
+/* model_predict_all(): return model posterior predictions for
+ * all observations in a pair of datasets. the two datasets
+ * must have equal sizes, but no checking is performed on
+ * their observations.
+ *
+ * arguments:
+ *  @mdl: model structure pointer.
+ *  @mean: dataset for predicted mean storage.
+ *  @var: dataset for predicted variance storage.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int model_predict_all (const model_t *mdl,
+                       data_t *mean,
+                       data_t *var) {
+  /* declare required variables:
+   *  @x: individual observations.
+   *  @mu: individual means.
+   *  @eta: individual variances.
+   */
+  vector_view_t x;
+  double mu, eta;
+
+  /* check the input pointers. */
+  if (!mdl || !mean || !var)
+    return 0;
+
+  /* check that the structures have matching dimensionality. */
+  if (mean->D != mdl->D || var->D != mdl->D || mean->N != var->N)
+    return 0;
+
+  /* loop over each observation. */
+  for (unsigned int i = 0; i < mean->N; i++) {
+    /* compute the posterior mean and variance. */
+    x = matrix_row(mean->X, i);
+    model_predict(mdl, &x, &mu, &eta);
+
+    /* store the predictions. */
+    vector_set(mean->y, i, mu);
+    vector_set(var->y, i, eta);
+  }
+
+  /* return success. */
+  return 1;
+}
+
 /* model_infer(): fully update the nuisance parameters of a model.
  *  - see model_infer_fn() for more information.
  */
