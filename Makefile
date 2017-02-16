@@ -29,16 +29,16 @@ again: clean all
 # line-count reporting target.
 lines:
 	@echo " WC lib"
-	@$(WC) lib/*.[ch]
+	@$(WC) $(shell find lib -name '*.c')
 	@echo " WC vfl"
-	@$(WC) vfl/*.[ch]
+	@$(WC) $(shell find vfl -name '*.h')
 
 # fixme statement reporting target.
 fixme:
 	@echo " FIXME lib"
-	@$(GREP) fixme lib/*.[ch] || echo " None found"
+	@$(GREP) fixme lib/*.c || echo " None found"
 	@echo " FIXME vfl"
-	@$(GREP) fixme vfl/*.[ch] || echo " None found"
+	@$(GREP) fixme vfl/*.h || echo " None found"
 
 # tarball creation target.
 dist: clean
