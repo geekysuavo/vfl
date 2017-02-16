@@ -20,7 +20,7 @@ factor_t *factor_polynomial (const unsigned int order) {
   f->mean = factor_polynomial_mean;
   f->var = factor_polynomial_var;
 
-  /* return the new cosine factor. */
+  /* return the new polynomial factor. */
   return f;
 }
 
