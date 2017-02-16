@@ -17,7 +17,7 @@ LIB=libvfl.so
 C_UTIL=rng specfun vector matrix blas chol eigen data
 
 # basenames of C factor source files.
-C_FACTOR=cosine impulse fixed-impulse
+C_FACTOR=cosine impulse fixed-impulse polynomial
 
 # basenames of C model source files.
 C_MODEL=vfr

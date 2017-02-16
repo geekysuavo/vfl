@@ -56,6 +56,8 @@ int fg_iterate (optim_t *opt) {
 
     /* gain a reference to the current factor parameter count. */
     const unsigned int P = factors[j]->P;
+    if (P == 0)
+      continue;
 
     /* configure the parameter and gradient vector views. */
     xa = vector_subvector(opt->xa, 0, P);

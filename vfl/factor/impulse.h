@@ -3,7 +3,7 @@
 #ifndef __VFL_FACTOR_IMPULSE_H__
 #define __VFL_FACTOR_IMPULSE_H__
 
-/* function declarations (factor-impulse.c): */
+/* function declarations (factor/impulse.c): */
 
 factor_t *factor_impulse (const double mu, const double tau);
 

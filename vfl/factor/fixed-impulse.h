@@ -16,7 +16,7 @@ typedef struct {
 }
 fixed_impulse_t;
 
-/* function declarations (factor-fixed-impulse.c): */
+/* function declarations (factor/fixed-impulse.c): */
 
 factor_t *factor_fixed_impulse (const double mu, const double tau);
 

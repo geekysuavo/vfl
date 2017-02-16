@@ -223,6 +223,7 @@ double factor_div (const factor_t *f, const factor_t *f2);
 #include <vfl/factor/cosine.h>
 #include <vfl/factor/impulse.h>
 #include <vfl/factor/fixed-impulse.h>
+#include <vfl/factor/polynomial.h>
 
 #endif /* !__VFL_FACTOR_H__ */
 

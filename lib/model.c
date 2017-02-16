@@ -526,8 +526,15 @@ int model_gradient (const model_t *mdl, const unsigned int i,
                     const unsigned int j, vector_t *grad) {
   /* check the input pointers and factor index. */
   if (!mdl || !mdl->dat || !mdl->grad || !grad ||
-      i >= mdl->dat->N || j >= mdl->M ||
-      grad->len != mdl->factors[j]->P)
+      i >= mdl->dat->N || j >= mdl->M)
+    return 0;
+
+  /* check if the factor has no parameters. */
+  if (mdl->factors[j]->P == 0)
+    return 1;
+
+  /* check the gradient size. */
+  if (grad->len != mdl->factors[j]->P)
     return 0;
 
   /* execute the assigned gradient function. */

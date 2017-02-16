@@ -3,7 +3,7 @@
 #ifndef __VFL_FACTOR_COSINE_H__
 #define __VFL_FACTOR_COSINE_H__
 
-/* function declarations (factor-cosine.c): */
+/* function declarations (factor/cosine.c): */
 
 factor_t *factor_cosine (const double mu, const double tau);
 
