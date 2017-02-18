@@ -272,6 +272,12 @@ int vfr_update (model_t *mdl, const unsigned int j) {
     }
   }
 
+  /* include the diagonal term into the weight precisions. */
+  for (unsigned int k = 0; k < K; k++) {
+    double gkk = matrix_get(mdl->Sinv, k0 + k, k0 + k);
+    matrix_set(mdl->Sinv, k0 + k, k0 + k, gkk + mdl->nu);
+  }
+
   /* copy the final row values of the precision matrix. */
   for (unsigned int k = 0; k < K; k++) {
     v = matrix_row(&V, k);

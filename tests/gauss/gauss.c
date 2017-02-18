@@ -25,21 +25,17 @@ int main (int argc, char **argv) {
   data_fread(dat, "gauss.dat");
 
   /* set up a regression model. */
-  model_t *mdl = model_vfr(10.0, 10.0, 1.0e-4);
+  model_t *mdl = model_vfr(100.0, 100.0, 1.0e-2);
   model_set_data(mdl, dat);
 
   /* add factors to the model. */
-  model_add_factor(mdl, factor_decay(20.0, 1000.0));
-  model_add_factor(mdl, factor_impulse(125.0, 0.005));
-  model_add_factor(mdl, factor_impulse(125.0, 0.005));
+  model_add_factor(mdl, factor_decay(10.0, 1000.0));
+  model_add_factor(mdl, factor_impulse(60.0, 0.01));
+  model_add_factor(mdl, factor_impulse(180.0, 0.01));
   
-  /* randomly initialize the impulse factor means. */
-  factor_set(mdl->factors[1], 0, 5.0 * rng_normal(R));
-  factor_set(mdl->factors[2], 0, 5.0 * rng_normal(R));
-
   /* set up an optimizer. */
   optim_t *opt = optim_fg(mdl);
-  opt->l0 = 0.0001;
+  opt->l0 = 1.0;
   opt->dl = 0.1;
   unsigned int iter;
   double bound;

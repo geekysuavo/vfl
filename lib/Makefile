@@ -65,10 +65,10 @@ again: clean all
 # line-count reporting target.
 lines:
 	@echo " WC"
-	@$(WC) src/*.[ch]
+	@$(WC) $(shell find * -name '*.c')
 
 # fixme statement reporting target.
 fixme:
 	@echo " FIXME"
-	@$(GREP) fixme *.[ch] || echo " None found"
+	@$(GREP) fixme $(shell find * -name '*.c') || echo " None found"
 
