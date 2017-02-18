@@ -206,6 +206,7 @@ unsigned int model_weight_idx (const model_t *mdl,
 
 /* derived model headers: */
 #include <vfl/model/vfr.h>
+#include <vfl/model/tauvfr.h>
 
 #endif /* !__VFL_MODEL_H__ */
 
