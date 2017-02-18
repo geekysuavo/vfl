@@ -25,7 +25,8 @@ int main (int argc, char **argv) {
   data_fread(dat, "cosines.dat");
 
   /* set up a regression model. */
-  model_t *mdl = model_vfr(1000.0, 1000.0, 1.0e-6);
+//model_t *mdl = model_vfr(1000.0, 1000.0, 1.0e-6);
+  model_t *mdl = model_tauvfr(1.0, 1.0e-6);
   model_set_data(mdl, dat);
 
   /* add factors to the model. */
