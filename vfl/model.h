@@ -9,8 +9,8 @@
 
 /* include application headers. */
 #include <vfl/data.h>
-#include <vfl/chol.h>
 #include <vfl/factor.h>
+#include <vfl/util/chol.h>
 
 /* model_t: defined type for the model structure. */
 typedef struct model model_t;

@@ -8,8 +8,8 @@
 #include <stdlib.h>
 
 /* include application headers. */
-#include <vfl/matrix.h>
-#include <vfl/vector.h>
+#include <vfl/util/matrix.h>
+#include <vfl/util/vector.h>
 
 /* data_t: structure for holding observations.
  */

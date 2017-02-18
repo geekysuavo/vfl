@@ -1,6 +1,6 @@
 
 /* include the eigenvalue algorithms header. */
-#include <vfl/eigen.h>
+#include <vfl/util/eigen.h>
 
 /* eigen_upper(): compute an upper bound on the eigenvalues of
  * a real symmetric positive definite matrix. this uses the

@@ -14,7 +14,7 @@ LIBS=-lm
 LIB=libvfl.so
 
 # basenames of C utility source files.
-C_UTIL=rng specfun vector matrix blas chol eigen data
+C_UTIL=rng specfun vector matrix blas chol eigen
 
 # basenames of C factor source files.
 C_FACTOR=cosine decay impulse fixed-impulse polynomial
@@ -26,10 +26,11 @@ C_MODEL=vfr tauvfr
 C_OPTIM=fg
 
 # basenames of all C source files.
-C=$(C_UTIL)
-C+= factor $(addprefix factor/,$(C_FACTOR))
-C+= model $(addprefix model/,$(C_MODEL))
-C+= optim $(addprefix optim/,$(C_OPTIM))
+C=  data factor model optim
+C+= $(addprefix factor/,$(C_FACTOR))
+C+= $(addprefix model/,$(C_MODEL))
+C+= $(addprefix optim/,$(C_OPTIM))
+C+= $(addprefix util/,$(C_UTIL))
 
 # filenames of C sources.
 SRC=$(addsuffix .c,$(C))

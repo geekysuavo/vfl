@@ -1,6 +1,6 @@
 
 /* include the vector header. */
-#include <vfl/vector.h>
+#include <vfl/util/vector.h>
 
 /* vector_alloc(): allocate a new vector for use.
  *

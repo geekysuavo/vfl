@@ -8,9 +8,9 @@
 #include <math.h>
 
 /* include application headers. */
-#include <vfl/specfun.h>
-#include <vfl/matrix.h>
-#include <vfl/vector.h>
+#include <vfl/util/specfun.h>
+#include <vfl/util/matrix.h>
+#include <vfl/util/vector.h>
 
 /* factor_t: defined type for the factor structure. */
 typedef struct factor factor_t;

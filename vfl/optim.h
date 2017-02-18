@@ -5,7 +5,7 @@
 
 /* include the model and eigenvalue headers. */
 #include <vfl/model.h>
-#include <vfl/eigen.h>
+#include <vfl/util/eigen.h>
 
 /* optim_t: defined type for the optimizer structure. */
 typedef struct optim optim_t;

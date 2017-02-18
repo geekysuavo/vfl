@@ -1,6 +1,6 @@
 
 /* include the special functions header. */
-#include <vfl/specfun.h>
+#include <vfl/util/specfun.h>
 
 /* set the coefficient count of the series approximations. */
 #define N_PSI 7

@@ -1,6 +1,6 @@
 
 /* include the matrix header. */
-#include <vfl/matrix.h>
+#include <vfl/util/matrix.h>
 
 /* matrix_alloc(): allocate a new matrix for use.
  *

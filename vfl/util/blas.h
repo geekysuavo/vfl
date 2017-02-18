@@ -4,8 +4,8 @@
 #define __VFL_BLAS_H__
 
 /* include the matrix and vector headers. */
-#include <vfl/matrix.h>
-#include <vfl/vector.h>
+#include <vfl/util/matrix.h>
+#include <vfl/util/vector.h>
 
 /* blas_transpose_t: enumeration of all possible ways to transpose
  * a matrix (or not) during calculations.

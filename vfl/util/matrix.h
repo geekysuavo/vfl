@@ -10,7 +10,7 @@
 #include <math.h>
 
 /* include the vector header. */
-#include <vfl/vector.h>
+#include <vfl/util/vector.h>
 
 /* matrix_disp(): macro function for displaying the contents of matrices.
  */

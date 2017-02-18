@@ -1,6 +1,6 @@
 
 /* include the cholesky decomposition header. */
-#include <vfl/chol.h>
+#include <vfl/util/chol.h>
 
 /* chol_decomp(): compute the cholesky decomposition of a symmetric
  * positive definite matrix.

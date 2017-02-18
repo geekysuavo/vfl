@@ -4,9 +4,9 @@
 #define __VFL_CHOL_H__
 
 /* include the matrix, vector, and blas headers. */
-#include <vfl/matrix.h>
-#include <vfl/vector.h>
-#include <vfl/blas.h>
+#include <vfl/util/matrix.h>
+#include <vfl/util/vector.h>
+#include <vfl/util/blas.h>
 
 /* function declarations (chol.c): */
 

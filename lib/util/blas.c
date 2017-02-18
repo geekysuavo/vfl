@@ -1,6 +1,6 @@
 
 /* inclue the basic linear algebra subroutines header. */
-#include <vfl/blas.h>
+#include <vfl/util/blas.h>
 
 /* blas_dasum(): compute the sum of absolute values of the elements
  * of a vector.
