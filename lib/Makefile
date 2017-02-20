@@ -20,7 +20,7 @@ C_UTIL=rng specfun vector matrix blas chol eigen
 C_FACTOR=cosine decay impulse fixed-impulse polynomial
 
 # basenames of C model source files.
-C_MODEL=vfr tauvfr
+C_MODEL=vfc vfr tauvfr
 
 # basenames of C optimizer source files.
 C_OPTIM=fg

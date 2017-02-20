@@ -250,6 +250,9 @@ int model_set_data (model_t *mdl, data_t *dat) {
   if (!mdl->xi)
     return 0;
 
+  /* initialize the logistic parameters. */
+  vector_set_all(mdl->xi, 1.0);
+
   /* return succes. */
   return 1;
 }
@@ -566,5 +569,153 @@ unsigned int model_weight_idx (const model_t *mdl,
 
   /* return the weight index. */
   return idx + k;
+}
+
+/* model_weight_adjust_init(): initialize data structures for performing
+ * a new low-rank adjustment of the:
+ *   a.) precision matrix cholesky factors.
+ *   b.) covariance matrix.
+ *
+ * arguments:
+ *  @mdl: model structure pointer to access.
+ *  @j: model factor index.
+ */
+void model_weight_adjust_init (const model_t *mdl, const unsigned int j) {
+  /* get the weight offset and count of the current factor. */
+  const unsigned int k0 = model_weight_idx(mdl, j, 0);
+  const unsigned int K = mdl->factors[j]->K;
+
+  /* declare vector views for tracking precision matrix modifications. */
+  vector_view_t u;
+  matrix_view_t U;
+
+  /* create the matrix view for storing updates. */
+  U = matrix_view_array(mdl->tmp->data + mdl->K + mdl->P, K, mdl->K);
+
+  /* copy the initial rows of the precision matrix. */
+  for (unsigned int k = 0; k < K; k++) {
+    u = matrix_row(&U, k);
+    matrix_copy_row(&u, mdl->Sinv, k0 + k);
+  }
+}
+
+/* model_weight_adjust_init(): perform a low-rank adjustment of the model
+ * precision cholesky factors and covariances.
+ *
+ * arguments:
+ *  @mdl: model structure pointer to access.
+ *  @j: model factor index.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int model_weight_adjust (model_t *mdl, const unsigned int j) {
+  /* get the weight offset and count of the current factor. */
+  const unsigned int k0 = model_weight_idx(mdl, j, 0);
+  const unsigned int K = mdl->factors[j]->K;
+
+  /* declare vector views for tracking precision matrix modifications. */
+  vector_view_t u, v, z;
+  matrix_view_t U, V;
+
+  /* create the vector view for holding individual rows/columns. */
+  double *ptr = mdl->tmp->data;
+  z = vector_view_array(ptr, mdl->K);
+  ptr += mdl->K + mdl->P;
+
+  /* create the matrix view for storing updates. */
+  U = matrix_view_array(ptr, K, mdl->K);
+  ptr += K * mdl->K;
+
+  /* create the matrix view for storing downdates. */
+  V = matrix_view_array(ptr, K, mdl->K);
+
+  /* copy the final rows of the precision matrix. */
+  for (unsigned int k = 0; k < K; k++) {
+    v = matrix_row(&V, k);
+    matrix_copy_row(&v, mdl->Sinv, k0 + k);
+  }
+
+  /* compute the difference between the precision matrix rows. */
+  matrix_sub(&V, &U);
+
+  /* adjust the row differences for use in rank-1 updates. */
+  for (unsigned int k = 0; k < K; k++) {
+    /* scale the main diagonal element by one-half, and zero
+     * all off-diagonals that have already been updated.
+     */
+    v = matrix_row(&V, k);
+    vector_set(&v, k0 + k, 0.5 * vector_get(&v, k0 + k));
+    for (unsigned int kk = 0; kk < k; kk++)
+      vector_set(&v, k0 + kk, 0.0);
+  }
+
+  /* transform the row differences into symmetric updates and downdates. */
+  for (unsigned int k = 0; k < K; k++) {
+    /* get views of the update and downdate row vectors. */
+    u = matrix_row(&U, k);
+    v = matrix_row(&V, k);
+
+    /* compute the symmetrization constants. */
+    const double vnrm = blas_dnrm2(&v);
+    const double alpha = sqrt(vnrm / 2.0);
+    const double beta = 1.0 / vnrm;
+
+    /* symmetrize the vectors. */
+    for (unsigned int i = 0; i < mdl->K; i++) {
+      /* get the elements of the selector and asymmetric update. */
+      const double ui = (i == k0 + k ? 1.0 : 0.0);
+      const double vi = vector_get(&v, i);
+
+      /* compute the elements of the symmetric update/downdate. */
+      const double xi = alpha * (ui + beta * vi);
+      const double yi = alpha * (ui - beta * vi);
+
+      /* store the elements back into their vectors. */
+      vector_set(&u, i, xi);
+      vector_set(&v, i, yi);
+    }
+  }
+
+  /* apply the updates. */
+  for (unsigned int k = 0; k < K; k++) {
+    /* update the cholesky factors. */
+    u = matrix_row(&U, k);
+    matrix_copy_row(&z, &U, k);
+    chol_update(mdl->L, &z);
+
+    /* update the covariance matrix. */
+    blas_dgemv(BLAS_NO_TRANS, 1.0, mdl->Sigma, &u, 0.0, &z);
+    double zudot = blas_ddot(&z, &u);
+    zudot = 1.0 / (1.0 + zudot);
+    for (unsigned int i = 0; i < mdl->K; i++)
+      for (unsigned int j = 0; j < mdl->K; j++)
+        matrix_set(mdl->Sigma, i, j,
+          matrix_get(mdl->Sigma, i, j) -
+          zudot * vector_get(&z, i) *
+                  vector_get(&z, j));
+  }
+
+  /* apply the downdates. */
+  for (unsigned int k = 0; k < K; k++) {
+    /* downdate the cholesky factors. */
+    v = matrix_row(&V, k);
+    matrix_copy_row(&z, &V, k);
+    chol_downdate(mdl->L, &z);
+
+    /* downdate the covariance matrix. */
+    blas_dgemv(BLAS_NO_TRANS, 1.0, mdl->Sigma, &v, 0.0, &z);
+    double zvdot = blas_ddot(&z, &v);
+    zvdot = 1.0 / (1.0 - zvdot);
+    for (unsigned int i = 0; i < mdl->K; i++)
+      for (unsigned int j = 0; j < mdl->K; j++)
+        matrix_set(mdl->Sigma, i, j,
+          matrix_get(mdl->Sigma, i, j) +
+          zvdot * vector_get(&z, i) *
+                  vector_get(&z, j));
+  }
+
+  /* return success. */
+  return 1;
 }
 

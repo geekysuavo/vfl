@@ -1,7 +1,7 @@
 
 /* include the required headers. */
 #include <vfl/optim.h>
-#include <vfl/rng.h>
+#include <vfl/util/rng.h>
 
 /* main(): application entry point.
  *

@@ -2,31 +2,51 @@
 /* include the model header. */
 #include <vfl/model.h>
 
-/* model_tauvfr(): allocate a new fixed-tau vfr model.
+/* sigfn(): compute the standard logistic function.
+ *
+ * computation:
+ *  sigma(xi) = (1 + e^(-x))^(-1)
+ */
+static inline double sigfn (const double xi) {
+  /* compute and return the function value. */
+  return 1.0 / (1.0 + exp(-xi));
+}
+
+/* ellfn(): compute the ell-function used by the logistic bound.
+ *
+ * computation:
+ *  ell(xi) = (4 xi)^(-1) tanh(xi / 2)
+ */
+static inline double ellfn (const double xi) {
+  /* compute and return the function value. */
+  return tanh(0.5 * xi) / (4.0 * xi);
+}
+
+/* --- */
+
+/* model_vfc(): allocate a new variational feature classification model.
  *
  * arguments:
- *  @tau: fixed value of the noise precision.
- *  @nu: relative precision of the weights.
+ *  @nu: prior absolute precision of the weights.
  *
  * returns:
- *  newly allocated and initialized vfr model.
+ *  newly allocated and initialized vfc model.
  */
-model_t *model_tauvfr (const double tau, const double nu) {
-  /* allocate a variational feature model. */
+model_t *model_vfc (const double nu) {
+  /* allocate a new variational feature model. */
   model_t *mdl = model_alloc();
   if (!mdl)
     return NULL;
 
   /* set the function pointers. */
-  mdl->bound = tauvfr_bound;
-  mdl->predict = tauvfr_predict;
-  mdl->infer = tauvfr_infer;
-  mdl->update = tauvfr_update;
-  mdl->grad = tauvfr_gradient;
+  mdl->bound = vfc_bound;
+  mdl->predict = vfc_predict;
+  mdl->infer = vfc_infer;
+  mdl->update = vfc_update;
+  mdl->grad = vfc_gradient;
 
   /* attempt to set the prior parameters. */
-  if (!model_set_alpha0(mdl, tau) ||
-      !model_set_nu(mdl, nu)) {
+  if (!model_set_nu(mdl, nu)) {
     model_free(mdl);
     return NULL;
   }
@@ -35,12 +55,11 @@ model_t *model_tauvfr (const double tau, const double nu) {
   return mdl;
 }
 
-/* tauvfr_bound(): return the lower bound of a fixed-tau vfr model.
+/* vfc_bound(): return the lower bound of a vfc model.
  *  - see model_bound_fn() for more information.
  */
-double tauvfr_bound (const model_t *mdl) {
+double vfc_bound (const model_t *mdl) {
   /* initialize the computation. */
-  const double tau = mdl->beta;
   double bound = 0.0;
 
   /* include the complexity term. */
@@ -50,65 +69,52 @@ double tauvfr_bound (const model_t *mdl) {
   /* include the data fit term. */
   vector_view_t b = vector_subvector(mdl->tmp, 0, mdl->K);
   blas_dtrmv(BLAS_TRANS, 1.0, mdl->L, mdl->wbar, 0.0, &b);
-  bound += 0.5 * tau * blas_ddot(&b, &b);
+  bound += 0.5 * blas_ddot(&b, &b);
+
+  /* include the logistic terms. */
+  for (unsigned int i = 0; i < mdl->dat->N; i++) {
+    const double xi = vector_get(mdl->xi, i);
+    bound += sigfn(xi) - 0.5 * xi + ellfn(xi) * xi * xi;
+  }
 
   /* return the computed result. */
   return bound;
 }
 
-/* tauvfr_predict(): return the prediction of a fixed-tau vfr model.
+/* vfc_predict(): return the prediction of a vfc model.
  *  - see model_predict_fn() for more information.
  */
-int tauvfr_predict (const model_t *mdl, const vector_t *x,
-                    double *mean, double *var) {
+int vfc_predict (const model_t *mdl, const vector_t *x,
+                 double *mean, double *var) {
   /* initialize the predicted mean. */
-  double mu = 0.0;
+  double p = 0.0;
 
   /* loop over the terms of the inner product. */
   for (unsigned int j = 0, i = 0; j < mdl->M; j++) {
     for (unsigned int k = 0; k < mdl->factors[j]->K; k++, i++) {
-      /* include the current contribution from the inner product. */
-      mu += vector_get(mdl->wbar, i) * model_mean(mdl, x, j, k);
+      /* include the current contribution form the inner product. */
+      p += vector_get(mdl->wbar, i) * model_mean(mdl, x, j, k);
     }
   }
 
-  /* compute the expected noise variance and initialize
-   * the predicted variance.
-   */
-  const double tauinv = 1.0 / mdl->alpha;
-  double eta = tauinv - mu * mu;
-
-  /* loop over the first trace dimension. */
-  for (unsigned int j1 = 0, i1 = 0; j1 < mdl->M; j1++) {
-    for (unsigned int k1 = 0; k1 < mdl->factors[j1]->K; k1++, i1++) {
-      /* loop over the second trace dimension. */
-      for (unsigned int j2 = 0, i2 = 0; j2 < mdl->M; j2++) {
-        for (unsigned int k2 = 0; k2 < mdl->factors[j2]->K; k2++, i2++) {
-          /* include the current contribution from the trace. */
-          eta += (matrix_get(mdl->Sigma, i1, i2) +
-                  vector_get(mdl->wbar, i1) *
-                  vector_get(mdl->wbar, i2)) *
-                 model_var(mdl, x, j1, j2, k1, k2);
-        }
-      }
-    }
-  }
+  /* pass the inner product through the logistic function. */
+  p = sigfn(p);
 
   /* store the results and return success. */
-  *mean = mu;
-  *var = eta;
+  *mean = p;
+  *var = p * (1.0 - p);
   return 1;
 }
 
-/* tauvfr_infer(): perform complete inference in a fixed-tau vfr model.
+/* vfc_infer(): perform complete inference in a vfc model.
  *  - see model_infer_fn() for more information.
  */
-int tauvfr_infer (model_t *mdl) {
+int vfc_infer (model_t *mdl) {
   /* gain access to the dataset structure members. */
   const unsigned int N = mdl->dat->N;
   matrix_t *X = mdl->dat->X;
   vector_t *y = mdl->dat->y;
-  double yi;
+  double yi, xi;
 
   /* declare views into the weight precisions and the projections. */
   matrix_view_t G;
@@ -126,11 +132,11 @@ int tauvfr_infer (model_t *mdl) {
       /* initialize the projection subvector element. */
       double hk = 0.0;
 
-      /* compute the contributions of each observation. */
+      /* compute the contribution of each observation. */
       for (unsigned int i = 0; i < N; i++) {
         x = matrix_row(X, i);
         yi = vector_get(y, i);
-        hk += yi * model_mean(mdl, &x, j1, k1);
+        hk += (2.0 * yi - 1.0) * model_mean(mdl, &x, j1, k1);
       }
 
       /* store the projection subvector element. */
@@ -150,7 +156,8 @@ int tauvfr_infer (model_t *mdl) {
           /* compute the contributions of each observation. */
           for (unsigned int i = 0; i < N; i++) {
             x = matrix_row(X, i);
-            gkk += model_var(mdl, &x, j1, j2, k1, k2);
+            xi = vector_get(mdl->xi, i);
+            gkk += 2.0 * ellfn(xi) * model_var(mdl, &x, j1, j2, k1, k2);
           }
 
           /* store the precision submatrix element. */
@@ -174,19 +181,47 @@ int tauvfr_infer (model_t *mdl) {
   matrix_copy(mdl->L, mdl->Sinv);
   chol_decomp(mdl->L);
 
-  /* update the weight means and covariances. */
+  /* update the weight means. */
   chol_solve(mdl->L, mdl->h, mdl->wbar);
+  vector_scale(mdl->wbar, 0.5);
+
+  /* update the weight covariances. */
   chol_invert(mdl->L, mdl->Sigma);
+
+  /* update the logistic parameters. */
+  for (unsigned int i = 0; i < N; i++) {
+    /* initialize the parameter computation. */
+    x = matrix_row(X, i);
+    xi = 0.0;
+
+    /* loop over the first trace dimension. */
+    for (unsigned int j1 = 0, i1 = 0; j1 < mdl->M; j1++) {
+      for (unsigned int k1 = 0; k1 < mdl->factors[j1]->K; k1++, i1++) {
+        /* loop over the second trace dimension. */
+        for (unsigned int j2 = 0, i2 = 0; j2 < mdl->M; j2++) {
+          for (unsigned int k2 = 0; k2 < mdl->factors[j2]->K; k2++, i2++) {
+            /* include the current contribution from the trace. */
+            xi += (matrix_get(mdl->Sigma, i1, i2) +
+                   vector_get(mdl->wbar, i1) *
+                   vector_get(mdl->wbar, i2)) *
+                  model_var(mdl, &x, j1, j2, k1, k2);
+          }
+        }
+      }
+    }
+
+    /* store the computed logistic parameter. */
+    vector_set(mdl->xi, i, sqrt(xi));
+  }
 
   /* return success. */
   return 1;
 }
 
-/* tauvfr_update(): perform efficient low-rank inference in a
- * fixed-tau vfr model.
+/* vfc_update(): perform efficient low-rank inference in a vfc model.
  *  - see model_update_fn() for more information.
  */
-int tauvfr_update (model_t *mdl, const unsigned int j) {
+int vfc_update (model_t *mdl, const unsigned int j) {
   /* get the weight offset and count of the current factor. */
   const unsigned int k0 = model_weight_idx(mdl, j, 0);
   const unsigned int K = mdl->factors[j]->K;
@@ -196,7 +231,7 @@ int tauvfr_update (model_t *mdl, const unsigned int j) {
   matrix_t *X = mdl->dat->X;
   vector_t *y = mdl->dat->y;
   vector_view_t x;
-  double yi;
+  double yi, xi;
 
   /* prepare for low-rank adjustment. */
   model_weight_adjust_init(mdl, j);
@@ -210,7 +245,7 @@ int tauvfr_update (model_t *mdl, const unsigned int j) {
     for (unsigned int i = 0; i < N; i++) {
       x = matrix_row(X, i);
       yi = vector_get(y, i);
-      hk += yi * model_mean(mdl, &x, j, k);
+      hk += (2.0 * yi - 1.0) * model_mean(mdl, &x, j, k);
     }
 
     /* store the projection subvector element. */
@@ -229,7 +264,8 @@ int tauvfr_update (model_t *mdl, const unsigned int j) {
         /* compute the contributions of each observation. */
         for (unsigned int i = 0; i < N; i++) {
           x = matrix_row(X, i);
-          gkk += model_var(mdl, &x, j, j2, k, k2);
+          xi = vector_get(mdl->xi, i);
+          gkk += 2.0 * ellfn(xi) * model_var(mdl, &x, j, j2, k, k2);
         }
 
         /* store the precision submatrix element. */
@@ -254,17 +290,43 @@ int tauvfr_update (model_t *mdl, const unsigned int j) {
 
   /* update the weight means. */
   chol_solve(mdl->L, mdl->h, mdl->wbar);
+  vector_scale(mdl->wbar, 0.5);
+
+  /* update the logistic parameters. */
+  for (unsigned int i = 0; i < N; i++) {
+    /* initialize the parameter computation. */
+    x = matrix_row(X, i);
+    xi = 0.0;
+
+    /* loop over the first trace dimension. */
+    for (unsigned int j1 = 0, i1 = 0; j1 < mdl->M; j1++) {
+      for (unsigned int k1 = 0; k1 < mdl->factors[j1]->K; k1++, i1++) {
+        /* loop over the second trace dimension. */
+        for (unsigned int j2 = 0, i2 = 0; j2 < mdl->M; j2++) {
+          for (unsigned int k2 = 0; k2 < mdl->factors[j2]->K; k2++, i2++) {
+            /* include the current contribution from the trace. */
+            xi += (matrix_get(mdl->Sigma, i1, i2) +
+                   vector_get(mdl->wbar, i1) *
+                   vector_get(mdl->wbar, i2)) *
+                  model_var(mdl, &x, j1, j2, k1, k2);
+          }
+        }
+      }
+    }
+
+    /* store the computed logistic parameter. */
+    vector_set(mdl->xi, i, sqrt(xi));
+  }
 
   /* return success. */
   return 1;
 }
 
-/* tauvfr_gradient(): return the gradient of a single factor in a
- * fixed-tau vfr model.
+/* vfc_gradient(): return the gradient of a single factor in a vfc model.
  *  - see model_gradient_fn() for more information.
  */
-int tauvfr_gradient (const model_t *mdl, const unsigned int i,
-                     const unsigned int j, vector_t *grad) {
+int vfc_gradient (const model_t *mdl, const unsigned int i,
+                  const unsigned int j, vector_t *grad) {
   /* determine the weight index offset of the current factor. */
   const unsigned int k0 = model_weight_idx(mdl, j, 0);
 
@@ -275,9 +337,6 @@ int tauvfr_gradient (const model_t *mdl, const unsigned int i,
   /* gain access to the specified observation. */
   vector_view_t x = matrix_row(mdl->dat->X, i);
   const double y = vector_get(mdl->dat->y, i);
-
-  /* compute the expected noise precision. */
-  const double tau = mdl->alpha;
 
   /* create the vector view for individual gradient terms. */
   vector_view_t g = vector_subvector(mdl->tmp, mdl->K, grad->len);
@@ -291,7 +350,7 @@ int tauvfr_gradient (const model_t *mdl, const unsigned int i,
     for (unsigned int kk = 0; kk < K; kk++) {
       /* compute the weight second moment. */
       const double wwT = matrix_get(mdl->Sigma, k0 + k, k0 + kk) +
-                         tau * wk * vector_get(mdl->wbar, k0 + kk);
+                         wk * vector_get(mdl->wbar, k0 + kk);
 
       /* include the second-order contribution. */
       factor_diff_var(fj, &x, k, kk, &g);
@@ -300,7 +359,7 @@ int tauvfr_gradient (const model_t *mdl, const unsigned int i,
 
     /* include the first-order contribution. */
     factor_diff_mean(fj, &x, k, &g);
-    blas_daxpy(tau * wk * y, &g, grad);
+    blas_daxpy(wk * y, &g, grad);
 
     /* loop over the other factors. */
     for (unsigned int j2 = 0, i2 = 0; j2 < mdl->M; j2++) {
@@ -317,7 +376,7 @@ int tauvfr_gradient (const model_t *mdl, const unsigned int i,
       for (unsigned int k2 = 0; k2 < K2; k2++) {
         /* compute the weight second moment. */
         const double wwT = matrix_get(mdl->Sigma, k0 + k, i2 + k2) +
-                           tau * wk * vector_get(mdl->wbar, i2 + k2);
+                           wk * vector_get(mdl->wbar, i2 + k2);
 
         /* include the off-diagonal second-order contribution. */
         const double E2 = factor_mean(mdl->factors[j2], &x, k2);

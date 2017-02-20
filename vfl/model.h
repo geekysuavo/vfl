@@ -200,11 +200,18 @@ int model_update (model_t *mdl, const unsigned int j);
 int model_gradient (const model_t *mdl, const unsigned int i,
                     const unsigned int j, vector_t *grad);
 
+/* global, yet internally used function declarations (model.c): */
+
 unsigned int model_weight_idx (const model_t *mdl,
                                const unsigned int j,
                                const unsigned int k);
 
+void model_weight_adjust_init (const model_t *mdl, const unsigned int j);
+
+int model_weight_adjust (model_t *mdl, const unsigned int j);
+
 /* derived model headers: */
+#include <vfl/model/vfc.h>
 #include <vfl/model/vfr.h>
 #include <vfl/model/tauvfr.h>
 
