@@ -5,6 +5,7 @@
 
 /* include c headers. */
 #include <stdlib.h>
+#include <stdarg.h>
 #include <math.h>
 
 /* include application headers. */
@@ -142,7 +143,7 @@ struct factor {
    */
   unsigned int bytes, D, P, K;
 
-  /* univariate factors:
+  /* univariate factors only:
    *  @d: input dimension.
    */
   unsigned int d;
@@ -225,6 +226,7 @@ double factor_div (const factor_t *f, const factor_t *f2);
 #include <vfl/factor/impulse.h>
 #include <vfl/factor/fixed-impulse.h>
 #include <vfl/factor/polynomial.h>
+#include <vfl/factor/product.h>
 
 #endif /* !__VFL_FACTOR_H__ */
 

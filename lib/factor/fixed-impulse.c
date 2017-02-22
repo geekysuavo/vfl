@@ -15,7 +15,7 @@
  *  newly allocated and initialized fixed impulse factor.
  */
 factor_t *factor_fixed_impulse (const double mu, const double tau) {
-  /* allocate a factor without any extra memory. */
+  /* allocate a factor with extra memory. */
   factor_t *f = factor_alloc(sizeof(fixed_impulse_t), 1, 1, 1);
   if (!f)
     return NULL;
@@ -33,6 +33,7 @@ factor_t *factor_fixed_impulse (const double mu, const double tau) {
 
   /* store the assignment function pointer. */
   f->set = factor_fixed_impulse_set;
+  f->copy = factor_fixed_impulse_copy;
 
   /* attempt to set the initial factor parameter. */
   if (!f->set(f, P_TAU, tau)) {
@@ -159,5 +160,21 @@ int factor_fixed_impulse_set (factor_t *f, const unsigned int i,
 
   /* invalid parameter index. */
   return 0;
+}
+
+/* factor_fixed_impulse_copy(): copy extra information between fixed impulse
+ * factors.
+ *  - see factor_copy_fn() for more information.
+ */
+int factor_fixed_impulse_copy (const factor_t *f, factor_t *fdup) {
+  /* get the extended structure pointers. */
+  fixed_impulse_t *fdupx = (fixed_impulse_t*) fdup;
+  fixed_impulse_t *fx = (fixed_impulse_t*) f;
+
+  /* copy the location parameter. */
+  fdupx->mu = fx->mu;
+
+  /* return success. */
+  return 1;
 }
 

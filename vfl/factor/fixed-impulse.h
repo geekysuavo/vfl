@@ -45,5 +45,7 @@ double factor_fixed_impulse_div (const factor_t *f, const factor_t *f2);
 int factor_fixed_impulse_set (factor_t *f, const unsigned int i,
                               const double value);
 
+int factor_fixed_impulse_copy (const factor_t *f, factor_t *fdup);
+
 #endif /* !__VFL_FACTOR_FIXED_IMPULSE_H__ */
 

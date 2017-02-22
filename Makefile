@@ -19,7 +19,12 @@ all:
 # intermediate file cleanup target.
 clean:
 	@$(MAKE) -sC lib clean
+	@$(MAKE) -sC tests/carbon-dioxide clean
 	@$(MAKE) -sC tests/cosines clean
+	@$(MAKE) -sC tests/gauss clean
+	@$(MAKE) -sC tests/methane clean
+	@$(MAKE) -sC tests/multexp clean
+	@$(MAKE) -sC tests/poly clean
 	@$(MAKE) -sC tests/sinc clean
 	@$(MAKE) -sC tests/sinc-fixed clean
 
