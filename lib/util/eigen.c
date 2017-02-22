@@ -81,9 +81,16 @@ double eigen_minev (const matrix_t *A, matrix_t *B,
     /* store the previous eigenvalue. */
     mu_prev = mu;
 
-    /* update the eigenvector estimate. */
+    /* hit the eigenvector estimate with the spectrally shifted matrix. */
     blas_dgemv(BLAS_NO_TRANS, 1.0, B, b, 0.0, z);
-    vector_scale(z, 1.0 / blas_dnrm2(z));
+    const double znrm = blas_dnrm2(z);
+
+    /* if the eigenvector estimate is zero, return the bound. */
+    if (znrm == 0.0)
+      return evub;
+
+    /* upate the eigenvector estimate. */
+    vector_scale(z, 1.0 / znrm);
     vector_copy(b, z);
 
     /* update the eigenvalue estimate. */
