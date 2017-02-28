@@ -35,23 +35,9 @@ int main (int argc, char **argv) {
   /* randomly adjust the frequency mean. */
   factor_set(mdl->factors[0], 2, 100.0 * rng_normal(R));
 
-  /* set up an optimizer. */
+  /* optimize. */
   optim_t *opt = optim_fg(mdl);
-  opt->l0 = 1.0;
-  opt->dl = 0.1;
-  unsigned int iter;
-  double bound;
-
-  /* perform a few optimization iterations. */
-  for (iter = 0; iter < 1000; iter++) {
-    bound = model_bound(mdl);
-    fprintf(stderr, "%u %le", iter, bound);
-    int mod = opt->iterate(opt);
-    for (unsigned int p = 0; p < mdl->factors[0]->P; p++)
-      fprintf(stderr, " %16.9le", vector_get(mdl->factors[0]->par, p));
-    fprintf(stderr, "\n");
-    if (!mod) break;
-  }
+  optim_execute(opt);
 
   /* allocate datasets for prediction. */
   double grid_values[] = { 0.0, 1.0e-3, 10.0 };

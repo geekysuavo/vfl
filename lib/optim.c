@@ -29,6 +29,8 @@ optim_t *optim_alloc (model_t *mdl, const unsigned int bytes) {
   opt->mdl = mdl;
 
   /* initialize the function pointers. */
+  opt->iterate = NULL;
+  opt->execute = NULL;
   opt->free = NULL;
 
   /* determine the maximum parameter count of the model factors. */
@@ -54,9 +56,14 @@ optim_t *optim_alloc (model_t *mdl, const unsigned int bytes) {
     return NULL;
   }
 
-  /* initialize the search parameters. */
+  /* initialize the control parameters. */
+  opt->max_steps = 10;
+  opt->max_iters = 1000;
   opt->l0 = 1.0;
   opt->dl = 0.1;
+
+  /* initialize the lower bound. */
+  opt->bound0 = opt->bound = model_bound(mdl);
 
   /* return the new optimizer. */
   return opt;
@@ -87,5 +94,29 @@ void optim_free (optim_t *opt) {
 
   /* free the structure pointer. */
   free(opt);
+}
+
+/* optim_iterate(): perform a single optimization iteration.
+ *  - see optim_iterate_fn() for more information.
+ */
+int optim_iterate (optim_t *opt) {
+  /* check the input pointer. */
+  if (!opt || !opt->iterate)
+    return 0;
+
+  /* run the iteration function. */
+  return opt->iterate(opt);
+}
+
+/* optim_execute(): perform multiple free-run optimization iterations.
+ *  - see optim_iterate_fn() for more information.
+ */
+int optim_execute (optim_t *opt) {
+  /* check the input pointer. */
+  if (!opt || !opt->execute)
+    return 0;
+
+  /* run the execution function. */
+  return opt->execute(opt);
 }
 

@@ -46,30 +46,12 @@ int main (int argc, char **argv) {
     factor_set(mdl->factors[j], 2,  0.45 + 0.5 * rng_normal(R));
   }
 
-  /* set up an optimizer. */
+  /* optimize. */
   optim_t *opt = optim_fg(mdl);
+  opt->max_iters = 50;
   opt->l0 = 1.0;
   opt->dl = 0.1;
-  unsigned int iter;
-  double bound, bprev;
-  bound = -1.0e99;
-
-  /* perform a few optimization iterations. */
-  for (iter = 0; iter <= 50; iter++) {
-    bprev = bound;
-    bound = model_bound(mdl);
-    if (bound < bprev) break;
-
-    fprintf(stderr, "%u %le", iter, bound);
-    for (unsigned int j = 0; j < mdl->M; j++)
-      fprintf(stderr, " %le %le",
-        vector_get(mdl->factors[j]->par, 0),
-        vector_get(mdl->factors[j]->par, 2));
-    fprintf(stderr, "\n");
-    fflush(stderr);
-
-    if (!opt->iterate(opt)) break;
-  }
+  optim_execute(opt);
 
   /* allocate datasets for prediction. */
   double grid_values[] = { -1.5, 0.01, 1.0,
@@ -84,6 +66,7 @@ int main (int argc, char **argv) {
   data_fwrite(var, "var.dat");
 
   /* free the structures. */
+  optim_free(opt);
   model_free(mdl);
   data_free(mean);
   data_free(var);

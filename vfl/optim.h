@@ -42,9 +42,11 @@ struct optim {
 
   /* function pointers:
    *  @iterate: hook for iterating on the lower bound.
+   *  @execute: hook for running free-run optimization.
    *  @free: hook for freeing extra allocated memory.
    */
   optim_iterate_fn iterate;
+  optim_iterate_fn execute;
   optim_free_fn free;
 
   /* proximal gradient step and endpoints:
@@ -52,11 +54,19 @@ struct optim {
    *  @xb: final point, gamma --> inf.
    *  @x: intermediate point.
    *  @g: step vector.
+   */
+  vector_t *xa, *xb, *x, *g;
+
+  /* iteration and execution control variables:
+   *  @max_steps: maximum number of steps per iteration.
+   *  @max_iters: maximum number of total iterations.
+   *  @bound0: initial lower bound on allocation.
+   *  @bound: current lower bound.
    *  @l0: initial lipschitz constant.
    *  @dl: lipschitz step factor.
    */
-  vector_t *xa, *xb, *x, *g;
-  double l0, dl;
+  unsigned int max_steps, max_iters;
+  double bound0, bound, l0, dl;
 
   /* temporary structures:
    *  @Fs: spectrally-shifted fisher information matrix.
@@ -69,6 +79,10 @@ struct optim {
 optim_t *optim_alloc (model_t *mdl, const unsigned int bytes);
 
 void optim_free (optim_t *opt);
+
+int optim_iterate (optim_t *opt);
+
+int optim_execute (optim_t *opt);
 
 /* derived optimizer headers. */
 #include <vfl/optim/fg.h>

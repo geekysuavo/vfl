@@ -18,6 +18,7 @@ optim_t *optim_fg (model_t *mdl) {
 
   /* set the function pointers. */
   opt->iterate = fg_iterate;
+  opt->execute = fg_execute;
 
   /* return the new optimizer. */
   return opt;
@@ -124,7 +125,7 @@ int fg_iterate (optim_t *opt) {
       gamma *= opt->dl;
       steps++;
     }
-    while (!valid && steps < 10);
+    while (!valid && steps < opt->max_steps);
 
     /* if a valid step was not identified. */
     if (!valid) {
@@ -135,7 +136,39 @@ int fg_iterate (optim_t *opt) {
     }
   }
 
+  /* store the new lower bound into the optimizer. */
+  opt->bound = bound;
+
   /* return whether or not the bound was changed by iteration. */
   return (bound != bound_init);
+}
+
+/* fg_execute(): execution function for full-gradient optimization.
+ *  - see optim_iterate_fn() for more information.
+ */
+int fg_execute (optim_t *opt) {
+  /* declare a variable for storing the lower
+   * bound from the previous iteration.
+   */
+  double bound_prev = opt->bound;
+
+  /* loop for the specified number of iterations. */
+  for (unsigned int iter = 0; iter < opt->max_iters; iter++) {
+    /* store the previous value of the lower bound. */
+    bound_prev = opt->bound;
+
+    /* perform an iteration, and break if the bound is unchanged. */
+    if (!optim_iterate(opt))
+      break;
+
+    /* break if the bound was decreased. */
+    if (opt->bound < bound_prev)
+      break;
+  }
+
+  /* return whether the bound was changed by the final iteration,
+   * which could be a sign that optimization is incomplete.
+   */
+  return (opt->bound > bound_prev);
 }
 

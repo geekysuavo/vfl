@@ -39,20 +39,11 @@ int main (int argc, char **argv) {
   model_add_factor(mdl, factor_cosine( 5.0,    0.1));
   model_add_factor(mdl, factor_cosine(10.0,    0.1));
 
-  /* set up an optimizer. */
+  /* optimize. */
   optim_t *opt = optim_fg(mdl);
+  opt->max_iters = 2000;
   opt->l0 = 0.0001;
-  opt->dl = 0.1;
-  unsigned int iter;
-  double bound;
-
-  /* perform a few optimization iterations. */
-  for (iter = 0; iter < 2000; iter++) {
-    bound = model_bound(mdl);
-    fprintf(stderr, "%u %le\n", iter, bound);
-    if (!opt->iterate(opt))
-      break;
-  }
+  optim_execute(opt);
 
   /* allocate datasets for prediction. */
   double grid_values[] = { -25.0, 1.0e-2, 75.0 };

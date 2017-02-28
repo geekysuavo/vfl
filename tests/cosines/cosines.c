@@ -24,8 +24,7 @@ int main (int argc, char **argv) {
   data_t *dat = data_alloc();
   data_fread(dat, "cosines.dat");
 
-  /* set up a regression model. */
-//model_t *mdl = model_vfr(1000.0, 1000.0, 1.0e-6);
+  /* set up a fixed-tau regression model. */
   model_t *mdl = model_tauvfr(1.0, 1.0e-6);
   model_set_data(mdl, dat);
 
@@ -40,21 +39,10 @@ int main (int argc, char **argv) {
   for (unsigned int j = 0; j < mdl->M; j++)
     factor_set(mdl->factors[j], 0, 300.0 * rng_normal(R));
 
-  /* set up an optimizer. */
+  /* optimize. */
   optim_t *opt = optim_fg(mdl);
   opt->l0 = 0.001;
-  opt->dl = 0.1;
-  unsigned int iter;
-  double bound;
-
-  /* perform a few optimization iterations. */
-  for (iter = 0; iter < 1000; iter++) {
-    bound = model_bound(mdl);
-    fprintf(stderr, "%u %le", iter, bound);
-    int mod = opt->iterate(opt);
-    fprintf(stderr, "\n");
-    if (!mod) break;
-  }
+  optim_execute(opt);
 
   /* allocate datasets for prediction. */
   double grid_values[] = { 0.0, 1.0e-3, 0.5 };

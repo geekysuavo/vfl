@@ -31,21 +31,10 @@ int main (int argc, char **argv) {
   model_add_factor(mdl, factor_decay(10.0, 1000.0));
   model_add_factor(mdl, factor_decay(10.0, 10000.0));
   
-  /* set up an optimizer. */
+  /* optimize. */
   optim_t *opt = optim_fg(mdl);
   opt->l0 = 0.001;
-  opt->dl = 0.1;
-  unsigned int iter;
-  double bound;
-
-  /* perform a few optimization iterations. */
-  for (iter = 0; iter < 1000; iter++) {
-    bound = model_bound(mdl);
-    fprintf(stderr, "%u %le", iter, bound);
-    int mod = opt->iterate(opt);
-    fprintf(stderr, "\n");
-    if (!mod) break;
-  }
+  optim_execute(opt);
 
   /* allocate datasets for prediction. */
   double grid_values[] = { 0.0, 0.1, 150.0 };

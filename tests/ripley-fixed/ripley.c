@@ -25,7 +25,7 @@ int main (int argc, char **argv) {
   model_set_data(mdl, dat);
 
   /* add factors to the model. */
-  for (unsigned int i = 0; i < dat->N; i++) {
+  for (unsigned int i = 0; i < dat->N; i += 10) {
     /* get the factor location. */
     const double x = matrix_get(dat->X, i, 0);
     const double y = matrix_get(dat->X, i, 1);
@@ -43,25 +43,11 @@ int main (int argc, char **argv) {
     factor_set(mdl->factors[mdl->M - 1], 1, 10.0);
   }
 
-  /* set up an optimizer. */
+  /* optimize. */
   optim_t *opt = optim_fg(mdl);
+  opt->max_iters = 50;
   opt->l0 = 0.001;
-  opt->dl = 0.1;
-  unsigned int iter;
-  double bound, bprev;
-  bound = -1.0e99;
-
-  /* perform a few optimization iterations. */
-  for (iter = 0; iter <= 50; iter++) {
-    bprev = bound;
-    bound = model_bound(mdl);
-    if (bound < bprev) break;
-
-    fprintf(stderr, "%u %le\n", iter, bound);
-    fflush(stderr);
-
-    if (!opt->iterate(opt)) break;
-  }
+  optim_execute(opt);
 
   /* allocate datasets for prediction. */
   double grid_values[] = { -1.5, 0.01, 1.0,
@@ -76,6 +62,7 @@ int main (int argc, char **argv) {
   data_fwrite(var, "var.dat");
 
   /* free the structures. */
+  optim_free(opt);
   model_free(mdl);
   data_free(mean);
   data_free(var);
