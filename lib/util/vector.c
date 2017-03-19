@@ -2,6 +2,38 @@
 /* include the vector header. */
 #include <vfl/util/vector.h>
 
+/* vector_bytes(): compute the space required for a vector.
+ *
+ * arguments:
+ *  @len: number of elements in the vector.
+ *
+ * returns:
+ *  number of bytes required for a vector structure having the
+ *  specified number of elements.
+ */
+unsigned int vector_bytes (const unsigned int len) {
+  /* compute and return the space requirement. */
+  return sizeof(vector_t) + len * sizeof(double);
+}
+
+/* vector_init(): overlay a vector at a specified memory address.
+ *
+ * arguments:
+ *  @addr: memory address to overlay structure onto.
+ *  @len: number of elements in the overlaid vector.
+ */
+void vector_init (void *addr, const unsigned int len) {
+  /* cast the memory address to a vector structure pointer. */
+  vector_t *v = (vector_t*) addr;
+
+  /* store the structure parameters. */
+  v->len = len;
+  v->stride = 1;
+
+  /* point the vector data array to the end of the structure. */
+  v->data = (double*) ((char*) v + sizeof(vector_t));
+}
+
 /* vector_alloc(): allocate a new vector for use.
  *
  * arguments:
@@ -12,27 +44,14 @@
  *  vector will not yet be initialized.
  */
 vector_t *vector_alloc (const unsigned int len) {
-  /* declare required variables:
-   *  @bytes: size of the memory block to allocate.
-   *  @v: output vector structure pointer.
-   */
-  unsigned int bytes;
-  vector_t *v;
-
   /* allocate a new structure pointer, or fail. */
-  bytes = sizeof(vector_t) + len * sizeof(double);
-  v = (vector_t*) malloc(bytes);
+  const unsigned int bytes = vector_bytes(len);
+  vector_t *v = (vector_t*) malloc(bytes);
   if (!v)
     return NULL;
 
-  /* store the structure parameters. */
-  v->len = len;
-  v->stride = 1;
-
-  /* point the vector data array to the end of the structure. */
-  v->data = (double*) ((char*) v + sizeof(vector_t));
-
-  /* return the new structure pointer. */
+  /* initialize and return the new structure pointer. */
+  vector_init(v, len);
   return v;
 }
 

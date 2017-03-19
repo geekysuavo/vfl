@@ -36,6 +36,10 @@ typedef vector_t vector_view_t;
 
 /* function declarations (vector.c): */
 
+unsigned int vector_bytes (const unsigned int len);
+
+void vector_init (void *addr, const unsigned int len);
+
 vector_t *vector_alloc (const unsigned int len);
 
 void vector_copy (vector_t *dest, const vector_t *src);

@@ -2,6 +2,43 @@
 /* include the matrix header. */
 #include <vfl/util/matrix.h>
 
+/* matrix_bytes(): compute the space required for a matrix.
+ *
+ * arguments:
+ *  @rows: number of rows in the matrix.
+ *  @cols: number of columns in the matrix.
+ *
+ * returns:
+ *  number of bytes required by a matrix structure having the
+ *  specified number of rows and columns.
+ */
+unsigned int matrix_bytes (const unsigned int rows,
+                           const unsigned int cols) {
+  /* compute and return the space requirement. */
+  return sizeof(matrix_t) + rows * cols * sizeof(double);
+}
+
+/* matrix_init(): overlay a matrix at a specified memory address.
+ *
+ * arguments:
+ *  @addr: memory address to overlay structure onto.
+ *  @rows: number of rows in the overlaid matrix.
+ *  @cols: number of columns in the overlaid matrix.
+ */
+void matrix_init (void *addr, const unsigned int rows,
+                  const unsigned int cols) {
+  /* cast the memory address to a matrix structure pointer. */
+  matrix_t *A = (matrix_t*) addr;
+
+  /* store the structure parameters. */
+  A->rows = rows;
+  A->cols = cols;
+  A->stride = cols;
+
+  /* point the matrix data array to the end of the structure. */
+  A->data = (double*) ((char*) A + sizeof(matrix_t));
+}
+
 /* matrix_alloc(): allocate a new matrix for use.
  *
  * arguments:
@@ -13,28 +50,14 @@
  *  matrix will not yet be initialized.
  */
 matrix_t *matrix_alloc (const unsigned int rows, const unsigned int cols) {
-  /* declare required variables:
-   *  @bytes: size of the memory block to allocate.
-   *  @A: output matrix structure pointer.
-   */
-  unsigned int bytes;
-  matrix_t *A;
-
   /* allocate a new structure pointer, or fail. */
-  bytes = sizeof(matrix_t) + rows * cols * sizeof(double);
-  A = (matrix_t*) malloc(bytes);
+  const unsigned int bytes = matrix_bytes(rows, cols);
+  matrix_t *A = (matrix_t*) malloc(bytes);
   if (!A)
     return NULL;
 
-  /* store the structure parameters. */
-  A->rows = rows;
-  A->cols = cols;
-  A->stride = cols;
-
-  /* pointer the matrix data array to the end of the structure. */
-  A->data = (double*) ((char*) A + sizeof(matrix_t));
-
-  /* return the new structure pointer. */
+  /* initialize and return the structure pointer. */
+  matrix_init(A, rows, cols);
   return A;
 }
 

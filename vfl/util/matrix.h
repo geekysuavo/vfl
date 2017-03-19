@@ -40,6 +40,12 @@ typedef matrix_t matrix_view_t;
 
 /* function declarations (matrix.c): */
 
+unsigned int matrix_bytes (const unsigned int rows,
+                           const unsigned int cols);
+
+void matrix_init (void *addr, const unsigned int rows,
+                  const unsigned int cols);
+
 matrix_t *matrix_alloc (const unsigned int rows, const unsigned int cols);
 
 void matrix_copy (matrix_t *dest, const matrix_t *src);
