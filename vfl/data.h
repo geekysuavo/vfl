@@ -11,6 +11,20 @@
 #include <vfl/util/matrix.h>
 #include <vfl/util/vector.h>
 
+/* datum_t: structure for holding a single observation.
+ */
+typedef struct {
+  /* properties of each observation:
+   *  @p: observation output index.
+   *  @x: observation location.
+   *  @y: observed value.
+   */
+  unsigned int p;
+  vector_t *x;
+  double y;
+}
+datum_t;
+
 /* data_t: structure for holding observations.
  */
 typedef struct {
@@ -20,32 +34,38 @@ typedef struct {
    */
   unsigned int N, D;
 
-  /* core dataset arrays:
-   *  @X: observation inputs.
-   *  @y: observed outputs.
+  /* core dataset array:
+   *  @data: array of observations.
    */
-  matrix_t *X;
-  vector_t *y;
+  datum_t *data;
 }
 data_t;
 
-/* function declarations (data.c): */
+/* function declarations, allocation (data-alloc.c): */
 
 data_t *data_alloc (void);
 
-data_t *data_alloc_from_grid (const matrix_t *grid);
+data_t *data_alloc_from_file (const char *fname);
+
+data_t *data_alloc_from_grid (const unsigned int P,
+                              const matrix_t *grid);
 
 void data_free (data_t *dat);
 
-int data_get (const data_t *dat, const unsigned int i,
-              vector_t *x, double *y);
+int data_resize (data_t *dat, const unsigned int N, const unsigned int D);
 
-int data_set (data_t *dat, const unsigned int i,
-              const vector_t *x, const double y);
+/* function declarations (data-entries.c): */
 
-int data_augment (data_t *dat, const vector_t *x, const double y);
+datum_t *data_get (const data_t *dat, const unsigned int i);
 
-int data_augment_from_grid (data_t *dat, const matrix_t *grid);
+int data_set (data_t *dat, const unsigned int i, const datum_t *d);
+
+int data_augment (data_t *dat, const datum_t *d);
+
+int data_augment_from_grid (data_t *dat, const unsigned int p,
+                            const matrix_t *grid);
+
+/* function declarations, input/output (data-fileio.c): */
 
 int data_fread (data_t *dat, const char *fname);
 

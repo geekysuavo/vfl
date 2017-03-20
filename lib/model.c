@@ -460,11 +460,9 @@ int model_predict_all (const model_t *mdl,
                        data_t *mean,
                        data_t *var) {
   /* declare required variables:
-   *  @x: individual observations.
    *  @mu: individual means.
    *  @eta: individual variances.
    */
-  vector_view_t x;
   double mu, eta;
 
   /* check the input pointers. */
@@ -478,12 +476,11 @@ int model_predict_all (const model_t *mdl,
   /* loop over each observation. */
   for (unsigned int i = 0; i < mean->N; i++) {
     /* compute the posterior mean and variance. */
-    x = matrix_row(mean->X, i);
-    model_predict(mdl, &x, &mu, &eta);
+    model_predict(mdl, mean->data[i].x, &mu, &eta);
 
     /* store the predictions. */
-    vector_set(mean->y, i, mu);
-    vector_set(var->y, i, eta);
+    mean->data[i].y = mu;
+    var->data[i].y = eta;
   }
 
   /* return success. */

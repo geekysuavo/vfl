@@ -75,18 +75,34 @@ void matrix_copy (matrix_t *dest, const matrix_t *src) {
       matrix_set(dest, i, j, matrix_get(src, i, j));
 }
 
-/* matrix_copy_row(): copy the row of one matrix into a vector of
+/* matrix_copy_row(): copy one row of a matrix into a vector of
  * corforming size.
  *
  * arguments:
  *  @dest: destination vector structure pointer.
  *  @src: source matrix structure pointer.
+ *  @i: row index to copy from the matrix.
  */
 void matrix_copy_row (vector_t *dest, const matrix_t *src,
                       const unsigned int i) {
   /* copy the row elements without bounds checking. */
   for (unsigned int j = 0; j < dest->len; j++)
     vector_set(dest, j, matrix_get(src, i, j));
+}
+
+/* matrix_copy_col(): copy one column of a matrix into a vector of
+ * corforming size.
+ *
+ * arguments:
+ *  @dest: destination vector structure pointer.
+ *  @src: source matrix structure pointer.
+ *  @j: column index to copy from the matrix.
+ */
+void matrix_copy_col (vector_t *dest, const matrix_t *src,
+                      const unsigned int j) {
+  /* copy the column elements without bounds checking. */
+  for (unsigned int i = 0; i < dest->len; i++)
+    vector_set(dest, i, matrix_get(src, i, j));
 }
 
 /* matrix_free(): free an allocated matrix.

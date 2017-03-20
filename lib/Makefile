@@ -26,7 +26,7 @@ C_MODEL=vfc vfr tauvfr
 C_OPTIM=fg
 
 # basenames of all C source files.
-C=  data factor model optim
+C=  data-alloc data-entries data-fileio factor model optim
 C+= $(addprefix factor/,$(C_FACTOR))
 C+= $(addprefix model/,$(C_MODEL))
 C+= $(addprefix optim/,$(C_OPTIM))

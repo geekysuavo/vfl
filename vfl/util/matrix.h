@@ -53,6 +53,9 @@ void matrix_copy (matrix_t *dest, const matrix_t *src);
 void matrix_copy_row (vector_t *dest, const matrix_t *src,
                       const unsigned int i);
 
+void matrix_copy_col (vector_t *dest, const matrix_t *src,
+                      const unsigned int j);
+
 void matrix_free (matrix_t *A);
 
 matrix_view_t matrix_view_array (double *data,
