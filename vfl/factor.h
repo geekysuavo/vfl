@@ -21,30 +21,53 @@ typedef struct factor factor_t;
  * arguments:
  *  @f: factor structure pointer.
  *  @x: observation input vector.
- *  @i: basis element index
+ *  @p: function output index.
+ *  @i: basis element index.
  *
  * returns:
- *  E[ phi(x | theta(f))_i ]
+ *  E[ phi^{p}(x | theta(f))_i ]
  */
 typedef double (*factor_mean_fn) (const factor_t *f,
                                   const vector_t *x,
+                                  const unsigned int p,
                                   const unsigned int i);
+
+/* FACTOR_MEAN(): macro function for declaring and defining
+ * functions conforming to factor_mean_fn().
+ */
+#define FACTOR_MEAN(name) \
+double name ## _mean (const factor_t *f, \
+                      const vector_t *x, \
+                      const unsigned int p, \
+                      const unsigned int i)
 
 /* factor_var_fn(): return the second moment of basis elements.
  *
  * arguments:
  *  @f: factor structure pointer.
  *  @x: observation input vector.
+ *  @p: function output index.
  *  @i: first basis element index
  *  @j: second basis element index
  *
  * returns:
- *  E[ phi(x | theta(f))_i phi(x | theta(f))_j ]
+ *  E[ phi^{p}(x | theta(f))_i phi^{p}(x | theta(f))_j ]
  */
 typedef double (*factor_var_fn) (const factor_t *f,
                                  const vector_t *x,
+                                 const unsigned int p,
                                  const unsigned int i,
                                  const unsigned int j);
+
+/* FACTOR_VAR(): macro function for declaring and defining
+ * functions conforming to factor_var_fn().
+ */
+#define FACTOR_VAR(name) \
+double name ## _var (const factor_t *f, \
+                     const vector_t *x, \
+                     const unsigned int p, \
+                     const unsigned int i, \
+                     const unsigned int j)
 
 /* factor_diff_mean_fn(): return the gradient of the first moment
  * of a basis element.
@@ -52,16 +75,28 @@ typedef double (*factor_var_fn) (const factor_t *f,
  * arguments:
  *  @f: factor structure pointer.
  *  @x: observation input vector.
+ *  @p: function output index.
  *  @i: basis element index
  *  @df: vector of gradients.
  *
  * returns:
- *  grad(lambda) E[ phi(x | theta(f))_i ]
+ *  grad(lambda) E[ phi^{p}(x | theta(f))_i ]
  */
 typedef void (*factor_diff_mean_fn) (const factor_t *f,
                                      const vector_t *x,
+                                     const unsigned int p,
                                      const unsigned int i,
                                      vector_t *df);
+
+/* FACTOR_DIFF_MEAN(): macro function for declaring and defining
+ * functions conforming to factor_diff_mean_fn().
+ */
+#define FACTOR_DIFF_MEAN(name) \
+void name ## _diff_mean (const factor_t *f, \
+                         const vector_t *x, \
+                         const unsigned int p, \
+                         const unsigned int i, \
+                         vector_t *df)
 
 /* factor_diff_var_fn(): return the gradient of the second moment
  * of a basis element.
@@ -69,18 +104,38 @@ typedef void (*factor_diff_mean_fn) (const factor_t *f,
  * arguments:
  *  @f: factor structure pointer.
  *  @x: observation input vector.
+ *  @p: function output index.
  *  @i: first basis element index
  *  @j: second basis element index
  *  @df: vector of gradients.
  *
  * returns:
- *  grad(lambda) E[ phi(x | theta(f))_i phi(x | theta(f))_j ]
+ *  grad(lambda) E[ phi^{p}(x | theta(f))_i phi^{p}(x | theta(f))_j ]
  */
 typedef void (*factor_diff_var_fn) (const factor_t *f,
                                     const vector_t *x,
+                                    const unsigned int p,
                                     const unsigned int i,
                                     const unsigned int j,
                                     vector_t *df);
+
+/* FACTOR_DIFF_VAR(): macro function for declaring and defining
+ * functions conforming to factor_diff_var_fn().
+ */
+#define FACTOR_DIFF_VAR(name) \
+void name ## _diff_var (const factor_t *f, \
+                         const vector_t *x, \
+                         const unsigned int p, \
+                         const unsigned int i, \
+                         const unsigned int j, \
+                         vector_t *df)
+
+/* FIXME: introduce a factor_update_fn() for mean-field updates?
+ *
+ * typedef int (*factor_update_fn) (factor_t *f, const data_t *dat,
+ *                                  const factor_t **fv,
+ *                                  const factor_t **pv);
+ */
 
 /* factor_div_fn(): return the kullback-liebler divergence between
  * two factors of the same type, but different parameters.
@@ -93,6 +148,12 @@ typedef void (*factor_diff_var_fn) (const factor_t *f,
  *  KL[ q(theta(f)) || q(theta(f2)) ]
  */
 typedef double (*factor_div_fn) (const factor_t *f, const factor_t *f2);
+
+/* FACTOR_DIV(): macro function for declaring and defining
+ * functions conforming to factor_div_fn().
+ */
+#define FACTOR_DIV(name) \
+double name ## _div (const factor_t *f, const factor_t *f2)
 
 /* factor_set_fn(): assign a variational parameter in a factor.
  *
@@ -107,6 +168,12 @@ typedef double (*factor_div_fn) (const factor_t *f, const factor_t *f2);
 typedef int (*factor_set_fn) (factor_t *f, const unsigned int i,
                               const double value);
 
+/* FACTOR_SET(): macro function for declaring and defining
+ * functions conforming to factor_set_fn().
+ */
+#define FACTOR_SET(name) \
+int name ## _set (factor_t *f, const unsigned int i, const double value)
+
 /* factor_copy_fn(): copy any extra (e.g. aliased) memory from one
  * factor into another.
  *
@@ -119,6 +186,12 @@ typedef int (*factor_set_fn) (factor_t *f, const unsigned int i,
  */
 typedef int (*factor_copy_fn) (const factor_t *f, factor_t *fdup);
 
+/* FACTOR_COPY(): macro function for declaring and defining
+ * functions conforming to factor_copy_fn().
+ */
+#define FACTOR_COPY(name) \
+int name ## _copy (const factor_t *f, factor_t *fdup)
+
 /* factor_free_fn(): free any extra (e.g. aliased) memory that is
  * associated with a factor.
  *
@@ -126,6 +199,12 @@ typedef int (*factor_copy_fn) (const factor_t *f, factor_t *fdup);
  *  @f: factor structure pointer to free.
  */
 typedef void (*factor_free_fn) (factor_t *f);
+
+/* FACTOR_FREE(): macro function for declaring and defining
+ * functions conforming to factor_free_fn().
+ */
+#define FACTOR_FREE(name) \
+void name ## _free (factor_t *f)
 
 /* struct factor: structure for holding a variational factor.
  *
@@ -147,6 +226,11 @@ struct factor {
    *  @d: input dimension.
    */
   unsigned int d;
+
+  /* factor flags:
+   *  @fixed: whether to fix the factor to its current state.
+   */
+  unsigned int fixed;
 
   /* expectations:
    *  @mean: first moment.
@@ -200,20 +284,24 @@ int factor_set (factor_t *f, const unsigned int i, const double value);
 
 double factor_mean (const factor_t *f,
                     const vector_t *x,
+                    const unsigned int p,
                     const unsigned int i);
 
 double factor_var (const factor_t *f,
                    const vector_t *x,
+                   const unsigned int p,
                    const unsigned int i,
                    const unsigned int j);
 
 int factor_diff_mean (const factor_t *f,
                       const vector_t *x,
+                      const unsigned int p,
                       const unsigned int i,
                       vector_t *df);
 
 int factor_diff_var (const factor_t *f,
                      const vector_t *x,
+                     const unsigned int p,
                      const unsigned int i,
                      const unsigned int j,
                      vector_t *df);

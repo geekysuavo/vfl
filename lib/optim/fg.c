@@ -27,7 +27,7 @@ optim_t *optim_fg (model_t *mdl) {
 /* fg_iterate(): iteration function for full-gradient optimization.
  *  - see optim_iterate_fn() for more information.
  */
-int fg_iterate (optim_t *opt) {
+OPTIM_ITERATE (fg) {
   /* gain references to commonly accessed variables. */
   factor_t **factors = opt->mdl->factors;
   factor_t **priors = opt->mdl->priors;
@@ -146,7 +146,7 @@ int fg_iterate (optim_t *opt) {
 /* fg_execute(): execution function for full-gradient optimization.
  *  - see optim_iterate_fn() for more information.
  */
-int fg_execute (optim_t *opt) {
+OPTIM_EXECUTE (fg) {
   /* declare a variable for storing the lower
    * bound from the previous iteration.
    */

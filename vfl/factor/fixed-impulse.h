@@ -20,32 +20,16 @@ fixed_impulse_t;
 
 factor_t *factor_fixed_impulse (const double mu, const double tau);
 
-double factor_fixed_impulse_mean (const factor_t *f,
-                                  const vector_t *x,
-                                  const unsigned int i);
+FACTOR_MEAN (fixed_impulse);
+FACTOR_VAR  (fixed_impulse);
 
-double factor_fixed_impulse_var (const factor_t *f,
-                                 const vector_t *x,
-                                 const unsigned int i,
-                                 const unsigned int j);
+FACTOR_DIFF_MEAN (fixed_impulse);
+FACTOR_DIFF_VAR  (fixed_impulse);
 
-void factor_fixed_impulse_diff_mean (const factor_t *f,
-                                     const vector_t *x,
-                                     const unsigned int i,
-                                     vector_t *df);
+FACTOR_DIV (fixed_impulse);
+FACTOR_SET (fixed_impulse);
 
-void factor_fixed_impulse_diff_var (const factor_t *f,
-                                    const vector_t *x,
-                                    const unsigned int i,
-                                    const unsigned int j,
-                                    vector_t *df);
-
-double factor_fixed_impulse_div (const factor_t *f, const factor_t *f2);
-
-int factor_fixed_impulse_set (factor_t *f, const unsigned int i,
-                              const double value);
-
-int factor_fixed_impulse_copy (const factor_t *f, factor_t *fdup);
+FACTOR_COPY (fixed_impulse);
 
 #endif /* !__VFL_FACTOR_FIXED_IMPULSE_H__ */
 

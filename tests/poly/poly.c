@@ -17,8 +17,7 @@ int main (int argc, char **argv) {
     return 1;
 
   /* read the dataset file. */
-  data_t *dat = data_alloc();
-  data_fread(dat, "../sinc/sinc.dat");
+  data_t *dat = data_alloc_from_file("../sinc/sinc.dat");
 
   /* set up a regression model. */
   model_t *mdl = model_vfr(1000.0, 2.5, 1.0e-3);
@@ -32,8 +31,8 @@ int main (int argc, char **argv) {
   /* allocate datasets for prediction. */
   double grid_values[] = { -10.0, 0.001, 10.0 };
   matrix_view_t grid = matrix_view_array(grid_values, 1, 3);
-  data_t *mean = data_alloc_from_grid(&grid);
-  data_t *var = data_alloc_from_grid(&grid);
+  data_t *mean = data_alloc_from_grid(1, &grid);
+  data_t *var = data_alloc_from_grid(1, &grid);
 
   /* compute the prediction. */
   model_predict_all(mdl, mean, var);

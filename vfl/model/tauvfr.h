@@ -7,17 +7,11 @@
 
 model_t *model_tauvfr (const double tau, const double nu);
 
-double tauvfr_bound (const model_t *mdl);
-
-int tauvfr_predict (const model_t *mdl, const vector_t *x,
-                    double *mean, double *var);
-
-int tauvfr_infer (model_t *mdl);
-
-int tauvfr_update (model_t *mdl, const unsigned int j);
-
-int tauvfr_gradient (const model_t *mdl, const unsigned int i,
-                     const unsigned int j, vector_t *grad);
+MODEL_BOUND    (tauvfr);
+MODEL_PREDICT  (tauvfr);
+MODEL_INFER    (tauvfr);
+MODEL_UPDATE   (tauvfr);
+MODEL_GRADIENT (tauvfr);
 
 #endif /* !__VFL_MODEL_TAUVFR_H__ */
 

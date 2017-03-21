@@ -94,10 +94,20 @@ int data_augment_from_grid (data_t *dat, const unsigned int p,
                             const matrix_t *grid) {
   /* declare required variables:
    *  @N, @D: new dataset sizes.
+   *  @idx: current grid index.
+   *  @sz: maximum grid indices.
    *  @x: vector of grid locations.
    */
-  unsigned int N, D;
+  unsigned int status, N, D, *idx, *sz;
   vector_t *x;
+
+  /* initialize the return status. */
+  status = 0;
+
+  /* initialize the pointers. */
+  idx = NULL;
+  sz = NULL;
+  x = NULL;
 
   /* check the input pointers. */
   if (!dat || !grid)
@@ -111,6 +121,12 @@ int data_augment_from_grid (data_t *dat, const unsigned int p,
   D = grid->rows;
   N = 1;
 
+  /* allocate indices for grid traversal. */
+  idx = (unsigned int*) malloc(D * sizeof(unsigned int));
+  sz = (unsigned int*) malloc(D * sizeof(unsigned int));
+  if (!idx || !sz)
+    goto fail;
+
   /* compute the size of the augmenting grid. */
   for (unsigned int d = 0; d < D; d++) {
     /* get the start, end, and step along the current dimension. */
@@ -118,24 +134,28 @@ int data_augment_from_grid (data_t *dat, const unsigned int p,
     const double x2 = matrix_get(grid, d, 2);
     const double dx = matrix_get(grid, d, 1);
 
+    /* compute the grid size along the current dimension. */
+    sz[d] = (unsigned int) floor((x2 - x1) / dx) + 1;
+    idx[d] = 0;
+
     /* include the current dimension contribution to the size. */
-    N *= (unsigned int) floor((x2 - x1) / dx);
+    N *= sz[d];
   }
 
   /* attempt to resize the dataset. */
   if (!data_resize(dat, dat->N + N, D))
-    return 0;
+    goto fail;
 
   /* allocate a vector for holding observations. */
   x = vector_alloc(D);
   if (!x)
-    return 0;
+    goto fail;
 
   /* initialize the observation vector. */
   matrix_copy_col(x, grid, 0);
 
   /* loop over every grid point. */
-  for (unsigned int i = N; i < dat->N; i++) {
+  for (unsigned int i = 0; i < N; i++) {
     /* store the current grid point. */
     vector_copy(dat->data[i].x, x);
     dat->data[i].y = 0.0;
@@ -143,24 +163,34 @@ int data_augment_from_grid (data_t *dat, const unsigned int p,
 
     /* move to the next grid point. */
     for (unsigned int d = 0; d < D; d++) {
-      /* get the start, end, and step along the current dimension. */
+      /* get the start and step along the current dimension. */
       const double x1 = matrix_get(grid, d, 0);
-      const double x2 = matrix_get(grid, d, 2);
       const double dx = matrix_get(grid, d, 1);
 
       /* increment the current dimension. */
-      vector_set(x, d, vector_get(x, d) + dx);
+      idx[d]++;
+
+      /* update the grid vector. */
+      vector_set(x, d, x1 + idx[d] * dx);
 
       /* check if the current dimension has overflowed. */
-      if (vector_get(x, d) > x2)
+      if (idx[d] >= sz[d]) {
         vector_set(x, d, x1);
+        idx[d] = 0;
+      }
       else
         break;
     }
   }
 
-  /* free the observation vector and return success. */
+  /* indicate successful completion. */
+  status = 1;
+
+fail:
+  /* free all allocated memory and return. */
   vector_free(x);
-  return 1;
+  free(idx);
+  free(sz);
+  return status;
 }
 

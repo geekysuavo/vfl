@@ -22,18 +22,18 @@ factor_t *factor_decay (const double alpha, const double beta) {
     return NULL;
 
   /* store the expectation function pointers. */
-  f->mean = factor_decay_mean;
-  f->var = factor_decay_var;
+  f->mean = decay_mean;
+  f->var = decay_var;
 
   /* store the gradient function pointers. */
-  f->diff_mean = factor_decay_diff_mean;
-  f->diff_var = factor_decay_diff_var;
+  f->diff_mean = decay_diff_mean;
+  f->diff_var = decay_diff_var;
 
   /* store the divergence funciton pointer. */
-  f->div = factor_decay_div;
+  f->div = decay_div;
 
   /* store the assignment function pointer. */
-  f->set = factor_decay_set;
+  f->set = decay_set;
 
   /* attempt to set the initial factor parameters. */
   if (!f->set(f, P_ALPHA, alpha) || !f->set(f, P_BETA, beta)) {
@@ -45,12 +45,10 @@ factor_t *factor_decay (const double alpha, const double beta) {
   return f;
 }
 
-/* factor_decay_mean(): evalute the decay factor mean.
+/* decay_mean(): evalute the decay factor mean.
  *  - see factor_mean_fn() for more information.
  */
-double factor_decay_mean (const factor_t *f,
-                          const vector_t *x,
-                          const unsigned int i) {
+FACTOR_MEAN (decay) {
   /* get the input value along the factor dimension. */
   const double xd = vector_get(x, f->d);
 
@@ -62,13 +60,10 @@ double factor_decay_mean (const factor_t *f,
   return pow(beta / (beta + xd), alpha);
 }
 
-/* factor_decay_var(): evalute the decay factor variance.
+/* decay_var(): evalute the decay factor variance.
  *  - see factor_var_fn() for more information.
  */
-double factor_decay_var (const factor_t *f,
-                         const vector_t *x,
-                         const unsigned int i,
-                         const unsigned int j) {
+FACTOR_VAR (decay) {
   /* get twice the input value along the factor dimension. */
   const double xp = 2.0 * vector_get(x, f->d);
 
@@ -80,13 +75,10 @@ double factor_decay_var (const factor_t *f,
   return pow(beta / (beta + xp), alpha);
 }
 
-/* factor_decay_diff_mean(): evaluate the decay factor mean gradient.
+/* decay_diff_mean(): evaluate the decay factor mean gradient.
  *  - see factor_diff_mean_fn() for more information.
  */
-void factor_decay_diff_mean (const factor_t *f,
-                             const vector_t *x,
-                             const unsigned int i,
-                             vector_t *df) {
+FACTOR_DIFF_MEAN (decay) {
   /* get the input value along the factor dimension. */
   const double xd = vector_get(x, f->d);
 
@@ -107,14 +99,10 @@ void factor_decay_diff_mean (const factor_t *f,
   vector_set(df, P_BETA, dbeta);
 }
 
-/* factor_decay_diff_var(): evaluate the decay factor variance gradient.
+/* decay_diff_var(): evaluate the decay factor variance gradient.
  *  - see factor_diff_var_fn() for more information.
  */
-void factor_decay_diff_var (const factor_t *f,
-                            const vector_t *x,
-                            const unsigned int i,
-                            const unsigned int j,
-                            vector_t *df) {
+FACTOR_DIFF_VAR (decay) {
   /* get twice the input value along the factor dimension. */
   const double xp = 2.0 * vector_get(x, f->d);
 
@@ -135,10 +123,10 @@ void factor_decay_diff_var (const factor_t *f,
   vector_set(df, P_BETA, dbeta);
 }
 
-/* factor_decay_div(): evaluate the decay factor divergence.
+/* decay_div(): evaluate the decay factor divergence.
  *  - see factor_div_fn() for more information.
  */
-double factor_decay_div (const factor_t *f, const factor_t *f2) {
+FACTOR_DIV (decay) {
   /* get the first factor parameters. */
   const double alpha = vector_get(f->par, P_ALPHA);
   const double beta = vector_get(f->par, P_BETA);
@@ -154,11 +142,10 @@ double factor_decay_div (const factor_t *f, const factor_t *f2) {
        + (beta - beta2) * (alpha / beta);
 }
 
-/* factor_decay_set(): store a parameter into a decay factor.
+/* decay_set(): store a parameter into a decay factor.
  *  - see factor_set_fn() for more information.
  */
-int factor_decay_set (factor_t *f, const unsigned int i,
-                      const double value) {
+FACTOR_SET (decay) {
   /* determine which parameter is being assigned. */
   switch (i) {
     /* shape parameter: in (0, inf) */

@@ -42,7 +42,7 @@ model_t *model_vfr (const double alpha0,
 /* vfr_bound(): return the lower bound of a vfr model.
  *  - see model_bound_fn() for more information.
  */
-double vfr_bound (const model_t *mdl) {
+MODEL_BOUND (vfr) {
   /* initialize the computation. */
   double bound = 0.0;
 
@@ -60,8 +60,7 @@ double vfr_bound (const model_t *mdl) {
 /* vfr_predict(): return the prediction of a vfr model.
  *  - see model_predict_fn() for more information.
  */
-int vfr_predict (const model_t *mdl, const vector_t *x,
-                 double *mean, double *var) {
+MODEL_PREDICT (vfr) {
   /* initialize the predicted mean. */
   double mu = 0.0;
 
@@ -69,7 +68,7 @@ int vfr_predict (const model_t *mdl, const vector_t *x,
   for (unsigned int j = 0, i = 0; j < mdl->M; j++) {
     for (unsigned int k = 0; k < mdl->factors[j]->K; k++, i++) {
       /* include the current contribution from the inner product. */
-      mu += vector_get(mdl->wbar, i) * model_mean(mdl, x, j, k);
+      mu += vector_get(mdl->wbar, i) * model_mean(mdl, x, p, j, k);
     }
   }
 
@@ -89,7 +88,7 @@ int vfr_predict (const model_t *mdl, const vector_t *x,
           eta += (matrix_get(mdl->Sigma, i1, i2) +
                   vector_get(mdl->wbar, i1) *
                   vector_get(mdl->wbar, i2)) *
-                 model_var(mdl, x, j1, j2, k1, k2);
+                 model_var(mdl, x, p, j1, j2, k1, k2);
         }
       }
     }
@@ -104,17 +103,15 @@ int vfr_predict (const model_t *mdl, const vector_t *x,
 /* vfr_infer(): perform complete inference in a vfr model.
  *  - see model_infer_fn() for more information.
  */
-int vfr_infer (model_t *mdl) {
+MODEL_INFER (vfr) {
   /* gain access to the dataset structure members. */
   const unsigned int N = mdl->dat->N;
-  matrix_t *X = mdl->dat->X;
-  vector_t *y = mdl->dat->y;
-  double yi;
+  data_t *dat = mdl->dat;
+  datum_t *di;
 
   /* declare views into the weight precisions and the projections. */
   matrix_view_t G;
   vector_view_t h;
-  vector_view_t x;
 
   /* loop over the factors. */
   for (unsigned int j1 = 0, i1 = 0; j1 < mdl->M; j1++) {
@@ -129,9 +126,8 @@ int vfr_infer (model_t *mdl) {
 
       /* compute the contributions of each observation. */
       for (unsigned int i = 0; i < N; i++) {
-        x = matrix_row(X, i);
-        yi = vector_get(y, i);
-        hk += yi * model_mean(mdl, &x, j1, k1);
+        di = data_get(dat, i);
+        hk += di->y * model_mean(mdl, di->x, di->p, j1, k1);
       }
 
       /* store the projection subvector element. */
@@ -150,8 +146,8 @@ int vfr_infer (model_t *mdl) {
 
           /* compute the contributions of each observation. */
           for (unsigned int i = 0; i < N; i++) {
-            x = matrix_row(X, i);
-            gkk += model_var(mdl, &x, j1, j2, k1, k2);
+            di = data_get(dat, i);
+            gkk += model_var(mdl, di->x, di->p, j1, j2, k1, k2);
           }
 
           /* store the precision submatrix element. */
@@ -179,11 +175,17 @@ int vfr_infer (model_t *mdl) {
   chol_solve(mdl->L, mdl->h, mdl->wbar);
   chol_invert(mdl->L, mdl->Sigma);
 
-  /* compute the data and model inner products. */
+  /* compute the model inner product. */
   vector_view_t z = vector_subvector(mdl->tmp, 0, mdl->K);
   blas_dtrmv(BLAS_TRANS, 1.0, mdl->L, mdl->wbar, 0.0, &z);
   const double wSw = blas_ddot(&z, &z);
-  const double yy = blas_ddot(y, y);
+
+  /* compute the data inner product. */
+  double yy = 0.0;
+  for (unsigned int i = 0; i < N; i++) {
+    di = data_get(dat, i);
+    yy += di->y * di->y;
+  }
 
   /* update the noise shape and rate. */
   mdl->alpha = mdl->alpha0 + 0.5 * (double) N;
@@ -196,17 +198,15 @@ int vfr_infer (model_t *mdl) {
 /* vfr_update(): perform efficient low-rank inference in a vfr model.
  *  - see model_update_fn() for more information.
  */
-int vfr_update (model_t *mdl, const unsigned int j) {
+MODEL_UPDATE (vfr) {
   /* get the weight offset and count of the current factor. */
   const unsigned int k0 = model_weight_idx(mdl, j, 0);
   const unsigned int K = mdl->factors[j]->K;
 
   /* gain access to the dataset structure members. */
   const unsigned int N = mdl->dat->N;
-  matrix_t *X = mdl->dat->X;
-  vector_t *y = mdl->dat->y;
-  vector_view_t x;
-  double yi;
+  data_t *dat = mdl->dat;
+  datum_t *di;
 
   /* prepare for low-rank adjustment. */
   model_weight_adjust_init(mdl, j);
@@ -218,9 +218,8 @@ int vfr_update (model_t *mdl, const unsigned int j) {
 
     /* compute the contributions of each observation. */
     for (unsigned int i = 0; i < N; i++) {
-      x = matrix_row(X, i);
-      yi = vector_get(y, i);
-      hk += yi * model_mean(mdl, &x, j, k);
+      di = data_get(dat, i);
+      hk += di->y * model_mean(mdl, di->x, di->p, j, k);
     }
 
     /* store the projection subvector element. */
@@ -238,8 +237,8 @@ int vfr_update (model_t *mdl, const unsigned int j) {
 
         /* compute the contributions of each observation. */
         for (unsigned int i = 0; i < N; i++) {
-          x = matrix_row(X, i);
-          gkk += model_var(mdl, &x, j, j2, k, k2);
+          di = data_get(dat, i);
+          gkk += model_var(mdl, di->x, di->p, j, j2, k, k2);
         }
 
         /* store the precision submatrix element. */
@@ -265,11 +264,17 @@ int vfr_update (model_t *mdl, const unsigned int j) {
   /* update the weight means. */
   chol_solve(mdl->L, mdl->h, mdl->wbar);
 
-  /* compute the data and model inner products. */
+  /* compute the model inner product. */
   vector_view_t z = vector_subvector(mdl->tmp, 0, mdl->K);
   blas_dtrmv(BLAS_TRANS, 1.0, mdl->L, mdl->wbar, 0.0, &z);
   const double wSw = blas_ddot(&z, &z);
-  const double yy = blas_ddot(y, y);
+
+  /* compute the data inner product. */
+  double yy = 0.0;
+  for (unsigned int i = 0; i < N; i++) {
+    di = data_get(dat, i);
+    yy += di->y * di->y;
+  }
 
   /* update the noise shape and rate. */
   mdl->alpha = mdl->alpha0 + 0.5 * (double) N;
@@ -288,8 +293,7 @@ int vfr_update (model_t *mdl, const unsigned int j) {
 /* vfr_gradient(): return the gradient of a single factor in a vfr model.
  *  - see model_gradient_fn() for more information.
  */
-int vfr_gradient (const model_t *mdl, const unsigned int i,
-                  const unsigned int j, vector_t *grad) {
+MODEL_GRADIENT (vfr) {
   /* determine the weight index offset of the current factor. */
   const unsigned int k0 = model_weight_idx(mdl, j, 0);
 
@@ -298,8 +302,10 @@ int vfr_gradient (const model_t *mdl, const unsigned int i,
   const unsigned int K = fj->K;
 
   /* gain access to the specified observation. */
-  vector_view_t x = matrix_row(mdl->dat->X, i);
-  const double y = vector_get(mdl->dat->y, i);
+  datum_t *di = data_get(mdl->dat, i);
+  const unsigned int p = di->p;
+  const vector_t *x = di->x;
+  const double y = di->y;
 
   /* compute the expected noise precision. */
   const double tau = mdl->alpha / mdl->beta;
@@ -319,12 +325,12 @@ int vfr_gradient (const model_t *mdl, const unsigned int i,
                          tau * wk * vector_get(mdl->wbar, k0 + kk);
 
       /* include the second-order contribution. */
-      factor_diff_var(fj, &x, k, kk, &g);
+      factor_diff_var(fj, x, p, k, kk, &g);
       blas_daxpy(-0.5 * wwT, &g, grad);
     }
 
     /* include the first-order contribution. */
-    factor_diff_mean(fj, &x, k, &g);
+    factor_diff_mean(fj, x, p, k, &g);
     blas_daxpy(tau * wk * y, &g, grad);
 
     /* loop over the other factors. */
@@ -345,7 +351,7 @@ int vfr_gradient (const model_t *mdl, const unsigned int i,
                            tau * wk * vector_get(mdl->wbar, i2 + k2);
 
         /* include the off-diagonal second-order contribution. */
-        const double E2 = factor_mean(mdl->factors[j2], &x, k2);
+        const double E2 = factor_mean(mdl->factors[j2], x, p, k2);
         blas_daxpy(-wwT * E2, &g, grad);
       }
 

@@ -16,20 +16,21 @@ factor_t *factor_polynomial (const unsigned int order) {
   if (!f)
     return NULL;
 
+  /* indicate that the factor is fixed. */
+  f->fixed = 1;
+
   /* store the expectation function pointers. */
-  f->mean = factor_polynomial_mean;
-  f->var = factor_polynomial_var;
+  f->mean = polynomial_mean;
+  f->var = polynomial_var;
 
   /* return the new polynomial factor. */
   return f;
 }
 
-/* factor_polynomial_mean(): evalute the polynomial factor mean.
+/* polynomial_mean(): evalute the polynomial factor mean.
  *  - see factor_mean_fn() for more information.
  */
-double factor_polynomial_mean (const factor_t *f,
-                               const vector_t *x,
-                               const unsigned int i) {
+FACTOR_MEAN (polynomial) {
   /* get the input value along the factor dimension. */
   const double xd = vector_get(x, f->d);
 
@@ -37,13 +38,10 @@ double factor_polynomial_mean (const factor_t *f,
   return pow(xd, i);
 }
 
-/* factor_polynomial_var(): evalute the polynomial factor variance.
+/* polynomial_var(): evalute the polynomial factor variance.
  *  - see factor_var_fn() for more information.
  */
-double factor_polynomial_var (const factor_t *f,
-                              const vector_t *x,
-                              const unsigned int i,
-                              const unsigned int j) {
+FACTOR_VAR (polynomial) {
   /* get the input value along the factor dimension. */
   const double xd = vector_get(x, f->d);
 

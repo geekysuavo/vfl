@@ -7,14 +7,8 @@
 
 factor_t *factor_polynomial (const unsigned int order);
 
-double factor_polynomial_mean (const factor_t *f,
-                               const vector_t *x,
-                               const unsigned int i);
-
-double factor_polynomial_var (const factor_t *f,
-                              const vector_t *x,
-                              const unsigned int i,
-                              const unsigned int j);
+FACTOR_MEAN (polynomial);
+FACTOR_VAR  (polynomial);
 
 #endif /* !__VFL_FACTOR_POLYNOMIAL_H__ */
 

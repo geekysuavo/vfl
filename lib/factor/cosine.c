@@ -22,18 +22,18 @@ factor_t *factor_cosine (const double mu, const double tau) {
     return NULL;
 
   /* store the expectation function pointers. */
-  f->mean = factor_cosine_mean;
-  f->var = factor_cosine_var;
+  f->mean = cosine_mean;
+  f->var = cosine_var;
 
   /* store the gradient function pointers. */
-  f->diff_mean = factor_cosine_diff_mean;
-  f->diff_var = factor_cosine_diff_var;
+  f->diff_mean = cosine_diff_mean;
+  f->diff_var = cosine_diff_var;
 
   /* store the divergence funciton pointer. */
-  f->div = factor_cosine_div;
+  f->div = cosine_div;
 
   /* store the assignment function pointer. */
-  f->set = factor_cosine_set;
+  f->set = cosine_set;
 
   /* attempt to set the initial factor parameters. */
   if (!f->set(f, P_MU, mu) || !f->set(f, P_TAU, tau)) {
@@ -45,12 +45,10 @@ factor_t *factor_cosine (const double mu, const double tau) {
   return f;
 }
 
-/* factor_cosine_mean(): evalute the cosine factor mean.
+/* cosine_mean(): evalute the cosine factor mean.
  *  - see factor_mean_fn() for more information.
  */
-double factor_cosine_mean (const factor_t *f,
-                           const vector_t *x,
-                           const unsigned int i) {
+FACTOR_MEAN (cosine) {
   /* get the input value along the factor dimension. */
   const double xd = vector_get(x, f->d);
 
@@ -62,13 +60,10 @@ double factor_cosine_mean (const factor_t *f,
   return exp(-0.5 * xd * xd / tau) * cos(mu * xd + M_PI_2 * (double) i);
 }
 
-/* factor_cosine_var(): evalute the cosine factor variance.
+/* cosine_var(): evalute the cosine factor variance.
  *  - see factor_var_fn() for more information.
  */
-double factor_cosine_var (const factor_t *f,
-                          const vector_t *x,
-                          const unsigned int i,
-                          const unsigned int j) {
+FACTOR_VAR (cosine) {
   /* get the input value along the factor dimension. */
   const double xd = vector_get(x, f->d);
 
@@ -88,13 +83,10 @@ double factor_cosine_var (const factor_t *f,
   return 0.5 * (ep + em);
 }
 
-/* factor_cosine_diff_mean(): evaluate the cosine factor mean gradient.
+/* cosine_diff_mean(): evaluate the cosine factor mean gradient.
  *  - see factor_diff_mean_fn() for more information.
  */
-void factor_cosine_diff_mean (const factor_t *f,
-                              const vector_t *x,
-                              const unsigned int i,
-                              vector_t *df) {
+FACTOR_DIFF_MEAN (cosine) {
   /* get the input value along the factor dimension. */
   const double xd = vector_get(x, f->d);
 
@@ -119,14 +111,10 @@ void factor_cosine_diff_mean (const factor_t *f,
   vector_set(df, P_TAU, dtau);
 }
 
-/* factor_cosine_diff_var(): evaluate the cosine factor variance gradient.
+/* cosine_diff_var(): evaluate the cosine factor variance gradient.
  *  - see factor_diff_var_fn() for more information.
  */
-void factor_cosine_diff_var (const factor_t *f,
-                             const vector_t *x,
-                             const unsigned int i,
-                             const unsigned int j,
-                             vector_t *df) {
+FACTOR_DIFF_VAR (cosine) {
   /* get twice the input value along the factor dimension. */
   const double xp = 2.0 * vector_get(x, f->d);
 
@@ -151,10 +139,10 @@ void factor_cosine_diff_var (const factor_t *f,
   vector_set(df, P_TAU, dtau);
 }
 
-/* factor_cosine_div(): evaluate the cosine factor divergence.
+/* cosine_div(): evaluate the cosine factor divergence.
  *  - see factor_div_fn() for more information.
  */
-double factor_cosine_div (const factor_t *f, const factor_t *f2) {
+FACTOR_DIV (cosine) {
   /* get the first factor parameters. */
   const double mu = vector_get(f->par, P_MU);
   const double tau = vector_get(f->par, P_TAU);
@@ -168,11 +156,10 @@ double factor_cosine_div (const factor_t *f, const factor_t *f2) {
        - 0.5 * log(tau2 / tau) - 0.5;
 }
 
-/* factor_cosine_set(): store a parameter into a cosine factor.
+/* cosine_set(): store a parameter into a cosine factor.
  *  - see factor_set_fn() for more information.
  */
-int factor_cosine_set (factor_t *f, const unsigned int i,
-                       const double value) {
+FACTOR_SET (cosine) {
   /* determine which parameter is being assigned. */
   switch (i) {
     /* frequency mean: in (-inf, inf) */

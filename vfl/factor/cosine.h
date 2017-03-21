@@ -7,30 +7,14 @@
 
 factor_t *factor_cosine (const double mu, const double tau);
 
-double factor_cosine_mean (const factor_t *f,
-                           const vector_t *x,
-                           const unsigned int i);
+FACTOR_MEAN (cosine);
+FACTOR_VAR  (cosine);
 
-double factor_cosine_var (const factor_t *f,
-                          const vector_t *x,
-                          const unsigned int i,
-                          const unsigned int j);
+FACTOR_DIFF_MEAN (cosine);
+FACTOR_DIFF_VAR  (cosine);
 
-void factor_cosine_diff_mean (const factor_t *f,
-                              const vector_t *x,
-                              const unsigned int i,
-                              vector_t *df);
-
-void factor_cosine_diff_var (const factor_t *f,
-                             const vector_t *x,
-                             const unsigned int i,
-                             const unsigned int j,
-                             vector_t *df);
-
-double factor_cosine_div (const factor_t *f, const factor_t *f2);
-
-int factor_cosine_set (factor_t *f, const unsigned int i,
-                       const double value);
+FACTOR_DIV (cosine);
+FACTOR_SET (cosine);
 
 #endif /* !__VFL_FACTOR_COSINE_H__ */
 

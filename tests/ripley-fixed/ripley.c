@@ -17,8 +17,7 @@ int main (int argc, char **argv) {
     return 1;
 
   /* read the dataset file. */
-  data_t *dat = data_alloc();
-  data_fread(dat, "ripley.dat");
+  data_t *dat = data_alloc_from_file("ripley.dat");
 
   /* set up a classification model. */
   model_t *mdl = model_vfc(1.0e-6);
@@ -27,8 +26,8 @@ int main (int argc, char **argv) {
   /* add factors to the model. */
   for (unsigned int i = 0; i < dat->N; i += 10) {
     /* get the factor location. */
-    const double x = matrix_get(dat->X, i, 0);
-    const double y = matrix_get(dat->X, i, 1);
+    const double x = vector_get(dat->data[i].x, 0);
+    const double y = vector_get(dat->data[i].x, 1);
 
     /* create the independent factors along each dimension. */
     factor_t *fx = factor_fixed_impulse(x, 0.1);
@@ -53,8 +52,8 @@ int main (int argc, char **argv) {
   double grid_values[] = { -1.5, 0.01, 1.0,
                            -0.3, 0.01, 1.2 };
   matrix_view_t grid = matrix_view_array(grid_values, 2, 3);
-  data_t *mean = data_alloc_from_grid(&grid);
-  data_t *var = data_alloc_from_grid(&grid);
+  data_t *mean = data_alloc_from_grid(1, &grid);
+  data_t *var = data_alloc_from_grid(1, &grid);
 
   /* compute the prediction. */
   model_predict_all(mdl, mean, var);

@@ -7,30 +7,14 @@
 
 factor_t *factor_impulse (const double mu, const double tau);
 
-double factor_impulse_mean (const factor_t *f,
-                            const vector_t *x,
-                            const unsigned int i);
+FACTOR_MEAN (impulse);
+FACTOR_VAR  (impulse);
 
-double factor_impulse_var (const factor_t *f,
-                           const vector_t *x,
-                           const unsigned int i,
-                           const unsigned int j);
+FACTOR_DIFF_MEAN (impulse);
+FACTOR_DIFF_VAR  (impulse);
 
-void factor_impulse_diff_mean (const factor_t *f,
-                               const vector_t *x,
-                               const unsigned int i,
-                               vector_t *df);
-
-void factor_impulse_diff_var (const factor_t *f,
-                              const vector_t *x,
-                              const unsigned int i,
-                              const unsigned int j,
-                              vector_t *df);
-
-double factor_impulse_div (const factor_t *f, const factor_t *f2);
-
-int factor_impulse_set (factor_t *f, const unsigned int i,
-                        const double value);
+FACTOR_DIV (impulse);
+FACTOR_SET (impulse);
 
 #endif /* !__VFL_FACTOR_IMPULSE_H__ */
 

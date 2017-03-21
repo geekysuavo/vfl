@@ -359,20 +359,22 @@ int model_add_factor (model_t *mdl, factor_t *f) {
  * arguments:
  *  @mdl: model structure pointer.
  *  @x: observation input vector.
+ *  @p: function output index.
  *  @j: factor index.
  *  @k: basis index.
  *
  * returns:
  *  expectation of the requested basis element.
  */
-double model_mean (const model_t *mdl, const vector_t *x,
+double model_mean (const model_t *mdl,
+                   const vector_t *x, const unsigned int p,
                    const unsigned int j, const unsigned int k) {
   /* check the input pointers and indices. */
   if (!mdl || !x || j >= mdl->M || k >= mdl->factors[j]->K)
     return 0.0;
 
   /* return the requested expectation. */
-  return factor_mean(mdl->factors[j], x, k);
+  return factor_mean(mdl->factors[j], x, p, k);
 }
 
 /* model_var(): return the second moment of a pair of
@@ -381,6 +383,7 @@ double model_mean (const model_t *mdl, const vector_t *x,
  * arguments:
  *  @mdl: model structure pointer.
  *  @x: observation input vector.
+ *  @p: function output index.
  *  @j1: first factor index.
  *  @j2: second factor index.
  *  @k1: first basis index.
@@ -389,7 +392,8 @@ double model_mean (const model_t *mdl, const vector_t *x,
  * returns:
  *  expectation of the requested product of basis elements.
  */
-double model_var (const model_t *mdl, const vector_t *x,
+double model_var (const model_t *mdl,
+                  const vector_t *x, const unsigned int p,
                   const unsigned int j1, const unsigned int j2,
                   const unsigned int k1, const unsigned int k2) {
   /* check the input pointers and indices. */
@@ -402,11 +406,11 @@ double model_var (const model_t *mdl, const vector_t *x,
    * of the product simplifies to the product of expectations.
    */
   if (j1 != j2)
-    return factor_mean(mdl->factors[j1], x, k1) *
-           factor_mean(mdl->factors[j2], x, k2);
+    return factor_mean(mdl->factors[j1], x, p, k1) *
+           factor_mean(mdl->factors[j2], x, p, k2);
 
   /* return the requested expectation. */
-  return factor_var(mdl->factors[j1], x, k1, k2);
+  return factor_var(mdl->factors[j1], x, p, k1, k2);
 }
 
 /* model_bound(): return the model variational lower bound.
@@ -434,13 +438,15 @@ double model_bound (const model_t *mdl) {
  *  - see model_predict_fn() for more information.
  */
 int model_predict (const model_t *mdl, const vector_t *x,
-                   double *mean, double *var) {
+                   const unsigned int p,
+                   double *mean,
+                   double *var) {
   /* check the input pointers and sizes. */
   if (!mdl || !mdl->predict || !x || !mean || !var || x->len < mdl->D)
     return 0;
 
   /* execute the assigned prediction function. */
-  return mdl->predict(mdl, x, mean, var);
+  return mdl->predict(mdl, x, p, mean, var);
 }
 
 /* model_predict_all(): return model posterior predictions for
@@ -476,7 +482,7 @@ int model_predict_all (const model_t *mdl,
   /* loop over each observation. */
   for (unsigned int i = 0; i < mean->N; i++) {
     /* compute the posterior mean and variance. */
-    model_predict(mdl, mean->data[i].x, &mu, &eta);
+    model_predict(mdl, mean->data[i].x, mean->data[i].p, &mu, &eta);
 
     /* store the predictions. */
     mean->data[i].y = mu;

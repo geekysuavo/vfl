@@ -21,6 +21,18 @@ typedef struct optim optim_t;
  */
 typedef int (*optim_iterate_fn) (optim_t *opt);
 
+/* OPTIM_ITERATE(): macro function for declaring and defining
+ * functions conforming to optim_iterate_fn() for iteration.
+ */
+#define OPTIM_ITERATE(name) \
+int name ## _iterate (optim_t *opt)
+
+/* OPTIM_EXECUTE(): macro function for declaring and defining
+ * functions conforming to optim_iterate_fn() for execution.
+ */
+#define OPTIM_EXECUTE(name) \
+int name ## _execute (optim_t *opt)
+
 /* optim_free_fn(): free any extra (e.g. aliased) memory that is
  * associated with an optimizer.
  *
@@ -28,6 +40,12 @@ typedef int (*optim_iterate_fn) (optim_t *opt);
  *  @opt: optimizer structure pointer to free.
  */
 typedef void (*optim_free_fn) (optim_t *opt);
+
+/* OPTIM_FREE(): macro function for declaring and defining
+ * functions conforming to optim_free_fn().
+ */
+#define OPTIM_FREE(name) \
+void name ## _free (optim_t *opt)
 
 /* struct optim: structure for holding an optimizer, used to
  * learn the variational parameters of a model.

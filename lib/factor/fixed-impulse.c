@@ -21,19 +21,19 @@ factor_t *factor_fixed_impulse (const double mu, const double tau) {
     return NULL;
 
   /* store the expectation function pointers. */
-  f->mean = factor_fixed_impulse_mean;
-  f->var = factor_fixed_impulse_var;
+  f->mean = fixed_impulse_mean;
+  f->var = fixed_impulse_var;
 
   /* store the gradient function pointers. */
-  f->diff_mean = factor_fixed_impulse_diff_mean;
-  f->diff_var = factor_fixed_impulse_diff_var;
+  f->diff_mean = fixed_impulse_diff_mean;
+  f->diff_var = fixed_impulse_diff_var;
 
   /* store the divergence funciton pointer. */
-  f->div = factor_fixed_impulse_div;
+  f->div = fixed_impulse_div;
 
   /* store the assignment function pointer. */
-  f->set = factor_fixed_impulse_set;
-  f->copy = factor_fixed_impulse_copy;
+  f->set = fixed_impulse_set;
+  f->copy = fixed_impulse_copy;
 
   /* attempt to set the initial factor parameter. */
   if (!f->set(f, P_TAU, tau)) {
@@ -49,12 +49,10 @@ factor_t *factor_fixed_impulse (const double mu, const double tau) {
   return f;
 }
 
-/* factor_fixed_impulse_mean(): evalute the fixed impulse factor mean.
+/* fixed_impulse_mean(): evalute the fixed impulse factor mean.
  *  - see factor_mean_fn() for more information.
  */
-double factor_fixed_impulse_mean (const factor_t *f,
-                                  const vector_t *x,
-                                  const unsigned int i) {
+FACTOR_MEAN (fixed_impulse) {
   /* get the location parameter. */
   fixed_impulse_t *fx = (fixed_impulse_t*) f;
   const double mu = fx->mu;
@@ -72,25 +70,19 @@ double factor_fixed_impulse_mean (const factor_t *f,
   return exp(-0.5 * tau * u * u);
 }
 
-/* factor_fixed_impulse_var(): evalute the fixed impulse factor variance.
+/* fixed_impulse_var(): evalute the fixed impulse factor variance.
  *  - see factor_var_fn() for more information.
  */
-double factor_fixed_impulse_var (const factor_t *f,
-                                 const vector_t *x,
-                                 const unsigned int i,
-                                 const unsigned int j) {
+FACTOR_VAR (fixed_impulse) {
   /* call the mean function. */
-  return factor_fixed_impulse_mean(f, x, i);
+  return fixed_impulse_mean(f, x, p, i);
 }
 
-/* factor_fixed_impulse_diff_mean(): evaluate the fixed impulse factor
+/* fixed_impulse_diff_mean(): evaluate the fixed impulse factor
  * mean gradient.
  *  - see factor_diff_mean_fn() for more information.
  */
-void factor_fixed_impulse_diff_mean (const factor_t *f,
-                                     const vector_t *x,
-                                     const unsigned int i,
-                                     vector_t *df) {
+FACTOR_DIFF_MEAN (fixed_impulse) {
   /* get the location parameter. */
   fixed_impulse_t *fx = (fixed_impulse_t*) f;
   const double mu = fx->mu;
@@ -99,7 +91,7 @@ void factor_fixed_impulse_diff_mean (const factor_t *f,
   const double xd = vector_get(x, f->d);
 
   /* compute the mean value and the shift. */
-  const double Gx = factor_fixed_impulse_mean(f, x, i);
+  const double Gx = fixed_impulse_mean(f, x, p, i);
   const double u = xd - mu;
 
   /* compute and store the partial derivative. */
@@ -107,23 +99,19 @@ void factor_fixed_impulse_diff_mean (const factor_t *f,
   vector_set(df, P_TAU, dtau);
 }
 
-/* factor_fixed_impulse_diff_var(): evaluate the fixed impulse factor
+/* fixed_impulse_diff_var(): evaluate the fixed impulse factor
  * variance gradient.
  *  - see factor_diff_var_fn() for more information.
  */
-void factor_fixed_impulse_diff_var (const factor_t *f,
-                                    const vector_t *x,
-                                    const unsigned int i,
-                                    const unsigned int j,
-                                    vector_t *df) {
+FACTOR_DIFF_VAR (fixed_impulse) {
   /* call the mean gradient function. */
-  factor_fixed_impulse_diff_mean(f, x, i, df);
+  fixed_impulse_diff_mean(f, x, p, i, df);
 }
 
-/* factor_fixed_impulse_div(): evaluate the fixed impulse factor divergence.
+/* fixed_impulse_div(): evaluate the fixed impulse factor divergence.
  *  - see factor_div_fn() for more information.
  */
-double factor_fixed_impulse_div (const factor_t *f, const factor_t *f2) {
+FACTOR_DIV (fixed_impulse) {
   /* get the first factor parameters. */
   const double tau = vector_get(f->par, P_TAU);
   fixed_impulse_t *fx = (fixed_impulse_t*) f;
@@ -139,11 +127,10 @@ double factor_fixed_impulse_div (const factor_t *f, const factor_t *f2) {
        - 0.5 * log(tau2 / tau) - 0.5;
 }
 
-/* factor_fixed_impulse_set(): store a parameter into a fixed impulse factor.
+/* fixed_impulse_set(): store a parameter into a fixed impulse factor.
  *  - see factor_set_fn() for more information.
  */
-int factor_fixed_impulse_set (factor_t *f, const unsigned int i,
-                              const double value) {
+FACTOR_SET (fixed_impulse) {
   /* determine which parameter is being assigned. */
   switch (i) {
     /* location precision: in (0, inf) */
@@ -162,11 +149,11 @@ int factor_fixed_impulse_set (factor_t *f, const unsigned int i,
   return 0;
 }
 
-/* factor_fixed_impulse_copy(): copy extra information between fixed impulse
+/* fixed_impulse_copy(): copy extra information between fixed impulse
  * factors.
  *  - see factor_copy_fn() for more information.
  */
-int factor_fixed_impulse_copy (const factor_t *f, factor_t *fdup) {
+FACTOR_COPY (fixed_impulse) {
   /* get the extended structure pointers. */
   fixed_impulse_t *fdupx = (fixed_impulse_t*) fdup;
   fixed_impulse_t *fx = (fixed_impulse_t*) f;

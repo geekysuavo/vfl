@@ -7,17 +7,11 @@
 
 model_t *model_vfc (const double nu);
 
-double vfc_bound (const model_t *mdl);
-
-int vfc_predict (const model_t *mdl, const vector_t *x,
-                 double *mean, double *var);
-
-int vfc_infer (model_t *mdl);
-
-int vfc_update (model_t *mdl, const unsigned int j);
-
-int vfc_gradient (const model_t *mdl, const unsigned int i,
-                  const unsigned int j, vector_t *grad);
+MODEL_BOUND    (vfc);
+MODEL_PREDICT  (vfc);
+MODEL_INFER    (vfc);
+MODEL_UPDATE   (vfc);
+MODEL_GRADIENT (vfc);
 
 #endif /* !__VFL_MODEL_VFC_H__ */
 

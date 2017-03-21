@@ -17,8 +17,7 @@ int main (int argc, char **argv) {
     return 1;
 
   /* read the dataset file. */
-  data_t *dat = data_alloc();
-  data_fread(dat, "multexp.dat");
+  data_t *dat = data_alloc_from_file("multexp.dat");
 
   /* set up a regression model. */
   model_t *mdl = model_vfr(10.0, 40.0, 1.0e-3);
@@ -39,8 +38,8 @@ int main (int argc, char **argv) {
   /* allocate datasets for prediction. */
   double grid_values[] = { 0.0, 0.1, 150.0 };
   matrix_view_t grid = matrix_view_array(grid_values, 1, 3);
-  data_t *mean = data_alloc_from_grid(&grid);
-  data_t *var = data_alloc_from_grid(&grid);
+  data_t *mean = data_alloc_from_grid(1, &grid);
+  data_t *var = data_alloc_from_grid(1, &grid);
 
   /* compute the prediction. */
   model_predict_all(mdl, mean, var);

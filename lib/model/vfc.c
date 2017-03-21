@@ -58,7 +58,7 @@ model_t *model_vfc (const double nu) {
 /* vfc_bound(): return the lower bound of a vfc model.
  *  - see model_bound_fn() for more information.
  */
-double vfc_bound (const model_t *mdl) {
+MODEL_BOUND (vfc) {
   /* initialize the computation. */
   double bound = 0.0;
 
@@ -84,42 +84,40 @@ double vfc_bound (const model_t *mdl) {
 /* vfc_predict(): return the prediction of a vfc model.
  *  - see model_predict_fn() for more information.
  */
-int vfc_predict (const model_t *mdl, const vector_t *x,
-                 double *mean, double *var) {
+MODEL_PREDICT (vfc) {
   /* initialize the predicted mean. */
-  double p = 0.0;
+  double rho = 0.0;
 
   /* loop over the terms of the inner product. */
   for (unsigned int j = 0, i = 0; j < mdl->M; j++) {
     for (unsigned int k = 0; k < mdl->factors[j]->K; k++, i++) {
       /* include the current contribution form the inner product. */
-      p += vector_get(mdl->wbar, i) * model_mean(mdl, x, j, k);
+      rho += vector_get(mdl->wbar, i) * model_mean(mdl, x, p, j, k);
     }
   }
 
   /* pass the inner product through the logistic function. */
-  p = sigfn(p);
+  rho = sigfn(rho);
 
   /* store the results and return success. */
-  *mean = p;
-  *var = p * (1.0 - p);
+  *mean = rho;
+  *var = rho * (1.0 - rho);
   return 1;
 }
 
 /* vfc_infer(): perform complete inference in a vfc model.
  *  - see model_infer_fn() for more information.
  */
-int vfc_infer (model_t *mdl) {
+MODEL_INFER (vfc) {
   /* gain access to the dataset structure members. */
   const unsigned int N = mdl->dat->N;
-  matrix_t *X = mdl->dat->X;
-  vector_t *y = mdl->dat->y;
-  double yi, xi;
+  data_t *dat = mdl->dat;
+  datum_t *di;
+  double xi;
 
   /* declare views into the weight precisions and the projections. */
   matrix_view_t G;
   vector_view_t h;
-  vector_view_t x;
 
   /* loop over the factors. */
   for (unsigned int j1 = 0, i1 = 0; j1 < mdl->M; j1++) {
@@ -134,9 +132,8 @@ int vfc_infer (model_t *mdl) {
 
       /* compute the contribution of each observation. */
       for (unsigned int i = 0; i < N; i++) {
-        x = matrix_row(X, i);
-        yi = vector_get(y, i);
-        hk += (2.0 * yi - 1.0) * model_mean(mdl, &x, j1, k1);
+        di = data_get(dat, i);
+        hk += (2.0 * di->y - 1.0) * model_mean(mdl, di->x, di->p, j1, k1);
       }
 
       /* store the projection subvector element. */
@@ -155,9 +152,10 @@ int vfc_infer (model_t *mdl) {
 
           /* compute the contributions of each observation. */
           for (unsigned int i = 0; i < N; i++) {
-            x = matrix_row(X, i);
+            di = data_get(dat, i);
             xi = vector_get(mdl->xi, i);
-            gkk += 2.0 * ellfn(xi) * model_var(mdl, &x, j1, j2, k1, k2);
+            gkk += 2.0 * ellfn(xi) * model_var(mdl, di->x, di->p,
+                                               j1, j2, k1, k2);
           }
 
           /* store the precision submatrix element. */
@@ -191,7 +189,7 @@ int vfc_infer (model_t *mdl) {
   /* update the logistic parameters. */
   for (unsigned int i = 0; i < N; i++) {
     /* initialize the parameter computation. */
-    x = matrix_row(X, i);
+    di = data_get(dat, i);
     xi = 0.0;
 
     /* loop over the first trace dimension. */
@@ -204,7 +202,7 @@ int vfc_infer (model_t *mdl) {
             xi += (matrix_get(mdl->Sigma, i1, i2) +
                    vector_get(mdl->wbar, i1) *
                    vector_get(mdl->wbar, i2)) *
-                  model_var(mdl, &x, j1, j2, k1, k2);
+                  model_var(mdl, di->x, di->p, j1, j2, k1, k2);
           }
         }
       }
@@ -221,17 +219,16 @@ int vfc_infer (model_t *mdl) {
 /* vfc_update(): perform efficient low-rank inference in a vfc model.
  *  - see model_update_fn() for more information.
  */
-int vfc_update (model_t *mdl, const unsigned int j) {
+MODEL_UPDATE (vfc) {
   /* get the weight offset and count of the current factor. */
   const unsigned int k0 = model_weight_idx(mdl, j, 0);
   const unsigned int K = mdl->factors[j]->K;
 
   /* gain access to the dataset structure members. */
   const unsigned int N = mdl->dat->N;
-  matrix_t *X = mdl->dat->X;
-  vector_t *y = mdl->dat->y;
-  vector_view_t x;
-  double yi, xi;
+  data_t *dat = mdl->dat;
+  datum_t *di;
+  double xi;
 
   /* prepare for low-rank adjustment. */
   model_weight_adjust_init(mdl, j);
@@ -243,9 +240,8 @@ int vfc_update (model_t *mdl, const unsigned int j) {
 
     /* compute the contributions of each observation. */
     for (unsigned int i = 0; i < N; i++) {
-      x = matrix_row(X, i);
-      yi = vector_get(y, i);
-      hk += (2.0 * yi - 1.0) * model_mean(mdl, &x, j, k);
+      di = data_get(dat, i);
+      hk += (2.0 * di->y - 1.0) * model_mean(mdl, di->x, di->p, j, k);
     }
 
     /* store the projection subvector element. */
@@ -263,9 +259,10 @@ int vfc_update (model_t *mdl, const unsigned int j) {
 
         /* compute the contributions of each observation. */
         for (unsigned int i = 0; i < N; i++) {
-          x = matrix_row(X, i);
+          di = data_get(dat, i);
           xi = vector_get(mdl->xi, i);
-          gkk += 2.0 * ellfn(xi) * model_var(mdl, &x, j, j2, k, k2);
+          gkk += 2.0 * ellfn(xi) * model_var(mdl, di->x, di->p,
+                                             j, j2, k, k2);
         }
 
         /* store the precision submatrix element. */
@@ -295,7 +292,7 @@ int vfc_update (model_t *mdl, const unsigned int j) {
   /* update the logistic parameters. */
   for (unsigned int i = 0; i < N; i++) {
     /* initialize the parameter computation. */
-    x = matrix_row(X, i);
+    di = data_get(dat, i);
     xi = 0.0;
 
     /* loop over the first trace dimension. */
@@ -308,7 +305,7 @@ int vfc_update (model_t *mdl, const unsigned int j) {
             xi += (matrix_get(mdl->Sigma, i1, i2) +
                    vector_get(mdl->wbar, i1) *
                    vector_get(mdl->wbar, i2)) *
-                  model_var(mdl, &x, j1, j2, k1, k2);
+                  model_var(mdl, di->x, di->p, j1, j2, k1, k2);
           }
         }
       }
@@ -325,8 +322,7 @@ int vfc_update (model_t *mdl, const unsigned int j) {
 /* vfc_gradient(): return the gradient of a single factor in a vfc model.
  *  - see model_gradient_fn() for more information.
  */
-int vfc_gradient (const model_t *mdl, const unsigned int i,
-                  const unsigned int j, vector_t *grad) {
+MODEL_GRADIENT (vfc) {
   /* determine the weight index offset of the current factor. */
   const unsigned int k0 = model_weight_idx(mdl, j, 0);
 
@@ -335,8 +331,10 @@ int vfc_gradient (const model_t *mdl, const unsigned int i,
   const unsigned int K = fj->K;
 
   /* gain access to the specified observation. */
-  vector_view_t x = matrix_row(mdl->dat->X, i);
-  const double y = vector_get(mdl->dat->y, i);
+  datum_t *di = data_get(mdl->dat, i);
+  const unsigned int p = di->p;
+  const vector_t *x = di->x;
+  const double y = di->y;
 
   /* create the vector view for individual gradient terms. */
   vector_view_t g = vector_subvector(mdl->tmp, mdl->K, grad->len);
@@ -353,12 +351,12 @@ int vfc_gradient (const model_t *mdl, const unsigned int i,
                          wk * vector_get(mdl->wbar, k0 + kk);
 
       /* include the second-order contribution. */
-      factor_diff_var(fj, &x, k, kk, &g);
+      factor_diff_var(fj, x, p, k, kk, &g);
       blas_daxpy(-0.5 * wwT, &g, grad);
     }
 
     /* include the first-order contribution. */
-    factor_diff_mean(fj, &x, k, &g);
+    factor_diff_mean(fj, x, p, k, &g);
     blas_daxpy(wk * y, &g, grad);
 
     /* loop over the other factors. */
@@ -379,7 +377,7 @@ int vfc_gradient (const model_t *mdl, const unsigned int i,
                            wk * vector_get(mdl->wbar, i2 + k2);
 
         /* include the off-diagonal second-order contribution. */
-        const double E2 = factor_mean(mdl->factors[j2], &x, k2);
+        const double E2 = factor_mean(mdl->factors[j2], x, p, k2);
         blas_daxpy(-wwT * E2, &g, grad);
       }
 

@@ -122,6 +122,7 @@ int data_resize (data_t *dat, const unsigned int N, const unsigned int D) {
 
   /* initialize each vector in the observation array. */
   for (unsigned int i = 0; i < N; i++) {
+    data[i].x = (vector_t*) ptr;
     vector_init(data[i].x, D);
     ptr += vbytes;
   }

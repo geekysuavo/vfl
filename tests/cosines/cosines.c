@@ -21,8 +21,7 @@ int main (int argc, char **argv) {
   rng_t *R = rng_alloc();
 
   /* read the dataset file. */
-  data_t *dat = data_alloc();
-  data_fread(dat, "cosines.dat");
+  data_t *dat = data_alloc_from_file("cosines.dat");
 
   /* set up a fixed-tau regression model. */
   model_t *mdl = model_tauvfr(1.0, 1.0e-6);
@@ -47,8 +46,8 @@ int main (int argc, char **argv) {
   /* allocate datasets for prediction. */
   double grid_values[] = { 0.0, 1.0e-3, 0.5 };
   matrix_view_t grid = matrix_view_array(grid_values, 1, 3);
-  data_t *mean = data_alloc_from_grid(&grid);
-  data_t *var = data_alloc_from_grid(&grid);
+  data_t *mean = data_alloc_from_grid(1, &grid);
+  data_t *var = data_alloc_from_grid(1, &grid);
 
   /* compute the prediction. */
   model_predict_all(mdl, mean, var);

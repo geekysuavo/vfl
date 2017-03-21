@@ -26,12 +26,19 @@ typedef struct model model_t;
  */
 typedef double (*model_bound_fn) (const model_t *mdl);
 
+/* MODEL_BOUND(): macro function for declaring and defining
+ * functions conforming to model_bound_fn().
+ */
+#define MODEL_BOUND(name) \
+double name ## _bound (const model_t *mdl)
+
 /* model_predict_fn(): return the posterior predicted mean and variance
  * of the model at a given observation input vector.
  *
  * arguments:
  *  @mdl: model structure pointer.
  *  @x: observation input vector.
+ *  @p: function output index.
  *  @mean: pointer to the predicted mean.
  *  @var: pointer to the predicted variance.
  *
@@ -39,7 +46,18 @@ typedef double (*model_bound_fn) (const model_t *mdl);
  *  integer indicating prediction success (1) or failure (0).
  */
 typedef int (*model_predict_fn) (const model_t *mdl, const vector_t *x,
-                                 double *mean, double *var);
+                                 const unsigned int p,
+                                 double *mean,
+                                 double *var);
+
+/* MODEL_PREDICT(): macro function for declaring and defining
+ * functions conforming to model_predict_fn().
+ */
+#define MODEL_PREDICT(name) \
+int name ## _predict (const model_t *mdl, const vector_t *x, \
+                      const unsigned int p, \
+                      double *mean, \
+                      double *var)
 
 /* model_infer_fn(): update the posterior nuisance parameters of a model.
  *
@@ -50,6 +68,12 @@ typedef int (*model_predict_fn) (const model_t *mdl, const vector_t *x,
  *  integer indicating inference success (1) or failure (0).
  */
 typedef int (*model_infer_fn) (model_t *mdl);
+
+/* MODEL_INFER(): macro function for declaring and defining
+ * functions conforming to model_infer_fn().
+ */
+#define MODEL_INFER(name) \
+int name ## _infer (model_t *mdl)
 
 /* model_update_fn(): update the posterior nuisance parameters of a model
  * using low-rank updates to the inverse covariance matrix and its cholesky
@@ -63,6 +87,12 @@ typedef int (*model_infer_fn) (model_t *mdl);
  *  integer indicating inference success (1) or failure (0).
  */
 typedef int (*model_update_fn) (model_t *mdl, const unsigned int j);
+
+/* MODEL_UPDATE(): macro function for declaring and defining
+ * functions conforming to model_update_fn().
+ */
+#define MODEL_UPDATE(name) \
+int name ## _update (model_t *mdl, const unsigned int j)
 
 /* model_gradient_fn(): return the gradient of the variational lower bound
  * with respect to the parameters of a single factor, taken against a
@@ -79,6 +109,13 @@ typedef int (*model_update_fn) (model_t *mdl, const unsigned int j);
  */
 typedef int (*model_gradient_fn) (const model_t *mdl, const unsigned int i,
                                   const unsigned int j, vector_t *grad);
+
+/* MODEL_GRADIENT(): macro function for declaring and defining
+ * functions conforming to model_gradient_fn().
+ */
+#define MODEL_GRADIENT(name) \
+int name ## _gradient (const model_t *mdl, const unsigned int i, \
+                       const unsigned int j, vector_t *grad)
 
 /* struct model: structure for holding a variational feature model.
  */
@@ -177,17 +214,21 @@ int model_set_data (model_t *mdl, data_t *dat);
 
 int model_add_factor (model_t *mdl, factor_t *f);
 
-double model_mean (const model_t *mdl, const vector_t *x,
+double model_mean (const model_t *mdl,
+                   const vector_t *x, const unsigned int p,
                    const unsigned int j, const unsigned int k);
 
-double model_var (const model_t *mdl, const vector_t *x,
+double model_var (const model_t *mdl,
+                  const vector_t *x, const unsigned int p,
                   const unsigned int j1, const unsigned int j2,
                   const unsigned int k1, const unsigned int k2);
 
 double model_bound (const model_t *mdl);
 
 int model_predict (const model_t *mdl, const vector_t *x,
-                   double *mean, double *var);
+                   const unsigned int p,
+                   double *mean,
+                   double *var);
 
 int model_predict_all (const model_t *mdl,
                        data_t *mean,

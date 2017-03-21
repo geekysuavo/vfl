@@ -22,18 +22,18 @@ factor_t *factor_impulse (const double mu, const double tau) {
     return NULL;
 
   /* store the expectation function pointers. */
-  f->mean = factor_impulse_mean;
-  f->var = factor_impulse_var;
+  f->mean = impulse_mean;
+  f->var = impulse_var;
 
   /* store the gradient function pointers. */
-  f->diff_mean = factor_impulse_diff_mean;
-  f->diff_var = factor_impulse_diff_var;
+  f->diff_mean = impulse_diff_mean;
+  f->diff_var = impulse_diff_var;
 
   /* store the divergence funciton pointer. */
-  f->div = factor_impulse_div;
+  f->div = impulse_div;
 
   /* store the assignment function pointer. */
-  f->set = factor_impulse_set;
+  f->set = impulse_set;
 
   /* attempt to set the initial factor parameters. */
   if (!f->set(f, P_MU, mu) || !f->set(f, P_TAU, tau)) {
@@ -45,12 +45,10 @@ factor_t *factor_impulse (const double mu, const double tau) {
   return f;
 }
 
-/* factor_impulse_mean(): evalute the impulse factor mean.
+/* impulse_mean(): evalute the impulse factor mean.
  *  - see factor_mean_fn() for more information.
  */
-double factor_impulse_mean (const factor_t *f,
-                            const vector_t *x,
-                            const unsigned int i) {
+FACTOR_MEAN (impulse) {
   /* get the input value along the factor dimension. */
   const double xd = vector_get(x, f->d);
 
@@ -65,24 +63,18 @@ double factor_impulse_mean (const factor_t *f,
   return exp(-0.5 * tau * u * u);
 }
 
-/* factor_impulse_var(): evalute the impulse factor variance.
+/* impulse_var(): evalute the impulse factor variance.
  *  - see factor_var_fn() for more information.
  */
-double factor_impulse_var (const factor_t *f,
-                           const vector_t *x,
-                           const unsigned int i,
-                           const unsigned int j) {
+FACTOR_VAR (impulse) {
   /* call the mean function. */
-  return factor_impulse_mean(f, x, i);
+  return impulse_mean(f, x, p, i);
 }
 
-/* factor_impulse_diff_mean(): evaluate the impulse factor mean gradient.
+/* impulse_diff_mean(): evaluate the impulse factor mean gradient.
  *  - see factor_diff_mean_fn() for more information.
  */
-void factor_impulse_diff_mean (const factor_t *f,
-                               const vector_t *x,
-                               const unsigned int i,
-                               vector_t *df) {
+FACTOR_DIFF_MEAN (impulse) {
   /* get the input value along the factor dimension. */
   const double xd = vector_get(x, f->d);
 
@@ -91,7 +83,7 @@ void factor_impulse_diff_mean (const factor_t *f,
   const double tau = vector_get(f->par, P_TAU);
 
   /* compute the mean value and the shift. */
-  const double Gx = factor_impulse_mean(f, x, i);
+  const double Gx = impulse_mean(f, x, p, i);
   const double u = xd - mu;
 
   /* compute the partial derivatives. */
@@ -103,22 +95,18 @@ void factor_impulse_diff_mean (const factor_t *f,
   vector_set(df, P_TAU, dtau);
 }
 
-/* factor_impulse_diff_var(): evaluate the impulse factor variance gradient.
+/* impulse_diff_var(): evaluate the impulse factor variance gradient.
  *  - see factor_diff_var_fn() for more information.
  */
-void factor_impulse_diff_var (const factor_t *f,
-                              const vector_t *x,
-                              const unsigned int i,
-                              const unsigned int j,
-                              vector_t *df) {
+FACTOR_DIFF_VAR (impulse) {
   /* call the mean gradient function. */
-  factor_impulse_diff_mean(f, x, i, df);
+  impulse_diff_mean(f, x, p, i, df);
 }
 
-/* factor_impulse_div(): evaluate the impulse factor divergence.
+/* impulse_div(): evaluate the impulse factor divergence.
  *  - see factor_div_fn() for more information.
  */
-double factor_impulse_div (const factor_t *f, const factor_t *f2) {
+FACTOR_DIV (impulse) {
   /* get the first factor parameters. */
   const double mu = vector_get(f->par, P_MU);
   const double tau = vector_get(f->par, P_TAU);
@@ -132,11 +120,10 @@ double factor_impulse_div (const factor_t *f, const factor_t *f2) {
        - 0.5 * log(tau2 / tau) - 0.5;
 }
 
-/* factor_impulse_set(): store a parameter into a impulse factor.
+/* impulse_set(): store a parameter into a impulse factor.
  *  - see factor_set_fn() for more information.
  */
-int factor_impulse_set (factor_t *f, const unsigned int i,
-                        const double value) {
+FACTOR_SET (impulse) {
   /* determine which parameter is being assigned. */
   switch (i) {
     /* location mean: in (-inf, inf) */

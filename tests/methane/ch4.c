@@ -17,12 +17,11 @@ int main (int argc, char **argv) {
     return 1;
 
   /* read the dataset file. */
-  data_t *dat = data_alloc();
-  data_fread(dat, "ch4.dat");
+  data_t *dat = data_alloc_from_file("ch4.dat");
 
   /* adjust the observation locations for simpler fitting. */
   for (unsigned int i = 0; i < dat->N; i++)
-    matrix_set(dat->X, i, 0, matrix_get(dat->X, i, 0) - 2000.0);
+    dat->data[i].x->data[0] -= 2000.0;
 
   /* set up a regression model. */
   model_t *mdl = model_vfr(100.0, 100.0, 1.0e-6);
@@ -47,16 +46,16 @@ int main (int argc, char **argv) {
   /* allocate datasets for prediction. */
   double grid_values[] = { -20.0, 1.0e-2, 70.0 };
   matrix_view_t grid = matrix_view_array(grid_values, 1, 3);
-  data_t *mean = data_alloc_from_grid(&grid);
-  data_t *var = data_alloc_from_grid(&grid);
+  data_t *mean = data_alloc_from_grid(1, &grid);
+  data_t *var = data_alloc_from_grid(1, &grid);
 
   /* compute the prediction. */
   model_predict_all(mdl, mean, var);
 
   /* reverse the adjustment made to the observation locations. */
   for (unsigned int i = 0; i < mean->N; i++) {
-    matrix_set(mean->X, i, 0, matrix_get(mean->X, i, 0) + 2000.0);
-    matrix_set(var->X,  i, 0, matrix_get(var->X,  i, 0) + 2000.0);
+    mean->data[i].x->data[0] += 2000.0;
+    var->data[i].x->data[0]  += 2000.0;
   }
 
   /* output the prediction. */

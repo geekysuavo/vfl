@@ -31,6 +31,9 @@ factor_t *factor_alloc (const unsigned int bytes,
   f->P = P;
   f->K = K;
 
+  /* set the default factor flags. */
+  f->fixed = 0;
+
   /* set the default factor dimension. */
   f->d = 0;
 
@@ -85,6 +88,9 @@ factor_t *factor_copy (const factor_t *f) {
   factor_t *fdup = factor_alloc(f->bytes, f->D, f->P, f->K);
   if (!fdup)
     return NULL;
+
+  /* copy the factor flags. */
+  fdup->fixed = f->fixed;
 
   /* copy the expectation function pointers. */
   fdup->mean = f->mean;
@@ -180,13 +186,14 @@ int factor_set (factor_t *f, const unsigned int i, const double value) {
  */
 double factor_mean (const factor_t *f,
                     const vector_t *x,
+                    const unsigned int p,
                     const unsigned int i) {
   /* check the input pointers and the basis index. */
   if (!f || !f->mean || !x || i >= f->K)
     return 0.0;
 
   /* execute the mean function. */
-  return f->mean(f, x, i);
+  return f->mean(f, x, p, i);
 }
 
 /* factor_var(): evaluate the variance function of a factor.
@@ -194,6 +201,7 @@ double factor_mean (const factor_t *f,
  */
 double factor_var (const factor_t *f,
                    const vector_t *x,
+                   const unsigned int p,
                    const unsigned int i,
                    const unsigned int j) {
   /* check the input pointers and basis indices. */
@@ -201,7 +209,7 @@ double factor_var (const factor_t *f,
     return 0.0;
 
   /* execute the variance function. */
-  return f->var(f, x, i, j);
+  return f->var(f, x, p, i, j);
 }
 
 /* factor_diff_mean(): evaluate the mean gradient function of a factor.
@@ -209,6 +217,7 @@ double factor_var (const factor_t *f,
  */
 int factor_diff_mean (const factor_t *f,
                       const vector_t *x,
+                      const unsigned int p,
                       const unsigned int i,
                       vector_t *df) {
   /* check the input pointers, basis index, and gradient length. */
@@ -217,7 +226,7 @@ int factor_diff_mean (const factor_t *f,
     return 0;
 
   /* execute the mean gradient function and return success. */
-  f->diff_mean(f, x, i, df);
+  f->diff_mean(f, x, p, i, df);
   return 1;
 }
 
@@ -226,6 +235,7 @@ int factor_diff_mean (const factor_t *f,
  */
 int factor_diff_var (const factor_t *f,
                      const vector_t *x,
+                     const unsigned int p,
                      const unsigned int i,
                      const unsigned int j,
                      vector_t *df) {
@@ -236,7 +246,7 @@ int factor_diff_var (const factor_t *f,
     return 0;
 
   /* execute the variance gradient function and return success. */
-  f->diff_var(f, x, i, j, df);
+  f->diff_var(f, x, p, i, j, df);
   return 1;
 }
 

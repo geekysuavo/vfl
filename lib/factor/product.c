@@ -71,20 +71,20 @@ factor_t *factor_product (const unsigned int F, ...) {
     return NULL;
 
   /* store the expectation function pointers. */
-  f->mean = factor_product_mean;
-  f->var = factor_product_var;
+  f->mean = product_mean;
+  f->var = product_var;
 
   /* store the gradient function pointers. */
-  f->diff_mean = factor_product_diff_mean;
-  f->diff_var = factor_product_diff_var;
+  f->diff_mean = product_diff_mean;
+  f->diff_var = product_diff_var;
 
   /* store the divergence funciton pointer. */
-  f->div = factor_product_div;
+  f->div = product_div;
 
   /* store the assignment function pointer. */
-  f->set = factor_product_set;
-  f->copy = factor_product_copy;
-  f->free = factor_product_free;
+  f->set = product_set;
+  f->copy = product_copy;
+  f->free = product_free;
 
   /* initialize the combined parameter vector and information matrix. */
   for (unsigned int fidx = 0, p0 = 0; fidx < F; fidx++) {
@@ -112,12 +112,10 @@ factor_t *factor_product (const unsigned int F, ...) {
   return f;
 }
 
-/* factor_product_mean(): evaluate the product factor mean.
+/* product_mean(): evaluate the product factor mean.
  *  - see factor_mean_fn() for more information.
  */
-double factor_product_mean (const factor_t *f,
-                            const vector_t *x,
-                            const unsigned int i) {
+FACTOR_MEAN (product) {
   /* get the extended structure pointer. */
   product_t *fx = (product_t*) f;
 
@@ -125,20 +123,17 @@ double factor_product_mean (const factor_t *f,
   double mean = 1.0;
   for (unsigned int n = 0; n < fx->F; n++) {
     factor_t *fn = fx->factors[n];
-    mean *= factor_mean(fn, x, i % fn->K);
+    mean *= factor_mean(fn, x, p, i % fn->K);
   }
 
   /* return the computed expectation. */
   return mean;
 }
 
-/* factor_product_var(): evaluate the product factor variance.
+/* product_var(): evaluate the product factor variance.
  *  - see factor_var_fn() for more information.
  */
-double factor_product_var (const factor_t *f,
-                           const vector_t *x,
-                           const unsigned int i,
-                           const unsigned int j) {
+FACTOR_VAR (product) {
   /* get the extended structure pointer. */
   product_t *fx = (product_t*) f;
 
@@ -146,20 +141,17 @@ double factor_product_var (const factor_t *f,
   double var = 1.0;
   for (unsigned int n = 0; n < fx->F; n++) {
     factor_t *fn = fx->factors[n];
-    var *= factor_var(fn, x, i % fn->K, j % fn->K);
+    var *= factor_var(fn, x, p, i % fn->K, j % fn->K);
   }
 
   /* return the computed expectation. */
   return var;
 }
 
-/* factor_product_diff_mean(): evaluate the product factor mean gradient.
+/* product_diff_mean(): evaluate the product factor mean gradient.
  *  - see factor_diff_mean_fn() for more information.
  */
-void factor_product_diff_mean (const factor_t *f,
-                               const vector_t *x,
-                               const unsigned int i,
-                               vector_t *df) {
+FACTOR_DIFF_MEAN (product) {
   /* get the extended structure pointer and factor count. */
   product_t *fx = (product_t*) f;
   const unsigned int F = fx->F;
@@ -172,7 +164,7 @@ void factor_product_diff_mean (const factor_t *f,
 
     /* store the factor gradient into the appropriate subvector. */
     vector_view_t df2 = vector_subvector(df, p0, Pf);
-    factor_diff_mean(f2, x, i % f2->K, &df2);
+    factor_diff_mean(f2, x, p, i % f2->K, &df2);
 
     /* increment the parameter offset. */
     p0 += Pf;
@@ -182,7 +174,7 @@ void factor_product_diff_mean (const factor_t *f,
   for (unsigned int n1 = 0; n1 < F; n1++) {
     /* compute the current factor mean. */
     factor_t *f1 = fx->factors[n1];
-    const double mean1 = factor_mean(f1, x, i % f1->K);
+    const double mean1 = factor_mean(f1, x, p, i % f1->K);
 
     /* loop over the factors again. */
     for (unsigned int n2 = 0, p0 = 0; n2 < F; n2++) {
@@ -201,14 +193,10 @@ void factor_product_diff_mean (const factor_t *f,
   }
 }
 
-/* factor_product_diff_var(): evaluate the product factor variance gradient.
+/* product_diff_var(): evaluate the product factor variance gradient.
  *  - see factor_diff_var_fn() for more information.
  */
-void factor_product_diff_var (const factor_t *f,
-                              const vector_t *x,
-                              const unsigned int i,
-                              const unsigned int j,
-                              vector_t *df) {
+FACTOR_DIFF_VAR (product) {
   /* get the extended structure pointer and factor count. */
   product_t *fx = (product_t*) f;
   const unsigned int F = fx->F;
@@ -221,7 +209,7 @@ void factor_product_diff_var (const factor_t *f,
 
     /* store the factor gradient into the appropriate subvector. */
     vector_view_t df2 = vector_subvector(df, p0, Pf);
-    factor_diff_var(f2, x, i % f2->K, j % f2->K, &df2);
+    factor_diff_var(f2, x, p, i % f2->K, j % f2->K, &df2);
 
     /* increment the parameter offset. */
     p0 += Pf;
@@ -231,7 +219,7 @@ void factor_product_diff_var (const factor_t *f,
   for (unsigned int n1 = 0; n1 < F; n1++) {
     /* compute the current factor variance. */
     factor_t *f1 = fx->factors[n1];
-    const double var1 = factor_var(f1, x, i % f1->K, j % f1->K);
+    const double var1 = factor_var(f1, x, p, i % f1->K, j % f1->K);
 
     /* loop over the factors again. */
     for (unsigned int n2 = 0, p0 = 0; n2 < F; n2++) {
@@ -250,10 +238,10 @@ void factor_product_diff_var (const factor_t *f,
   }
 }
 
-/* factor_product_div(): evaluate the product factor divergence.
+/* product_div(): evaluate the product factor divergence.
  *  - see factor_div_fn() for more information.
  */
-double factor_product_div (const factor_t *f, const factor_t *f2) {
+FACTOR_DIV (product) {
   /* get the extended structure pointers. */
   product_t *fx = (product_t*) f;
   product_t *f2x = (product_t*) f2;
@@ -267,11 +255,10 @@ double factor_product_div (const factor_t *f, const factor_t *f2) {
   return div;
 }
 
-/* factor_product_set(): store a parameter into a product factor.
+/* product_set(): store a parameter into a product factor.
  *  - see factor_set_fn() for more information.
  */
-int factor_product_set (factor_t *f, const unsigned int i,
-                        const double value) {
+FACTOR_SET (product) {
   /* get the extended structure pointer. */
   product_t *fx = (product_t*) f;
 
@@ -309,10 +296,10 @@ int factor_product_set (factor_t *f, const unsigned int i,
   return 0;
 }
 
-/* factor_product_copy(): copy extra information between product factors.
+/* product_copy(): copy extra information between product factors.
  *  - see factor_copy_fn() for more information.
  */
-int factor_product_copy (const factor_t *f, factor_t *fdup) {
+FACTOR_COPY (product) {
   /* get the extended structure pointers. */
   product_t *fdupx = (product_t*) fdup;
   product_t *fx = (product_t*) f;
@@ -341,10 +328,10 @@ int factor_product_copy (const factor_t *f, factor_t *fdup) {
   return 1;
 }
 
-/* factor_product_free(): free extra information from product factors.
+/* product_free(): free extra information from product factors.
  *  - see factor_free_fn() for more information.
  */
-void factor_product_free (factor_t *f) {
+FACTOR_FREE (product) {
   /* get the extended structure pointer. */
   product_t *fx = (product_t*) f;
 

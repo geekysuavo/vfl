@@ -7,9 +7,8 @@
 
 optim_t *optim_fg (model_t *mdl);
 
-int fg_iterate (optim_t *opt);
-
-int fg_execute (optim_t *opt);
+OPTIM_ITERATE (fg);
+OPTIM_EXECUTE (fg);
 
 #endif /* !__VFL_OPTIM_FG_H__ */
 
