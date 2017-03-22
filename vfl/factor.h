@@ -10,8 +10,7 @@
 
 /* include application headers. */
 #include <vfl/util/specfun.h>
-#include <vfl/util/matrix.h>
-#include <vfl/util/vector.h>
+#include <vfl/data.h>
 
 /* factor_t: defined type for the factor structure. */
 typedef struct factor factor_t;
@@ -124,18 +123,39 @@ typedef void (*factor_diff_var_fn) (const factor_t *f,
  */
 #define FACTOR_DIFF_VAR(name) \
 void name ## _diff_var (const factor_t *f, \
-                         const vector_t *x, \
-                         const unsigned int p, \
-                         const unsigned int i, \
-                         const unsigned int j, \
-                         vector_t *df)
+                        const vector_t *x, \
+                        const unsigned int p, \
+                        const unsigned int i, \
+                        const unsigned int j, \
+                        vector_t *df)
 
-/* FIXME: introduce a factor_update_fn() for mean-field updates?
+/* factor_meanfield_fn(): perform an assumed-density mean-field update
+ * of a factor, given its associated prior factor and a set of required
+ * coefficients.
  *
- * typedef int (*factor_update_fn) (factor_t *f, const data_t *dat,
- *                                  const factor_t **fv,
- *                                  const factor_t **pv);
+ * arguments:
+ *  @f: factor structure pointer.
+ *  @fp: prior factor structure pointer.
+ *  @dat: dataset structure pointer.
+ *  @c: vector of first-order coefficients.
+ *  @C: matrix of second-order coefficients.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
  */
+typedef int (*factor_meanfield_fn) (factor_t *f, const factor_t *fp,
+                                    const data_t *dat,
+                                    const vector_t *c,
+                                    const matrix_t *C);
+
+/* FACTOR_MEANFIELD(): macro function for declaring and defining
+ * functions conforming to factor_meanfield_fn().
+ */
+#define FACTOR_MEANFIELD(name) \
+int name ## _meanfield (factor_t *f, const factor_t *fp, \
+                        const data_t *dat, \
+                        const vector_t *c, \
+                        const matrix_t *C)
 
 /* factor_div_fn(): return the kullback-liebler divergence between
  * two factors of the same type, but different parameters.
@@ -246,6 +266,11 @@ struct factor {
   factor_diff_mean_fn diff_mean;
   factor_diff_var_fn diff_var;
 
+  /* mean-field:
+   *  @meanfield: update function.
+   */
+  factor_meanfield_fn meanfield;
+
   /* @div: kl-divergence between two factors of the same type.
    */
   factor_div_fn div;
@@ -305,6 +330,9 @@ int factor_diff_var (const factor_t *f,
                      const unsigned int i,
                      const unsigned int j,
                      vector_t *df);
+
+int factor_meanfield (factor_t *f, const factor_t *fp, const data_t *dat,
+                      const vector_t *c, const matrix_t *C);
 
 double factor_div (const factor_t *f, const factor_t *f2);
 

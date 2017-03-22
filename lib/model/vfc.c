@@ -43,7 +43,7 @@ model_t *model_vfc (const double nu) {
   mdl->predict = vfc_predict;
   mdl->infer = vfc_infer;
   mdl->update = vfc_update;
-  mdl->grad = vfc_gradient;
+  mdl->gradient = vfc_gradient;
 
   /* attempt to set the prior parameters. */
   if (!model_set_nu(mdl, nu)) {

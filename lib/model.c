@@ -58,7 +58,8 @@ model_t *model_alloc (void) {
   mdl->predict = NULL;
   mdl->infer = NULL;
   mdl->update = NULL;
-  mdl->grad = NULL;
+  mdl->gradient = NULL;
+  mdl->meanfield = NULL;
 
   /* initialize the prior parameters. */
   mdl->alpha0 = 1.0;
@@ -531,7 +532,7 @@ int model_update (model_t *mdl, const unsigned int j) {
 int model_gradient (const model_t *mdl, const unsigned int i,
                     const unsigned int j, vector_t *grad) {
   /* check the input pointers and factor index. */
-  if (!mdl || !mdl->dat || !mdl->grad || !grad ||
+  if (!mdl || !mdl->dat || !mdl->gradient || !grad ||
       i >= mdl->dat->N || j >= mdl->M)
     return 0;
 
@@ -544,8 +545,30 @@ int model_gradient (const model_t *mdl, const unsigned int i,
     return 0;
 
   /* execute the assigned gradient function. */
-  return mdl->grad(mdl, i, j, grad);
+  return mdl->gradient(mdl, i, j, grad);
 }
+
+/* model_meanfield(): perform an assumed-density mean-field factor update.
+ *  - see model_meanfield_fn() for more information.
+ */
+int model_meanfield (const model_t *mdl, const unsigned int j) {
+  /* check the input pointers and factor index. */
+  if (!mdl || !mdl->dat || j >= mdl->M)
+    return 0;
+
+  /* check if the factor has no parameters. */
+  if (mdl->factors[j]->P == 0)
+    return 1;
+
+  /* check the model and factor function pointers. */
+  if (!mdl->meanfield || !mdl->factors[j]->meanfield)
+    return 0;
+
+  /* execute the assigned mean-field update function. */
+  return mdl->meanfield(mdl, j);
+}
+
+/* --- */
 
 /* model_weight_idx(): return the index of a model weight that corresponds
  * to a specified basis index of a specified factor.

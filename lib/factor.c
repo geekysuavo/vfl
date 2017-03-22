@@ -45,6 +45,9 @@ factor_t *factor_alloc (const unsigned int bytes,
   f->diff_mean = NULL;
   f->diff_var = NULL;
 
+  /* initialize the mean-field function pointer. */
+  f->meanfield = NULL;
+
   /* initialize the divergence function pointer. */
   f->div = NULL;
 
@@ -248,6 +251,19 @@ int factor_diff_var (const factor_t *f,
   /* execute the variance gradient function and return success. */
   f->diff_var(f, x, p, i, j, df);
   return 1;
+}
+
+/* factor_meanfield(): perform an assumed-density mean-field factor update.
+ *  - see factor_meanfield_fn() for more information.
+ */
+int factor_meanfield (factor_t *f, const factor_t *fp, const data_t *dat,
+                      const vector_t *c, const matrix_t *C) {
+  /* check the input pointers. */
+  if (!f || !fp || !dat || !c || !C)
+    return 0;
+
+  /* execute the mean-field update function. */
+  return f->meanfield(f, fp, dat, c, C);
 }
 
 /* factor_div(): evaluate the divergence function of a factor.

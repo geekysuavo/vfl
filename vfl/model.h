@@ -117,6 +117,24 @@ typedef int (*model_gradient_fn) (const model_t *mdl, const unsigned int i,
 int name ## _gradient (const model_t *mdl, const unsigned int i, \
                        const unsigned int j, vector_t *grad)
 
+/* model_meanfield_fn(): perform an assumed-density mean-field update
+ * of a single factor in a variational feature learning model.
+ *
+ * arguments:
+ *  @mdl: model structure pointer.
+ *  @j: variational factor index.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+typedef int (*model_meanfield_fn) (const model_t *mdl, const unsigned int j);
+
+/* MODEL_MEANFIELD(): macro function for declaring and defining
+ * functions conforming to model_meanfield_fn().
+ */
+#define MODEL_MEANFIELD(name) \
+int name ## _meanfield (const model_t *mdl, const unsigned int j)
+
 /* struct model: structure for holding a variational feature model.
  */
 struct model {
@@ -133,12 +151,15 @@ struct model {
    *  @predict: predictive mean and variance.
    *  @infer: complete posterior nuisance inference.
    *  @update: partial posterior nuisance inference.
+   *  @gradient: lower bound gradient computation.
+   *  @meanfield: assumed-density mean-field computation.
    */
   model_bound_fn bound;
   model_predict_fn predict;
   model_infer_fn infer;
   model_update_fn update;
-  model_gradient_fn grad;
+  model_gradient_fn gradient;
+  model_meanfield_fn meanfield;
 
   /* prior parameters:
    *
@@ -240,6 +261,8 @@ int model_update (model_t *mdl, const unsigned int j);
 
 int model_gradient (const model_t *mdl, const unsigned int i,
                     const unsigned int j, vector_t *grad);
+
+int model_meanfield (const model_t *mdl, const unsigned int j);
 
 /* global, yet internally used function declarations (model.c): */
 

@@ -25,7 +25,7 @@ model_t *model_vfr (const double alpha0,
   mdl->predict = vfr_predict;
   mdl->infer = vfr_infer;
   mdl->update = vfr_update;
-  mdl->grad = vfr_gradient;
+  mdl->gradient = vfr_gradient;
 
   /* attempt to set the prior parameters. */
   if (!model_set_alpha0(mdl, alpha0) ||

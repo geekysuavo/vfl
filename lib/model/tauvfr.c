@@ -22,7 +22,7 @@ model_t *model_tauvfr (const double tau, const double nu) {
   mdl->predict = tauvfr_predict;
   mdl->infer = tauvfr_infer;
   mdl->update = tauvfr_update;
-  mdl->grad = tauvfr_gradient;
+  mdl->gradient = tauvfr_gradient;
 
   /* attempt to set the prior parameters. */
   if (!model_set_alpha0(mdl, tau) ||
