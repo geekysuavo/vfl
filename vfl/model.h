@@ -123,17 +123,21 @@ int name ## _gradient (const model_t *mdl, const unsigned int i, \
  * arguments:
  *  @mdl: model structure pointer.
  *  @j: variational factor index.
+ *  @c: vector for storing first-order coefficients.
+ *  @C: matrix for storing second-order coefficients.
  *
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-typedef int (*model_meanfield_fn) (const model_t *mdl, const unsigned int j);
+typedef int (*model_meanfield_fn) (const model_t *mdl, const unsigned int j,
+                                   const vector_t *c, const matrix_t *C);
 
 /* MODEL_MEANFIELD(): macro function for declaring and defining
  * functions conforming to model_meanfield_fn().
  */
 #define MODEL_MEANFIELD(name) \
-int name ## _meanfield (const model_t *mdl, const unsigned int j)
+int name ## _meanfield (const model_t *mdl, const unsigned int j, \
+                        const vector_t *c, const matrix_t *C)
 
 /* struct model: structure for holding a variational feature model.
  */

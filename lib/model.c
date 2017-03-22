@@ -549,7 +549,13 @@ int model_gradient (const model_t *mdl, const unsigned int i,
 }
 
 /* model_meanfield(): perform an assumed-density mean-field factor update.
- *  - see model_meanfield_fn() for more information.
+ *
+ * arguments:
+ *  @mdl: model structure pointer.
+ *  @j: index of the factor to update.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
  */
 int model_meanfield (const model_t *mdl, const unsigned int j) {
   /* check the input pointers and factor index. */
@@ -564,8 +570,27 @@ int model_meanfield (const model_t *mdl, const unsigned int j) {
   if (!mdl->meanfield || !mdl->factors[j]->meanfield)
     return 0;
 
-  /* execute the assigned mean-field update function. */
-  return mdl->meanfield(mdl, j);
+  /* gain access to the factor and its number of weights. */
+  factor_t *f = mdl->factors[j];
+  const unsigned int K = f->K;
+
+  /* gain access to the associated prior. */
+  const factor_t *fp = mdl->priors[j];
+
+  /* create a vector and matrix of coefficients for mean-field updates. */
+  vector_view_t c = vector_view_array(mdl->tmp->data, K);
+  matrix_view_t C = matrix_view_array(mdl->tmp->data + K, K, K);
+
+  /* prepare the coefficients for use by the factor. */
+  if (!mdl->meanfield(mdl, j, &c, &C))
+    return 0;
+
+  /* execute the factor update function using the coefficients. */
+  if (!f->meanfield(f, fp, mdl->dat, &c, &C))
+    return 0;
+
+  /* return success. */
+  return 1;
 }
 
 /* --- */
