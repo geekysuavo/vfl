@@ -32,8 +32,8 @@ FIXME.
 ## Licensing
 
 The **vfl** library is released under the
-[MIT license] (https://opensource.org/licenses/MIT). See the
-[LICENSE.md] (LICENSE.md) file for the complete license terms.
+[MIT license](https://opensource.org/licenses/MIT). See the
+[LICENSE.md](LICENSE.md) file for the complete license terms.
 
 Enjoy!
 
