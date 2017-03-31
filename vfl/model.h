@@ -159,7 +159,7 @@ int name ## _meanfield (const model_t *mdl, const unsigned int j, \
 /* MODEL_TYPE(): macro function for casting model structure pointers
  * to their associated type structures.
  */
-#define MODEL_TYPE(mdl) ((model_type_t*) (mdl))
+#define MODEL_TYPE(s) ((model_type_t*) (s))
 
 /* model_type_t: structure for holding type-specific model information.
  */

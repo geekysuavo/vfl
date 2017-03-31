@@ -2,28 +2,6 @@
 /* include the optimizer header. */
 #include <vfl/optim.h>
 
-/* optim_fg(): allocate a new full-gradient optimizer.
- *
- * arguments:
- *  @mdl: model structure pointer.
- *
- * returns:
- *  newly allocated and initialized optimizer.
- */
-optim_t *optim_fg (model_t *mdl) {
-  /* allocate a new optimizer without any extra memory. */
-  optim_t *opt = optim_alloc(mdl, 0);
-  if (!opt)
-    return NULL;
-
-  /* set the function pointers. */
-  opt->iterate = fg_iterate;
-  opt->execute = fg_execute;
-
-  /* return the new optimizer. */
-  return opt;
-}
-
 /* fg_iterate(): iteration function for full-gradient optimization.
  *  - see optim_iterate_fn() for more information.
  */
@@ -171,4 +149,18 @@ OPTIM_EXECUTE (fg) {
    */
   return (opt->bound > bound_prev);
 }
+
+/* fg_type: optimizer type structure for full-gradient training.
+ */
+static optim_type_t fg_type = {
+  "fg",                                          /* name    */
+  sizeof(optim_t),                               /* size    */
+  NULL,                                          /* init    */
+  fg_iterate,                                    /* iterate */
+  fg_execute,                                    /* execute */
+  NULL                                           /* free    */
+};
+
+/* optim_type_fg: address of the fg_type structure. */
+const optim_type_t *optim_type_fg = &fg_type;
 

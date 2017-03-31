@@ -38,7 +38,7 @@ int main (int argc, char **argv) {
     factor_set(mdl->factors[j], 0, 1.0);
 
   /* optimize. */
-  optim_t *opt = optim_fg(mdl);
+  optim_t *opt = optim_alloc(optim_type_fg, mdl);
   opt->l0 = 0.001;
   optim_execute(opt);
 

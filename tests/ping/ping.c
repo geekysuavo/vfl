@@ -38,7 +38,7 @@ int main (int argc, char **argv) {
   factor_set(mdl->factors[0], 2, 100.0 * rng_normal(R));
 
   /* optimize. */
-  optim_t *opt = optim_fg(mdl);
+  optim_t *opt = optim_alloc(optim_type_fg, mdl);
   optim_execute(opt);
 
   /* allocate datasets for prediction. */

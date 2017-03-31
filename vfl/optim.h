@@ -10,6 +10,17 @@
 /* optim_t: defined type for the optimizer structure. */
 typedef struct optim optim_t;
 
+/* optim_init_fn(): initialize an optimization structure
+ * in a type-specific manner.
+ *
+ * arguments:
+ *  @opt: optimizer structure pointer to initialize.
+ *
+ * returns:
+ *  integer indicating initialization success (1) or failure (0).
+ */
+typedef int (*optim_init_fn) (optim_t *opt);
+
 /* optim_iterate_fn(): perform a single iteration of optimization.
  *
  * arguments:
@@ -20,6 +31,20 @@ typedef struct optim optim_t;
  *  changed the model.
  */
 typedef int (*optim_iterate_fn) (optim_t *opt);
+
+/* optim_free_fn(): free any extra (e.g. aliased) memory that is
+ * associated with an optimizer.
+ *
+ * arguments:
+ *  @opt: optimizer structure pointer to free.
+ */
+typedef void (*optim_free_fn) (optim_t *opt);
+
+/* OPTIM_INIT(): macro function for declaring and defining
+ * functions conforming to optim_init_fn().
+ */
+#define OPTIM_INIT(name) \
+int name ## _init (optim_t *opt)
 
 /* OPTIM_ITERATE(): macro function for declaring and defining
  * functions conforming to optim_iterate_fn() for iteration.
@@ -33,39 +58,50 @@ int name ## _iterate (optim_t *opt)
 #define OPTIM_EXECUTE(name) \
 int name ## _execute (optim_t *opt)
 
-/* optim_free_fn(): free any extra (e.g. aliased) memory that is
- * associated with an optimizer.
- *
- * arguments:
- *  @opt: optimizer structure pointer to free.
- */
-typedef void (*optim_free_fn) (optim_t *opt);
-
 /* OPTIM_FREE(): macro function for declaring and defining
  * functions conforming to optim_free_fn().
  */
 #define OPTIM_FREE(name) \
 void name ## _free (optim_t *opt)
 
-/* struct optim: structure for holding an optimizer, used to
- * learn the variational parameters of a model.
+/* OPTIM_TYPE(): macro function for casting optimizer structure pointers
+ * to their associated type structures.
  */
-struct optim {
-  /* core optimizer information:
-   *  @bytes: number of bytes allocated to the structure.
-   *  @mdl: associated variational feature model.
-   */
-  unsigned int bytes;
-  model_t *mdl;
+#define OPTIM_TYPE(s) ((optim_type_t*) (s))
 
-  /* function pointers:
+/* optim_type_t: structure for holding type-specific
+ * optimizer information.
+ */
+typedef struct {
+  /* basic optimizer type-specific parameters:
+   *  @name: string name of the allocated optimizer.
+   *  @size: number of bytes allocated to the structure pointer.
+   */
+  const char *name;
+  long size;
+
+  /* optimizer type-specific functions:
+   *  @init: hook for initialization.
    *  @iterate: hook for iterating on the lower bound.
    *  @execute: hook for running free-run optimization.
    *  @free: hook for freeing extra allocated memory.
    */
+  optim_init_fn init;
   optim_iterate_fn iterate;
   optim_iterate_fn execute;
   optim_free_fn free;
+}
+optim_type_t;
+
+/* struct optim: structure for holding an optimizer, used to
+ * learn the variational parameters of a model.
+ */
+struct optim {
+  /* @type: optimizer type fields. */
+  optim_type_t type;
+
+  /* @mdl: associated variational feature model. */
+  model_t *mdl;
 
   /* proximal gradient step and endpoints:
    *  @xa: initial point, gamma = 0.
@@ -94,7 +130,7 @@ struct optim {
 
 /* function declarations (optim.c): */
 
-optim_t *optim_alloc (model_t *mdl, const unsigned int bytes);
+optim_t *optim_alloc (const optim_type_t *type, model_t *mdl);
 
 void optim_free (optim_t *opt);
 
@@ -102,8 +138,9 @@ int optim_iterate (optim_t *opt);
 
 int optim_execute (optim_t *opt);
 
-/* derived optimizer headers. */
-#include <vfl/optim/fg.h>
+/* available optimizer types: */
+
+extern const optim_type_t *optim_type_fg;
 
 #endif /* !__VFL_OPTIM_H__ */
 

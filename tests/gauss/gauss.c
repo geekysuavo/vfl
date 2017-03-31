@@ -32,7 +32,7 @@ int main (int argc, char **argv) {
   model_add_factor(mdl, factor_impulse(180.0, 0.01));
   
   /* optimize. */
-  optim_t *opt = optim_fg(mdl);
+  optim_t *opt = optim_alloc(optim_type_fg, mdl);
   optim_execute(opt);
 
   /* allocate datasets for prediction. */

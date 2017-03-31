@@ -44,7 +44,7 @@ int main (int argc, char **argv) {
   }
 
   /* optimize. */
-  optim_t *opt = optim_fg(mdl);
+  optim_t *opt = optim_alloc(optim_type_fg, mdl);
   opt->max_iters = 50;
   opt->l0 = 0.001;
   optim_execute(opt);

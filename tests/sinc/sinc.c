@@ -42,7 +42,7 @@ int main (int argc, char **argv) {
     factor_set(mdl->factors[j], 0, 2.5 * rng_normal(R));
 
   /* optimize. */
-  optim_t *opt = optim_fg(mdl);
+  optim_t *opt = optim_alloc(optim_type_fg, mdl);
   opt->l0 = 0.0001;
   optim_execute(opt);
 

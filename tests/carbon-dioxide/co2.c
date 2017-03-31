@@ -42,7 +42,7 @@ int main (int argc, char **argv) {
   model_add_factor(mdl, factor_cosine(10.0,    0.1));
 
   /* optimize. */
-  optim_t *opt = optim_fg(mdl);
+  optim_t *opt = optim_alloc(optim_type_fg, mdl);
   opt->max_iters = 2000;
   opt->l0 = 0.0001;
   optim_execute(opt);

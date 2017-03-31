@@ -5,33 +5,31 @@
 /* optim_alloc(): allocate a new optimizer.
  *
  * arguments:
+ *  @type: pointer to an optimizer type structure.
  *  @mdl: model structure pointer.
- *  @bytes: amount of memory to allocate, or zero for the default.
  *
  * returns:
  *  newly allocated and initialized optimizer structure pointer.
  */
-optim_t *optim_alloc (model_t *mdl, const unsigned int bytes) {
+optim_t *optim_alloc (const optim_type_t *type, model_t *mdl) {
+  /* check the type structure pointer. */
+  if (!type)
+    return NULL;
+
   /* return null if the model is null or incapable of inference. */
   if (!mdl || !model_infer(mdl))
     return NULL;
 
-  /* determine the amount of memory to allocate. */
-  const unsigned int sz = (bytes ? bytes : sizeof(optim_t));
-
   /* allocate the structure pointer. */
-  optim_t *opt = (optim_t*) malloc(sz);
+  optim_t *opt = malloc(type->size);
   if (!opt)
     return NULL;
 
-  /* store the core members. */
-  opt->bytes = sz;
-  opt->mdl = mdl;
+  /* initialize the optimizer type. */
+  opt->type = *type;
 
-  /* initialize the function pointers. */
-  opt->iterate = NULL;
-  opt->execute = NULL;
-  opt->free = NULL;
+  /* store the associated model. */
+  opt->mdl = mdl;
 
   /* determine the maximum parameter count of the model factors. */
   unsigned int pmax = 0;
@@ -65,6 +63,14 @@ optim_t *optim_alloc (model_t *mdl, const unsigned int bytes) {
   /* initialize the lower bound. */
   opt->bound0 = opt->bound = model_bound(mdl);
 
+  /* execute the initialization function, if defined. */
+  optim_init_fn init_fn = OPTIM_TYPE(opt)->init;
+  if (init_fn && !init_fn(opt)) {
+    /* failed to init. free allocated memory and return failure. */
+    optim_free(opt);
+    return NULL;
+  }
+
   /* return the new optimizer. */
   return opt;
 }
@@ -80,8 +86,9 @@ void optim_free (optim_t *opt) {
     return;
 
   /* if the optimizer has a free function assigned, execute it. */
-  if (opt->free)
-    opt->free(opt);
+  optim_free_fn free_fn = OPTIM_TYPE(opt)->free;
+  if (free_fn)
+    free_fn(opt);
 
   /* free the iteration vectors. */
   vector_free(opt->xa);
@@ -101,11 +108,16 @@ void optim_free (optim_t *opt) {
  */
 int optim_iterate (optim_t *opt) {
   /* check the input pointer. */
-  if (!opt || !opt->iterate)
+  if (!opt)
+    return 0;
+
+  /* check the function pointer. */
+  optim_iterate_fn iterate_fn = OPTIM_TYPE(opt)->iterate;
+  if (!iterate_fn)
     return 0;
 
   /* run the iteration function. */
-  return opt->iterate(opt);
+  return iterate_fn(opt);
 }
 
 /* optim_execute(): perform multiple free-run optimization iterations.
@@ -113,10 +125,15 @@ int optim_iterate (optim_t *opt) {
  */
 int optim_execute (optim_t *opt) {
   /* check the input pointer. */
-  if (!opt || !opt->execute)
+  if (!opt)
+    return 0;
+
+  /* check the function pointer. */
+  optim_iterate_fn execute_fn = OPTIM_TYPE(opt)->execute;
+  if (!execute_fn)
     return 0;
 
   /* run the execution function. */
-  return opt->execute(opt);
+  return execute_fn(opt);
 }
 
