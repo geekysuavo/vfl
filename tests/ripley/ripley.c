@@ -24,7 +24,8 @@ int main (int argc, char **argv) {
   data_t *dat = data_alloc_from_file("ripley.dat");
 
   /* set up a classification model. */
-  model_t *mdl = model_vfc(1.0e-6);
+  model_t *mdl = model_alloc(model_type_vfc);
+  model_set_nu(mdl, 1.0e-6);
   model_set_data(mdl, dat);
 
   /* add factors to the model. */

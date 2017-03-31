@@ -24,37 +24,6 @@ static inline double ellfn (const double xi) {
 
 /* --- */
 
-/* model_vfc(): allocate a new variational feature classification model.
- *
- * arguments:
- *  @nu: prior absolute precision of the weights.
- *
- * returns:
- *  newly allocated and initialized vfc model.
- */
-model_t *model_vfc (const double nu) {
-  /* allocate a new variational feature model. */
-  model_t *mdl = model_alloc();
-  if (!mdl)
-    return NULL;
-
-  /* set the function pointers. */
-  mdl->bound = vfc_bound;
-  mdl->predict = vfc_predict;
-  mdl->infer = vfc_infer;
-  mdl->update = vfc_update;
-  mdl->gradient = vfc_gradient;
-
-  /* attempt to set the prior parameters. */
-  if (!model_set_nu(mdl, nu)) {
-    model_free(mdl);
-    return NULL;
-  }
-
-  /* return the new model. */
-  return mdl;
-}
-
 /* vfc_bound(): return the lower bound of a vfc model.
  *  - see model_bound_fn() for more information.
  */
@@ -389,4 +358,21 @@ MODEL_GRADIENT (vfc) {
   /* return success. */
   return 1;
 }
+
+/* vfc_type: model type structure for variational feature classification.
+ */
+static model_type_t vfc_type = {
+  "vfc",                                         /* name      */
+  sizeof(model_t),                               /* size      */
+  NULL,                                          /* init      */
+  vfc_bound,                                     /* bound     */
+  vfc_predict,                                   /* predict   */
+  vfc_infer,                                     /* infer     */
+  vfc_update,                                    /* update    */
+  vfc_gradient,                                  /* gradient  */
+  NULL                                           /* meanfield */
+};
+
+/* model_type_vfc: address of the vfc_type structure. */
+const model_type_t *model_type_vfc = &vfc_type;
 

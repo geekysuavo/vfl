@@ -24,7 +24,9 @@ int main (int argc, char **argv) {
   data_t *dat = data_alloc_from_file("cosines.dat");
 
   /* set up a fixed-tau regression model. */
-  model_t *mdl = model_tauvfr(1.0, 1.0e-6);
+  model_t *mdl = model_alloc(model_type_tauvfr);
+  model_set_alpha0(mdl, 1.0);
+  model_set_nu(mdl, 1.0e-6);
   model_set_data(mdl, dat);
 
   /* add factors to the model. */

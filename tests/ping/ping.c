@@ -24,7 +24,10 @@ int main (int argc, char **argv) {
   data_t *dat = data_alloc_from_file("ping.dat");
 
   /* set up a regression model. */
-  model_t *mdl = model_vfr(100.0, 100.0, 1.0e-6);
+  model_t *mdl = model_alloc(model_type_vfr);
+  model_set_alpha0(mdl, 100.0);
+  model_set_beta0(mdl, 100.0);
+  model_set_nu(mdl, 1.0e-6);
   model_set_data(mdl, dat);
 
   /* add a single factor to the model. */

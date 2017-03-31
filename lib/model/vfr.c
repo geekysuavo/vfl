@@ -2,43 +2,6 @@
 /* include the model header. */
 #include <vfl/model.h>
 
-/* model_vfr(): allocate a new variational feature regression model.
- *
- * arguments:
- *  @alpha0: prior shape parameter for the noise precision.
- *  @beta0: prior rate parameter for the noise precision.
- *  @nu: prior relative precision of the weights.
- *
- * returns:
- *  newly allocated and initialized vfr model.
- */
-model_t *model_vfr (const double alpha0,
-                    const double beta0,
-                    const double nu) {
-  /* allocate a variational feature model. */
-  model_t *mdl = model_alloc();
-  if (!mdl)
-    return NULL;
-
-  /* set the function pointers. */
-  mdl->bound = vfr_bound;
-  mdl->predict = vfr_predict;
-  mdl->infer = vfr_infer;
-  mdl->update = vfr_update;
-  mdl->gradient = vfr_gradient;
-
-  /* attempt to set the prior parameters. */
-  if (!model_set_alpha0(mdl, alpha0) ||
-      !model_set_beta0(mdl, beta0) ||
-      !model_set_nu(mdl, nu)) {
-    model_free(mdl);
-    return NULL;
-  }
-
-  /* return the new model. */
-  return mdl;
-}
-
 /* vfr_bound(): return the lower bound of a vfr model.
  *  - see model_bound_fn() for more information.
  */
@@ -363,4 +326,21 @@ MODEL_GRADIENT (vfr) {
   /* return success. */
   return 1;
 }
+
+/* vfr_type: model type structure for variational feature regression.
+ */
+static model_type_t vfr_type = {
+  "vfr",                                         /* name      */
+  sizeof(model_t),                               /* size      */
+  NULL,                                          /* init      */
+  vfr_bound,                                     /* bound     */
+  vfr_predict,                                   /* predict   */
+  vfr_infer,                                     /* infer     */
+  vfr_update,                                    /* update    */
+  vfr_gradient,                                  /* gradient  */
+  NULL                                           /* meanfield */
+};
+
+/* model_type_vfr: address of the vfr_type structure. */
+const model_type_t *model_type_vfr = &vfr_type;
 

@@ -38,28 +38,30 @@ static inline unsigned int model_tmp (const model_t *mdl) {
 
 /* model_alloc(): allocate a new empty variational feature model.
  *
+ * arguments:
+ *  @type: pointer to a model type structure.
+ *
  * returns:
  *  newly allocated and initialized model structure pointer.
  */
-model_t *model_alloc (void) {
+model_t *model_alloc (const model_type_t *type) {
+  /* check that the type structure is valid. */
+  if (!type)
+    return NULL;
+
   /* allocate the structure pointer. */
-  model_t *mdl = malloc(sizeof(model_t));
+  model_t *mdl = malloc(type->size);
   if (!mdl)
     return NULL;
+
+  /* initialize the model type. */
+  mdl->type = *type;
 
   /* initialize the sizes of the model. */
   mdl->D = 0;
   mdl->P = 0;
   mdl->M = 0;
   mdl->K = 0;
-
-  /* initialize the function pointers. */
-  mdl->bound = NULL;
-  mdl->predict = NULL;
-  mdl->infer = NULL;
-  mdl->update = NULL;
-  mdl->gradient = NULL;
-  mdl->meanfield = NULL;
 
   /* initialize the prior parameters. */
   mdl->alpha0 = 1.0;
@@ -91,6 +93,14 @@ model_t *model_alloc (void) {
 
   /* initialize the temporary vector. */
   mdl->tmp = NULL;
+
+  /* execute the initialization function, if defined. */
+  model_init_fn init_fn = MODEL_TYPE(mdl)->init;
+  if (init_fn && !init_fn(mdl)) {
+    /* failed to init. free allocated memory and return failure. */
+    model_free(mdl);
+    return NULL;
+  }
 
   /* return the new model. */
   return mdl;
@@ -418,8 +428,13 @@ double model_var (const model_t *mdl,
  *  - see model_bound_fn() for more information.
  */
 double model_bound (const model_t *mdl) {
-  /* check the input pointers. */
-  if (!mdl || !mdl->bound)
+  /* check the input pointer. */
+  if (!mdl)
+    return 0.0;
+
+  /* check the function pointer. */
+  model_bound_fn bound_fn = MODEL_TYPE(mdl)->bound;
+  if (!bound_fn)
     return 0.0;
 
   /* initialize a variable to hold the divergence penalty. */
@@ -432,7 +447,7 @@ double model_bound (const model_t *mdl) {
   /* execute the assigned bound function and
    * include the divergence penalty.
    */
-  return mdl->bound(mdl) - div;
+  return bound_fn(mdl) - div;
 }
 
 /* model_predict(): return the model posterior prediction.
@@ -442,12 +457,21 @@ int model_predict (const model_t *mdl, const vector_t *x,
                    const unsigned int p,
                    double *mean,
                    double *var) {
-  /* check the input pointers and sizes. */
-  if (!mdl || !mdl->predict || !x || !mean || !var || x->len < mdl->D)
+  /* check the input pointers. */
+  if (!mdl || !x || !mean || !var)
+    return 0;
+
+  /* check the function pointer. */
+  model_predict_fn predict_fn = MODEL_TYPE(mdl)->predict;
+  if (!predict_fn)
+    return 0;
+
+  /* check the vector size. */
+  if (x->len < mdl->D)
     return 0;
 
   /* execute the assigned prediction function. */
-  return mdl->predict(mdl, x, p, mean, var);
+  return predict_fn(mdl, x, p, mean, var);
 }
 
 /* model_predict_all(): return model posterior predictions for
@@ -498,12 +522,17 @@ int model_predict_all (const model_t *mdl,
  *  - see model_infer_fn() for more information.
  */
 int model_infer (model_t *mdl) {
-  /* check the input pointers. */
-  if (!mdl || !mdl->infer)
+  /* check the input pointer. */
+  if (!mdl)
+    return 0;
+
+  /* check the function pointer. */
+  model_infer_fn infer_fn = MODEL_TYPE(mdl)->infer;
+  if (!infer_fn)
     return 0;
 
   /* execute the assigned inference function. */
-  return mdl->infer(mdl);
+  return infer_fn(mdl);
 }
 
 /* model_update(): efficiently update the nuisance parameters of a model.
@@ -515,12 +544,14 @@ int model_update (model_t *mdl, const unsigned int j) {
     return 0;
 
   /* if an update function is assigned, execute it. */
-  if (mdl->update)
-    return mdl->update(mdl, j);
+  model_update_fn update_fn = MODEL_TYPE(mdl)->update;
+  if (update_fn)
+    return update_fn(mdl, j);
 
   /* fall back to the infer function, if assigned. */
-  if (mdl->infer)
-    return mdl->infer(mdl);
+  model_infer_fn infer_fn = MODEL_TYPE(mdl)->infer;
+  if (infer_fn)
+    return infer_fn(mdl);
 
   /* neither function is assigned. fail. */
   return 0;
@@ -532,8 +563,7 @@ int model_update (model_t *mdl, const unsigned int j) {
 int model_gradient (const model_t *mdl, const unsigned int i,
                     const unsigned int j, vector_t *grad) {
   /* check the input pointers and factor index. */
-  if (!mdl || !mdl->dat || !mdl->gradient || !grad ||
-      i >= mdl->dat->N || j >= mdl->M)
+  if (!mdl || !mdl->dat || !grad || i >= mdl->dat->N || j >= mdl->M)
     return 0;
 
   /* check if the factor has no parameters. */
@@ -544,8 +574,13 @@ int model_gradient (const model_t *mdl, const unsigned int i,
   if (grad->len != mdl->factors[j]->P)
     return 0;
 
+  /* check the function pointer. */
+  model_gradient_fn gradient_fn = MODEL_TYPE(mdl)->gradient;
+  if (!gradient_fn)
+    return 0;
+
   /* execute the assigned gradient function. */
-  return mdl->gradient(mdl, i, j, grad);
+  return gradient_fn(mdl, i, j, grad);
 }
 
 /* model_meanfield(): perform an assumed-density mean-field factor update.
@@ -567,7 +602,9 @@ int model_meanfield (const model_t *mdl, const unsigned int j) {
     return 1;
 
   /* check the model and factor function pointers. */
-  if (!mdl->meanfield || !mdl->factors[j]->meanfield)
+  model_meanfield_fn mdl_fn = MODEL_TYPE(mdl)->meanfield;
+  factor_meanfield_fn fac_fn = mdl->factors[j]->meanfield;
+  if (!mdl_fn || !fac_fn)
     return 0;
 
   /* gain access to the factor and its number of weights. */
@@ -582,11 +619,11 @@ int model_meanfield (const model_t *mdl, const unsigned int j) {
   matrix_view_t C = matrix_view_array(mdl->tmp->data + K, K, K);
 
   /* prepare the coefficients for use by the factor. */
-  if (!mdl->meanfield(mdl, j, &c, &C))
+  if (!mdl_fn(mdl, j, &c, &C))
     return 0;
 
   /* execute the factor update function using the coefficients. */
-  if (!f->meanfield(f, fp, mdl->dat, &c, &C))
+  if (!fac_fn(f, fp, mdl->dat, &c, &C))
     return 0;
 
   /* return success. */

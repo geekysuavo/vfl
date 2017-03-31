@@ -2,39 +2,6 @@
 /* include the model header. */
 #include <vfl/model.h>
 
-/* model_tauvfr(): allocate a new fixed-tau vfr model.
- *
- * arguments:
- *  @tau: fixed value of the noise precision.
- *  @nu: relative precision of the weights.
- *
- * returns:
- *  newly allocated and initialized vfr model.
- */
-model_t *model_tauvfr (const double tau, const double nu) {
-  /* allocate a variational feature model. */
-  model_t *mdl = model_alloc();
-  if (!mdl)
-    return NULL;
-
-  /* set the function pointers. */
-  mdl->bound = tauvfr_bound;
-  mdl->predict = tauvfr_predict;
-  mdl->infer = tauvfr_infer;
-  mdl->update = tauvfr_update;
-  mdl->gradient = tauvfr_gradient;
-
-  /* attempt to set the prior parameters. */
-  if (!model_set_alpha0(mdl, tau) ||
-      !model_set_nu(mdl, nu)) {
-    model_free(mdl);
-    return NULL;
-  }
-
-  /* return the new model. */
-  return mdl;
-}
-
 /* tauvfr_bound(): return the lower bound of a fixed-tau vfr model.
  *  - see model_bound_fn() for more information.
  */
@@ -326,4 +293,22 @@ MODEL_GRADIENT (tauvfr) {
   /* return success. */
   return 1;
 }
+
+/* tauvfr_type: model type structure for fixed-tau
+ * variational feature regression.
+ */
+static model_type_t tauvfr_type = {
+  "tauvfr",                                      /* name      */
+  sizeof(model_t),                               /* size      */
+  NULL,                                          /* init      */
+  tauvfr_bound,                                  /* bound     */
+  tauvfr_predict,                                /* predict   */
+  tauvfr_infer,                                  /* infer     */
+  tauvfr_update,                                 /* update    */
+  tauvfr_gradient,                               /* gradient  */
+  NULL                                           /* meanfield */
+};
+
+/* model_type_tauvfr: address of the tauvfr_type structure. */
+const model_type_t *model_type_tauvfr = &tauvfr_type;
 
