@@ -30,9 +30,21 @@ int main (int argc, char **argv) {
   model_set_nu(mdl, 1.0e-6);
   model_set_data(mdl, dat);
 
-  /* add a single factor to the model. */
-  model_add_factor(mdl, factor_product(2, 0, factor_decay(200.0, 1000.0),
-                                          0, factor_cosine(0.0, 0.1)));
+  /* create a decay factor. */
+  factor_t *fd = factor_alloc(factor_type_decay);
+  factor_set(fd, 0,  200.0);
+  factor_set(fd, 1, 1000.0);
+
+  /* create a cosine factor. */
+  factor_t *fc = factor_alloc(factor_type_cosine);
+  factor_set(fc, 0, 0.0);
+  factor_set(fc, 1, 0.1);
+
+  /* add a factor as the product of the decay and cosine. */
+  factor_t *f = factor_alloc(factor_type_product);
+  product_add_factor(f, 0, fd);
+  product_add_factor(f, 0, fc);
+  model_add_factor(mdl, f);
 
   /* randomly adjust the frequency mean. */
   factor_set(mdl->factors[0], 2, 100.0 * rng_normal(R));

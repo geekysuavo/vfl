@@ -19,7 +19,6 @@ product_t;
 /* product_init(): initialize the product factor structure.
  *  - see factor_init_fn() for more information.
  */
-/* FIXME: product factors are now broken! */
 FACTOR_INIT (product) {
   /* initialize the factors array. */
   product_t *fx = (product_t*) f;
@@ -261,14 +260,77 @@ FACTOR_FREE (product) {
   free(fx->factors);
 }
 
+/* product_add_factor(): add a new factor to a product factor.
+ *
+ * arguments:
+ *  @f: factor structure pointer.
+ *  @d: new factor dimension.
+ *  @fd: new factor pointer.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int product_add_factor (factor_t *f, const unsigned int d, factor_t *fd) {
+  /* get the extended structure pointer. */
+  product_t *fx = (product_t*) f;
+
+  /* get the current factor sizes. */
+  unsigned int D = f->D;
+  unsigned int P = f->P;
+  unsigned int K = f->K;
+  unsigned int F = fx->F;
+
+  /* update the factor sizes. */
+  D = (d + fd->D > D ? d + fd->D : D);
+  K = (fd->K > K ? fd->K : K);
+  P += fd->P;
+  F++;
+
+  /* resize the base factor. */
+  if (!factor_resize(f, D, P, K))
+    return 0;
+
+  /* reallocate the factors array. */
+  fx->factors = realloc(fx->factors, F * sizeof(factor_t*));
+  if (!fx->factors)
+    return 0;
+
+  /* store the new factor and updated factor count. */
+  fx->factors[F - 1] = fd;
+  fx->F = F;
+
+  /* set the argument dimension index. */
+  fd->d = d;
+
+  /* initialize the combined information matrix and parameter vector. */
+  for (unsigned int fidx = 0, p0 = 0; fidx < F; fidx++) {
+    /* get the current factor parameter count. */
+    const unsigned int Pf = fx->factors[fidx]->P;
+
+    /* get views of the combined matrix and vector. */
+    matrix_view_t inf = matrix_submatrix(f->inf, p0, p0, Pf, Pf);
+    vector_view_t par = vector_subvector(f->par, p0, Pf);
+
+    /* copy the contents from the factor into the views. */
+    matrix_copy(&inf, fx->factors[fidx]->inf);
+    vector_copy(&par, fx->factors[fidx]->par);
+
+    /* increment the parameter offset. */
+    p0 += Pf;
+  }
+
+  /* return success. */
+  return 1;
+}
+
 /* product_type: product factor type structure.
  */
 static factor_type_t product_type = {
   "product",                                     /* name      */
   sizeof(product_t),                             /* size      */
-  0,                                             /* initial D */
+  1,                                             /* initial D */
   0,                                             /* initial P */
-  0,                                             /* initial K */
+  1,                                             /* initial K */
   product_mean,                                  /* mean      */
   product_var,                                   /* var       */
   product_diff_mean,                             /* diff_mean */

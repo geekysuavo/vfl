@@ -143,19 +143,14 @@ int factor_resize (factor_t *f,
   /* free the information matrix and parameter vector. */
   matrix_free(f->inf);
   vector_free(f->par);
-  f->inf = NULL;
-  f->par = NULL;
 
-  /* if the factor has parameters... */
-  if (P) {
-    /* ... allocate the information matrix and parameter vector. */
-    f->inf = matrix_alloc(P, P);
-    f->par = vector_alloc(P);
+  /* allocate the new information matrix and parameter vector. */
+  f->inf = matrix_alloc(P, P);
+  f->par = vector_alloc(P);
 
-    /* check for allocation failure. */
-    if (!f->inf || !f->par)
-      return 0;
-  }
+  /* check for allocation failure. */
+  if (!f->inf || !f->par)
+    return 0;
 
   /* initialize the matrix and vector elements. */
   matrix_set_zero(f->inf);

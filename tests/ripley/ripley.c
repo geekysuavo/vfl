@@ -31,12 +31,20 @@ int main (int argc, char **argv) {
   /* add factors to the model. */
   const unsigned int M = 10;
   for (unsigned int j = 0; j < M; j++) {
-    /* create the independent factors along each dimension. */
-    factor_t *fx = factor_impulse(0.0, 10.0);
-    factor_t *fy = factor_impulse(0.0, 10.0);
+    /* create a factor along the x-dimension. */
+    factor_t *fx = factor_alloc(factor_type_impulse);
+    factor_set(fx, 0,  0.0);
+    factor_set(fx, 1, 10.0);
 
-    /* create the combined factor. */
-    factor_t *f = factor_product(2, 0, fx, 1, fy);
+    /* create a factor along the y-dimension. */
+    factor_t *fy = factor_alloc(factor_type_impulse);
+    factor_set(fy, 0,  0.0);
+    factor_set(fy, 1, 10.0);
+
+    /* add the combined factor. */
+    factor_t *f = factor_alloc(factor_type_product);
+    product_add_factor(f, 0, fx);
+    product_add_factor(f, 1, fy);
     model_add_factor(mdl, f);
   }
 

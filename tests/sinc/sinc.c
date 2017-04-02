@@ -33,7 +33,9 @@ int main (int argc, char **argv) {
   /* add factors to the model. */
   const unsigned int M = 10;
   for (unsigned int i = 0; i < M; i++) {
-    factor_t *f = factor_impulse(0.0, 0.01);
+    factor_t *f = factor_alloc(factor_type_impulse);
+    factor_set(f, 0, 0.0);
+    factor_set(f, 1, 0.01);
     model_add_factor(mdl, f);
   }
 

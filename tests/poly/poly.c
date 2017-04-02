@@ -27,7 +27,8 @@ int main (int argc, char **argv) {
   model_set_data(mdl, dat);
 
   /* add a polynomial factor to the model. */
-  factor_t *f = factor_polynomial(10);
+  factor_t *f = factor_alloc(factor_type_polynomial);
+  polynomial_set_order(f, 10);
   model_add_factor(mdl, f);
   model_infer(mdl);
 

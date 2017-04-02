@@ -2,6 +2,22 @@
 /* include the required headers. */
 #include <vfl/optim.h>
 
+/* cosines: table of initial cosine factor parameters.
+ */
+static const struct {
+  double mu, tau;
+} cosines[] = {
+  {  0.0,    1.0e5 },
+  {  0.01, 100.0   },
+  {  0.1,   10.0   },
+  {  1.0,   10.0   },
+  {  0.5,    1.0   },
+  {  6.0,    1.0   },
+  { 12.0,    1.0   },
+  { 18.0,    0.1   },
+  {  0.0,    0.0   } /* end marker. */
+};
+
 /* main(): application entry point.
  *
  * arguments:
@@ -31,14 +47,12 @@ int main (int argc, char **argv) {
   model_set_data(mdl, dat);
 
   /* add cosine factors to the model. */
-  model_add_factor(mdl, factor_cosine( 0.0,    1.0e5));
-  model_add_factor(mdl, factor_cosine( 0.01, 100.0));
-  model_add_factor(mdl, factor_cosine( 0.1,   10.0));
-  model_add_factor(mdl, factor_cosine( 1.0,   10.0));
-  model_add_factor(mdl, factor_cosine( 0.5,    1.0));
-  model_add_factor(mdl, factor_cosine( 6.0,    1.0));
-  model_add_factor(mdl, factor_cosine(12.0,    1.0));
-  model_add_factor(mdl, factor_cosine(18.0,    0.1));
+  for (unsigned int j = 0; cosines[j].tau; j++) {
+    factor_t *f = factor_alloc(factor_type_cosine);
+    factor_set(f, 0, cosines[j].mu);
+    factor_set(f, 1, cosines[j].tau);
+    model_add_factor(mdl, f);
+  }
 
   /* optimize. */
   optim_t *opt = optim_alloc(optim_type_fg, mdl);

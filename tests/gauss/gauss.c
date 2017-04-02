@@ -2,6 +2,17 @@
 /* include the required headers. */
 #include <vfl/optim.h>
 
+/* parms: table of initial factor parameters.
+ */
+static struct {
+  double pa, pb;
+} parms[] = {
+  {  10.0, 1000.0  },
+  {  60.0,    0.01 },
+  { 180.0,    0.01 },
+  {   0.0,    0.0  } /* end marker. */
+};
+
 /* main(): application entry point.
  *
  * arguments:
@@ -27,9 +38,12 @@ int main (int argc, char **argv) {
   model_set_data(mdl, dat);
 
   /* add factors to the model. */
-  model_add_factor(mdl, factor_decay(10.0, 1000.0));
-  model_add_factor(mdl, factor_impulse(60.0, 0.01));
-  model_add_factor(mdl, factor_impulse(180.0, 0.01));
+  for (unsigned int j = 0; parms[j].pb; j++) {
+    factor_t *f = factor_alloc(j ? factor_type_impulse : factor_type_decay);
+    factor_set(f, 0, parms[j].pa);
+    factor_set(f, 1, parms[j].pb);
+    model_add_factor(mdl, f);
+  }
   
   /* optimize. */
   optim_t *opt = optim_alloc(optim_type_fg, mdl);

@@ -19,14 +19,9 @@ fixed_impulse_t;
 /* fixed_impulse_init(): initialize the fixed impulse factor structure.
  *  - see factor_init_fn() for more information.
  */
-/* FIXME: fixed impulse factors are now broken! */
 FACTOR_INIT (fixed_impulse) {
   /* initialize the impulse location. */
-  fixed_impulse_t *fx = (fixed_impulse_t*) f;
-  fx->mu = 0.0;
-
-  /* return success. */
-  return 1;
+  return fixed_impulse_set_location(f, 0.0);
 }
 
 /* fixed_impulse_mean(): evalute the fixed impulse factor mean.
@@ -140,6 +135,24 @@ FACTOR_COPY (fixed_impulse) {
 
   /* copy the location parameter. */
   fdupx->mu = fx->mu;
+
+  /* return success. */
+  return 1;
+}
+
+/* fixed_impulse_set_location(): set the location of a fixed impulse factor.
+ *
+ * arguments:
+ *  @f: factor structure pointer.
+ *  @mu: new factor location.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int fixed_impulse_set_location (factor_t *f, const double mu) {
+  /* set the impulse location. */
+  fixed_impulse_t *fx = (fixed_impulse_t*) f;
+  fx->mu = mu;
 
   /* return success. */
   return 1;

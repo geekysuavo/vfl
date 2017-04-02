@@ -2,6 +2,19 @@
 /* include the required headers. */
 #include <vfl/optim.h>
 
+/* decays: table of initial decay factor parameters.
+ */
+static const struct {
+  double alpha, beta;
+} decays[] = {
+  { 10.0,     1.0 },
+  { 10.0,    10.0 },
+  { 10.0,   100.0 },
+  { 10.0,  1000.0 },
+  { 10.0, 10000.0 },
+  {  0.0,     0.0 } /* end marker. */
+};
+
 /* main(): application entry point.
  *
  * arguments:
@@ -27,11 +40,12 @@ int main (int argc, char **argv) {
   model_set_data(mdl, dat);
 
   /* add factors to the model. */
-  model_add_factor(mdl, factor_decay(10.0, 1.0));
-  model_add_factor(mdl, factor_decay(10.0, 10.0));
-  model_add_factor(mdl, factor_decay(10.0, 100.0));
-  model_add_factor(mdl, factor_decay(10.0, 1000.0));
-  model_add_factor(mdl, factor_decay(10.0, 10000.0));
+  for (unsigned int j = 0; decays[j].alpha; j++) {
+    factor_t *f = factor_alloc(factor_type_decay);
+    factor_set(f, 0, decays[j].alpha);
+    factor_set(f, 1, decays[j].beta);
+    model_add_factor(mdl, f);
+  }
   
   /* optimize. */
   optim_t *opt = optim_alloc(optim_type_fg, mdl);

@@ -29,7 +29,9 @@ int main (int argc, char **argv) {
   /* add factors to the model. */
   for (unsigned int i = 0; i < dat->N; i++) {
     const double xi = vector_get(dat->data[i].x, 0);
-    factor_t *f = factor_fixed_impulse(xi, 0.001);
+    factor_t *f = factor_alloc(factor_type_fixed_impulse);
+    fixed_impulse_set_location(f, xi);
+    factor_set(f, 0, 0.001);
     model_add_factor(mdl, f);
   }
 

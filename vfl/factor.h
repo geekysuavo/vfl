@@ -382,6 +382,18 @@ int factor_meanfield (factor_t *f, const factor_t *fp, const data_t *dat,
 
 double factor_div (const factor_t *f, const factor_t *f2);
 
+/* function declarations (factor/fixed-impulse.c): */
+
+int fixed_impulse_set_location (factor_t *f, const double mu);
+
+/* function declarations (factor/polynomial.c): */
+
+int polynomial_set_order (factor_t *f, const unsigned int order);
+
+/* function declarations (factor/product.c): */
+
+int product_add_factor (factor_t *f, const unsigned int d, factor_t *fd);
+
 /* available factor types: */
 
 extern const factor_type_t *factor_type_cosine;

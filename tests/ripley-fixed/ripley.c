@@ -26,16 +26,22 @@ int main (int argc, char **argv) {
 
   /* add factors to the model. */
   for (unsigned int i = 0; i < dat->N; i += 10) {
-    /* get the factor location. */
+    /* create a factor along the x-dimension. */
+    factor_t *fx = factor_alloc(factor_type_fixed_impulse);
     const double x = vector_get(dat->data[i].x, 0);
+    fixed_impulse_set_location(fx, x);
+    factor_set(fx, 0, 0.1);
+
+    /* create a factor along the y-dimension. */
+    factor_t *fy = factor_alloc(factor_type_fixed_impulse);
     const double y = vector_get(dat->data[i].x, 1);
+    fixed_impulse_set_location(fy, y);
+    factor_set(fy, 0, 0.1);
 
-    /* create the independent factors along each dimension. */
-    factor_t *fx = factor_fixed_impulse(x, 0.1);
-    factor_t *fy = factor_fixed_impulse(y, 0.1);
-
-    /* create the combined factor. */
-    factor_t *f = factor_product(2, 0, fx, 1, fy);
+    /* add the combined factor. */
+    factor_t *f = factor_alloc(factor_type_product);
+    product_add_factor(f, 0, fx);
+    product_add_factor(f, 1, fy);
     model_add_factor(mdl, f);
 
     /* initialize the factor parameters. */

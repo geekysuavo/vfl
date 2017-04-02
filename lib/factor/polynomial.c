@@ -35,6 +35,20 @@ FACTOR_VAR (polynomial) {
   return pow(xd, i) * pow(xd, j);
 }
 
+/* polynomial_set_order(): set the order of a polynomial factor.
+ *
+ * arguments:
+ *  @f: factor structure pointer.
+ *  @order: new factor order.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int polynomial_set_order (factor_t *f, const unsigned int order) {
+  /* simply resize the factor to match the desired order. */
+  return factor_resize(f, f->D, f->P, order + 1);
+}
+
 /* polynomial_type: polynomial factor type structure.
  */
 static factor_type_t polynomial_type = {
