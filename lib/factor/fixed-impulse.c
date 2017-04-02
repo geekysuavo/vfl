@@ -5,48 +5,28 @@
 /* define the parameter indices. */
 #define P_TAU  0
 
-/* factor_fixed_impulse(): allocate a new fixed impulse factor.
- *
- * arguments:
- *  @mu: (fixed) location mean.
- *  @tau: initial location precision.
- *
- * returns:
- *  newly allocated and initialized fixed impulse factor.
+/* fixed_impulse_t: structure for holding a fixed impulse factor.
  */
-factor_t *factor_fixed_impulse (const double mu, const double tau) {
-  /* allocate a factor with extra memory. */
-  factor_t *f = factor_alloc(sizeof(fixed_impulse_t), 1, 1, 1);
-  if (!f)
-    return NULL;
+typedef struct {
+  /* @base: core factor structure members. */
+  factor_t base;
 
-  /* store the expectation function pointers. */
-  f->mean = fixed_impulse_mean;
-  f->var = fixed_impulse_var;
+  /* @mu: fixed location parameter. */
+  double mu;
+}
+fixed_impulse_t;
 
-  /* store the gradient function pointers. */
-  f->diff_mean = fixed_impulse_diff_mean;
-  f->diff_var = fixed_impulse_diff_var;
-
-  /* store the divergence funciton pointer. */
-  f->div = fixed_impulse_div;
-
-  /* store the assignment function pointer. */
-  f->set = fixed_impulse_set;
-  f->copy = fixed_impulse_copy;
-
-  /* attempt to set the initial factor parameter. */
-  if (!f->set(f, P_TAU, tau)) {
-    factor_free(f);
-    return NULL;
-  }
-
-  /* store the extra structure members. */
+/* fixed_impulse_init(): initialize the fixed impulse factor structure.
+ *  - see factor_init_fn() for more information.
+ */
+/* FIXME: fixed impulse factors are now broken! */
+FACTOR_INIT (fixed_impulse) {
+  /* initialize the impulse location. */
   fixed_impulse_t *fx = (fixed_impulse_t*) f;
-  fx->mu = mu;
+  fx->mu = 0.0;
 
-  /* return the new cosine factor. */
-  return f;
+  /* return success. */
+  return 1;
 }
 
 /* fixed_impulse_mean(): evalute the fixed impulse factor mean.
@@ -164,4 +144,29 @@ FACTOR_COPY (fixed_impulse) {
   /* return success. */
   return 1;
 }
+
+/* fixed_impulse_type: fixed impulse factor type structure.
+ */
+static factor_type_t fixed_impulse_type = {
+  "fixed-impulse",                               /* name      */
+  sizeof(fixed_impulse_t),                       /* size      */
+  1,                                             /* initial D */
+  1,                                             /* initial P */
+  1,                                             /* initial K */
+  fixed_impulse_mean,                            /* mean      */
+  fixed_impulse_var,                             /* var       */
+  fixed_impulse_diff_mean,                       /* diff_mean */
+  fixed_impulse_diff_var,                        /* diff_var  */
+  NULL,                                          /* meanfield */
+  fixed_impulse_div,                             /* div       */
+  fixed_impulse_init,                            /* init      */
+  fixed_impulse_set,                             /* set       */
+  fixed_impulse_copy,                            /* copy      */
+  NULL                                           /* free      */
+};
+
+/* factor_type_fixed_impulse: address of the fixed_impulse_type
+ * structure.
+ */
+const factor_type_t *factor_type_fixed_impulse = &fixed_impulse_type;
 

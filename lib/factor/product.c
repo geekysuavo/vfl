@@ -2,114 +2,32 @@
 /* include the factor header. */
 #include <vfl/factor.h>
 
-/* factor_product(): allocate a new product factor.
- *
- * arguments:
- *  @F: number of factors in the variable-length argument list.
- *  @...: variable-length argument list containing @F repeats,
- *        having the form (d, factor):
- *   @d: dimension index of the current factor.
- *   @factor: pointer to the current factor.
- *
- * returns:
- *  newly allocated and initialized product factor.
+/* product_t: structure for holding a product factor.
  */
-factor_t *factor_product (const unsigned int F, ...) {
-  /* declare required variables:
-   *  @d: current dimension index.
-   *  @D: total number of dimensions.
-   *  @P: total number of parameters.
-   *  @K: total number of weights.
-   *  @factors: array of factor arguments.
-   *  @vl: argument list.
+typedef struct {
+  /* @base: core factor structure members. */
+  factor_t base;
+
+  /* @factors: array of factors in the product.
+   * @F: number of factors in the product.
    */
-  unsigned int d, D, P, K;
   factor_t **factors;
-  va_list vl;
+  unsigned int F;
+}
+product_t;
 
-  /* return null if zero factors were provided. */
-  if (F == 0)
-    return NULL;
-
-  /* allocate an array to store factors into. */
-  factors = (factor_t**) malloc(F * sizeof(factor_t*));
-  if (!factors)
-    return NULL;
-
-  /* begin parsing the argument list. */
-  va_start(vl, F);
-  D = P = K = 0;
-
-  /* loop for the expected number of factors. */
-  for (unsigned int f = 0; f < F; f++) {
-    /* read the dimension index and the factor pointer. */
-    d = va_arg(vl, unsigned int);
-    factors[f] = va_arg(vl, factor_t*);
-
-    /* check the factor pointer. */
-    if (!factors[f]) {
-      free(factors);
-      va_end(vl);
-      return NULL;
-    }
-
-    /* set the argument dimension index. */
-    factors[f]->d = d;
-
-    /* update the counts. */
-    D = (d + factors[f]->D > D ? d + factors[f]->D : D);
-    K = (factors[f]->K > K ? factors[f]->K : K);
-    P += factors[f]->P;
-  }
-
-  /* end parsing the argument list. */
-  va_end(vl);
-
-  /* allocate a factor with extra memory. */
-  factor_t *f = factor_alloc(sizeof(product_t), D, P, K);
-  if (!f)
-    return NULL;
-
-  /* store the expectation function pointers. */
-  f->mean = product_mean;
-  f->var = product_var;
-
-  /* store the gradient function pointers. */
-  f->diff_mean = product_diff_mean;
-  f->diff_var = product_diff_var;
-
-  /* store the divergence funciton pointer. */
-  f->div = product_div;
-
-  /* store the assignment function pointer. */
-  f->set = product_set;
-  f->copy = product_copy;
-  f->free = product_free;
-
-  /* initialize the combined parameter vector and information matrix. */
-  for (unsigned int fidx = 0, p0 = 0; fidx < F; fidx++) {
-    /* get the current factor parameter count. */
-    const unsigned int Pf = factors[fidx]->P;
-
-    /* get views of the combined vector and matrix. */
-    matrix_view_t inf = matrix_submatrix(f->inf, p0, p0, Pf, Pf);
-    vector_view_t par = vector_subvector(f->par, p0, Pf);
-
-    /* copy the contents from the factor into the views. */
-    matrix_copy(&inf, factors[fidx]->inf);
-    vector_copy(&par, factors[fidx]->par);
-
-    /* increment the parameter offset. */
-    p0 += Pf;
-  }
-
-  /* store the extra structure members. */
+/* product_init(): initialize the product factor structure.
+ *  - see factor_init_fn() for more information.
+ */
+/* FIXME: product factors are now broken! */
+FACTOR_INIT (product) {
+  /* initialize the factors array. */
   product_t *fx = (product_t*) f;
-  fx->factors = factors;
-  fx->F = F;
+  fx->factors = NULL;
+  fx->F = 0;
 
-  /* return the new cosine factor. */
-  return f;
+  /* return success. */
+  return 1;
 }
 
 /* product_mean(): evaluate the product factor mean.
@@ -342,4 +260,29 @@ FACTOR_FREE (product) {
   /* free the array of factors. */
   free(fx->factors);
 }
+
+/* product_type: product factor type structure.
+ */
+static factor_type_t product_type = {
+  "product",                                     /* name      */
+  sizeof(product_t),                             /* size      */
+  0,                                             /* initial D */
+  0,                                             /* initial P */
+  0,                                             /* initial K */
+  product_mean,                                  /* mean      */
+  product_var,                                   /* var       */
+  product_diff_mean,                             /* diff_mean */
+  product_diff_var,                              /* diff_var  */
+  NULL,                                          /* meanfield */
+  product_div,                                   /* div       */
+  product_init,                                  /* init      */
+  product_set,                                   /* set       */
+  product_copy,                                  /* copy      */
+  product_free                                   /* free      */
+};
+
+/* factor_type_product: address of the product_type
+ * structure.
+ */
+const factor_type_t *factor_type_product = &product_type;
 

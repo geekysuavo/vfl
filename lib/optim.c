@@ -50,6 +50,7 @@ optim_t *optim_alloc (const optim_type_t *type, model_t *mdl) {
 
   /* check that allocation was successful. */
   if (!opt->xa || !opt->xb || !opt->x || !opt->g || !opt->Fs) {
+    /* allocation failed. */
     optim_free(opt);
     return NULL;
   }
@@ -66,7 +67,7 @@ optim_t *optim_alloc (const optim_type_t *type, model_t *mdl) {
   /* execute the initialization function, if defined. */
   optim_init_fn init_fn = OPTIM_TYPE(opt)->init;
   if (init_fn && !init_fn(opt)) {
-    /* failed to init. free allocated memory and return failure. */
+    /* initialization failed. */
     optim_free(opt);
     return NULL;
   }
@@ -101,6 +102,86 @@ void optim_free (optim_t *opt) {
 
   /* free the structure pointer. */
   free(opt);
+}
+
+/* optim_set_max_steps(): set the maximum number of steps per iteration
+ * to perform during optimization.
+ *
+ * arguments:
+ *  @opt: optimizer structure pointer.
+ *  @n: maximum number of steps.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int optim_set_max_steps (optim_t *opt, const unsigned int n) {
+  /* check the input arguments. */
+  if (!opt || n == 0)
+    return 0;
+
+  /* set the parameter and return success. */
+  opt->max_steps = n;
+  return 1;
+}
+
+/* optim_set_max_iters(): set the maximum number of iterations
+ * to perform during optimization.
+ *
+ * arguments:
+ *  @opt: optimizer structure pointer.
+ *  @n: maximum number of iterations.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int optim_set_max_iters (optim_t *opt, const unsigned int n) {
+  /* check the input arguments. */
+  if (!opt || n == 0)
+    return 0;
+
+  /* set the parameter and return success. */
+  opt->max_iters = n;
+  return 1;
+}
+
+/* optim_set_lipschitz_init(): set the initial lipschitz constant
+ * to use for each iteration.
+ *
+ * arguments:
+ *  @opt: optimizer structure pointer.
+ *  @l0: initial lipschitz constant.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int optim_set_lipschitz_init (optim_t *opt, const double l0) {
+  /* check the input arguments. */
+  if (!opt || l0 <= 0.0)
+    return 0;
+
+  /* set the parameter and return success. */
+  opt->l0 = l0;
+  return 1;
+}
+
+/* optim_set_lipschitz_step(): set the lipschitz constant adjustment
+ * factor to use for each step.
+ *
+ * arguments:
+ *  @opt: optimizer structure pointer.
+ *  @dl: lipschitz adjustment factor.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int optim_set_lipschitz_step (optim_t *opt, const double dl) {
+  /* check the input arguments. */
+  if (!opt || dl <= 0.0)
+    return 0;
+
+  /* set the parameter and return success. */
+  opt->dl = dl;
+  return 1;
 }
 
 /* optim_iterate(): perform a single optimization iteration.

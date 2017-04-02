@@ -6,45 +6,6 @@
 #define P_MU   0
 #define P_TAU  1
 
-/* factor_impulse(): allocate a new impulse factor.
- *
- * arguments:
- *  @mu: initial location mean.
- *  @tau: initial location precision.
- *
- * returns:
- *  newly allocated and initialized impulse factor.
- */
-factor_t *factor_impulse (const double mu, const double tau) {
-  /* allocate a factor without any extra memory. */
-  factor_t *f = factor_alloc(0, 1, 2, 1);
-  if (!f)
-    return NULL;
-
-  /* store the expectation function pointers. */
-  f->mean = impulse_mean;
-  f->var = impulse_var;
-
-  /* store the gradient function pointers. */
-  f->diff_mean = impulse_diff_mean;
-  f->diff_var = impulse_diff_var;
-
-  /* store the divergence funciton pointer. */
-  f->div = impulse_div;
-
-  /* store the assignment function pointer. */
-  f->set = impulse_set;
-
-  /* attempt to set the initial factor parameters. */
-  if (!f->set(f, P_MU, mu) || !f->set(f, P_TAU, tau)) {
-    factor_free(f);
-    return NULL;
-  }
-
-  /* return the new cosine factor. */
-  return f;
-}
-
 /* impulse_mean(): evalute the impulse factor mean.
  *  - see factor_mean_fn() for more information.
  */
@@ -150,4 +111,27 @@ FACTOR_SET (impulse) {
   /* invalid parameter index. */
   return 0;
 }
+
+/* impulse_type: impulse factor type structure.
+ */
+static factor_type_t impulse_type = {
+  "impulse",                                     /* name      */
+  sizeof(factor_t),                              /* size      */
+  1,                                             /* initial D */
+  2,                                             /* initial P */
+  1,                                             /* initial K */
+  impulse_mean,                                  /* mean      */
+  impulse_var,                                   /* var       */
+  impulse_diff_mean,                             /* diff_mean */
+  impulse_diff_var,                              /* diff_var  */
+  NULL,                                          /* meanfield */
+  impulse_div,                                   /* div       */
+  NULL,                                          /* init      */
+  impulse_set,                                   /* set       */
+  NULL,                                          /* copy      */
+  NULL                                           /* free      */
+};
+
+/* factor_type_impulse: address of the impulse_type structure. */
+const factor_type_t *factor_type_impulse = &impulse_type;
 

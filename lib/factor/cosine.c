@@ -6,45 +6,6 @@
 #define P_MU   0
 #define P_TAU  1
 
-/* factor_cosine(): allocate a new cosine factor.
- *
- * arguments:
- *  @mu: initial frequency mean.
- *  @tau: initial frequency precision.
- *
- * returns:
- *  newly allocated and initialized cosine factor.
- */
-factor_t *factor_cosine (const double mu, const double tau) {
-  /* allocate a factor without any extra memory. */
-  factor_t *f = factor_alloc(0, 1, 2, 2);
-  if (!f)
-    return NULL;
-
-  /* store the expectation function pointers. */
-  f->mean = cosine_mean;
-  f->var = cosine_var;
-
-  /* store the gradient function pointers. */
-  f->diff_mean = cosine_diff_mean;
-  f->diff_var = cosine_diff_var;
-
-  /* store the divergence funciton pointer. */
-  f->div = cosine_div;
-
-  /* store the assignment function pointer. */
-  f->set = cosine_set;
-
-  /* attempt to set the initial factor parameters. */
-  if (!f->set(f, P_MU, mu) || !f->set(f, P_TAU, tau)) {
-    factor_free(f);
-    return NULL;
-  }
-
-  /* return the new cosine factor. */
-  return f;
-}
-
 /* cosine_mean(): evalute the cosine factor mean.
  *  - see factor_mean_fn() for more information.
  */
@@ -186,4 +147,27 @@ FACTOR_SET (cosine) {
   /* invalid parameter index. */
   return 0;
 }
+
+/* cosine_type: cosine factor type structure.
+ */
+static factor_type_t cosine_type = {
+  "cosine",                                      /* name      */
+  sizeof(factor_t),                              /* size      */
+  1,                                             /* initial D */
+  2,                                             /* initial P */
+  2,                                             /* initial K */
+  cosine_mean,                                   /* mean      */
+  cosine_var,                                    /* var       */
+  cosine_diff_mean,                              /* diff_mean */
+  cosine_diff_var,                               /* diff_var  */
+  NULL,                                          /* meanfield */
+  cosine_div,                                    /* div       */
+  NULL,                                          /* init      */
+  cosine_set,                                    /* set       */
+  NULL,                                          /* copy      */
+  NULL                                           /* free      */
+};
+
+/* factor_type_cosine: address of the cosine_type structure. */
+const factor_type_t *factor_type_cosine = &cosine_type;
 

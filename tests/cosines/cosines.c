@@ -32,7 +32,9 @@ int main (int argc, char **argv) {
   /* add factors to the model. */
   const unsigned int M = 4;
   for (unsigned int j = 0; j < M; j++) {
-    factor_t *f = factor_cosine(0.0, 1.0e-5);
+    factor_t *f = factor_alloc(factor_type_cosine);
+    factor_set(f, 0, 0.0);
+    factor_set(f, 1, 1.0e-5);
     model_add_factor(mdl, f);
   }
 

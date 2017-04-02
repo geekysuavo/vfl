@@ -97,7 +97,7 @@ model_t *model_alloc (const model_type_t *type) {
   /* execute the initialization function, if defined. */
   model_init_fn init_fn = MODEL_TYPE(mdl)->init;
   if (init_fn && !init_fn(mdl)) {
-    /* failed to init. free allocated memory and return failure. */
+    /* initialization failed. */
     model_free(mdl);
     return NULL;
   }
@@ -597,19 +597,20 @@ int model_meanfield (const model_t *mdl, const unsigned int j) {
   if (!mdl || !mdl->dat || j >= mdl->M)
     return 0;
 
+  /* gain access to the factor and its number of weights and parameters. */
+  factor_t *f = mdl->factors[j];
+  const unsigned int K = f->K;
+  const unsigned int P = f->P;
+
   /* check if the factor has no parameters. */
-  if (mdl->factors[j]->P == 0)
+  if (P == 0)
     return 1;
 
   /* check the model and factor function pointers. */
   model_meanfield_fn mdl_fn = MODEL_TYPE(mdl)->meanfield;
-  factor_meanfield_fn fac_fn = mdl->factors[j]->meanfield;
+  factor_meanfield_fn fac_fn = FACTOR_TYPE(f)->meanfield;
   if (!mdl_fn || !fac_fn)
     return 0;
-
-  /* gain access to the factor and its number of weights. */
-  factor_t *f = mdl->factors[j];
-  const unsigned int K = f->K;
 
   /* gain access to the associated prior. */
   const factor_t *fp = mdl->priors[j];

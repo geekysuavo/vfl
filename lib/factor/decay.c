@@ -6,45 +6,6 @@
 #define P_ALPHA  0
 #define P_BETA   1
 
-/* factor_decay(): allocate a new decay factor.
- *
- * arguments:
- *  @alpha: initial shape parameter of the decay rate.
- *  @beta: initial rate parameter of the decay rate.
- *
- * returns:
- *  newly allocated and initialized decay factor.
- */
-factor_t *factor_decay (const double alpha, const double beta) {
-  /* allocate a factor without any extra memory. */
-  factor_t *f = factor_alloc(0, 1, 2, 1);
-  if (!f)
-    return NULL;
-
-  /* store the expectation function pointers. */
-  f->mean = decay_mean;
-  f->var = decay_var;
-
-  /* store the gradient function pointers. */
-  f->diff_mean = decay_diff_mean;
-  f->diff_var = decay_diff_var;
-
-  /* store the divergence funciton pointer. */
-  f->div = decay_div;
-
-  /* store the assignment function pointer. */
-  f->set = decay_set;
-
-  /* attempt to set the initial factor parameters. */
-  if (!f->set(f, P_ALPHA, alpha) || !f->set(f, P_BETA, beta)) {
-    factor_free(f);
-    return NULL;
-  }
-
-  /* return the new decay factor. */
-  return f;
-}
-
 /* decay_mean(): evalute the decay factor mean.
  *  - see factor_mean_fn() for more information.
  */
@@ -187,4 +148,27 @@ FACTOR_SET (decay) {
   /* invalid parameter index. */
   return 0;
 }
+
+/* decay_type: decay factor type structure.
+ */
+static factor_type_t decay_type = {
+  "decay",                                       /* name      */
+  sizeof(factor_t),                              /* size      */
+  1,                                             /* initial D */
+  2,                                             /* initial P */
+  1,                                             /* initial K */
+  decay_mean,                                    /* mean      */
+  decay_var,                                     /* var       */
+  decay_diff_mean,                               /* diff_mean */
+  decay_diff_var,                                /* diff_var  */
+  NULL,                                          /* meanfield */
+  decay_div,                                     /* div       */
+  NULL,                                          /* init      */
+  decay_set,                                     /* set       */
+  NULL,                                          /* copy      */
+  NULL                                           /* free      */
+};
+
+/* factor_type_decay: address of the decay_type structure. */
+const factor_type_t *factor_type_decay = &decay_type;
 

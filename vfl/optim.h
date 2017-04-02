@@ -134,6 +134,14 @@ optim_t *optim_alloc (const optim_type_t *type, model_t *mdl);
 
 void optim_free (optim_t *opt);
 
+int optim_set_max_steps (optim_t *opt, const unsigned int n);
+
+int optim_set_max_iters (optim_t *opt, const unsigned int n);
+
+int optim_set_lipschitz_init (optim_t *opt, const double l0);
+
+int optim_set_lipschitz_step (optim_t *opt, const double dl);
+
 int optim_iterate (optim_t *opt);
 
 int optim_execute (optim_t *opt);
