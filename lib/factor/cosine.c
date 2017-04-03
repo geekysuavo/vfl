@@ -148,6 +148,13 @@ FACTOR_SET (cosine) {
   return 0;
 }
 
+/* cosine_names: table of cosine factor parameter names.
+ */
+char *cosine_names[] = {
+  "mu",
+  "tau"
+};
+
 /* cosine_type: cosine factor type structure.
  */
 static factor_type_t cosine_type = {
@@ -156,6 +163,7 @@ static factor_type_t cosine_type = {
   1,                                             /* initial D */
   2,                                             /* initial P */
   2,                                             /* initial K */
+  cosine_names,                                  /* parnames  */
   cosine_mean,                                   /* mean      */
   cosine_var,                                    /* var       */
   cosine_diff_mean,                              /* diff_mean */

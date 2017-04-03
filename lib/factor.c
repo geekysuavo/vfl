@@ -23,6 +23,9 @@ factor_t *factor_alloc (const factor_type_t *type) {
   /* initialize the factor type. */
   f->type = *type;
 
+  /* initialize the factor parameter names table. */
+  f->parnames = type->parnames;
+
   /* set the default factor flags and dimension. */
   f->fixed = 0;
   f->d = 0;
@@ -163,6 +166,79 @@ int factor_resize (factor_t *f,
 
   /* return success. */
   return 1;
+}
+
+/* factor_dims(): get the number of dimensions supported by a factor.
+ *
+ * arguments:
+ *  @f: factor structure pointer to access.
+ *
+ * returns:
+ *  number of dimensions of the factor.
+ */
+unsigned int factor_dims (const factor_t *f) {
+  /* return the factor dimension count. */
+  return (f ? f->D : 0);
+}
+
+/* factor_parms(): get the number of parameters in a factor.
+ *
+ * arguments:
+ *  @f: factor structure pointer to access.
+ *
+ * returns:
+ *  number of parameters in the factor.
+ */
+unsigned int factor_parms (const factor_t *f) {
+  /* return the factor parameter count. */
+  return (f ? f->P : 0);
+}
+
+/* factor_weights(): get the number of weights associated with a factor.
+ *
+ * arguments:
+ *  @f: factor structure pointer to access.
+ *
+ * returns:
+ *  number of weights for the factor.
+ */
+unsigned int factor_weights (const factor_t *f) {
+  /* return the factor weight count. */
+  return (f ? f->K : 0);
+}
+
+/* factor_parname(): get the name string of a factor parameter.
+ *
+ * arguments:
+ *  @f: factor structure pointer to access.
+ *  @i: factor parameter index.
+ *
+ * returns:
+ *  string name of the indexed factor parameter, if available.
+ */
+char *factor_parname (const factor_t *f, const unsigned int i) {
+  /* check the input pointer, name table, and parameter index. */
+  if (!f || !f->parnames || i >= f->P)
+    return NULL;
+
+  /* return the factor name from the table. */
+  return f->parnames[i];
+}
+
+double factor_get_by_name (const factor_t *f, const char *name) {
+  /* check the input pointers. */
+  if (!f || !f->parnames || !name)
+    return 0.0;
+
+  /* loop over each factor parameter. */
+  for (unsigned int i = 0; i < f->P; i++) {
+    /* if the current parameter name matches, return its value. */
+    if (strcmp(f->parnames[i], name) == 0)
+      return vector_get(f->par, i);
+  }
+
+  /* failed to find the factor. return zero. */
+  return 0.0;
 }
 
 /* factor_get(): extract a parameter from a variational factor.

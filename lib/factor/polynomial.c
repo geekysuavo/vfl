@@ -57,6 +57,7 @@ static factor_type_t polynomial_type = {
   1,                                             /* initial D */
   0,                                             /* initial P */
   1,                                             /* initial K */
+  NULL,                                          /* parnames  */
   polynomial_mean,                               /* mean      */
   polynomial_var,                                /* var       */
   NULL,                                          /* diff_mean */

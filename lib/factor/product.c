@@ -225,10 +225,19 @@ FACTOR_COPY (product) {
   const unsigned int F = fx->F;
   fdupx->F = F;
 
-  /* allocate the duplicate factor array. */
-  fdupx->factors = (factor_t**) malloc(F * sizeof(factor_t*));
-  if (!fdupx->factors)
+  /* allocate the duplicate factor array and parameter names table. */
+  fdupx->factors = malloc(F * sizeof(factor_t*));
+  fdup->parnames = malloc(f->P * sizeof(char*));
+  if (!fdupx->factors || !fdup->parnames)
     return 0;
+
+  /* initialize the duplicate parameter names table. */
+  for (unsigned int p = 0; p < f->P; p++) {
+    const char *parname = factor_parname(f, p);
+    fdup->parnames[p] = malloc(strlen(parname) + 2);
+    if (fdup->parnames[p])
+      strcpy(fdup->parnames[p], parname);
+  }
 
   /* initialize the duplicate factor array. */
   for (unsigned int i = 0; i < F; i++)
@@ -290,6 +299,11 @@ int product_add_factor (factor_t *f, const unsigned int d, factor_t *fd) {
   if (!factor_resize(f, D, P, K))
     return 0;
 
+  /* reallocate the parameter names table. */
+  f->parnames = realloc(f->parnames, P * sizeof(char*));
+  if (!f->parnames)
+    return 0;
+
   /* reallocate the factors array. */
   fx->factors = realloc(fx->factors, F * sizeof(factor_t*));
   if (!fx->factors)
@@ -306,6 +320,8 @@ int product_add_factor (factor_t *f, const unsigned int d, factor_t *fd) {
   for (unsigned int fidx = 0, p0 = 0; fidx < F; fidx++) {
     /* get the current factor parameter count. */
     const unsigned int Pf = fx->factors[fidx]->P;
+    if (Pf == 0)
+      continue;
 
     /* get views of the combined matrix and vector. */
     matrix_view_t inf = matrix_submatrix(f->inf, p0, p0, Pf, Pf);
@@ -314,6 +330,23 @@ int product_add_factor (factor_t *f, const unsigned int d, factor_t *fd) {
     /* copy the contents from the factor into the views. */
     matrix_copy(&inf, fx->factors[fidx]->inf);
     vector_copy(&par, fx->factors[fidx]->par);
+
+    /* initialize the new parameter names. */
+    if (fidx == F - 1) {
+      for (unsigned int p = 0; p < Pf; p++) {
+        /* determine the new string length. */
+        unsigned int len = strlen(FACTOR_TYPE(fd)->name);
+        const char *parname = factor_parname(fd, p);
+        len += (parname ? strlen(parname) : 0);
+        len += 32;
+
+        /* allocate and build the new string. */
+        f->parnames[p0 + p] = malloc(len);
+        if (f->parnames[p0 + p])
+          snprintf(f->parnames[p0 + p], len - 1, "%s%u.%s",
+                   FACTOR_TYPE(fd)->name, fidx, parname);
+      }
+    }
 
     /* increment the parameter offset. */
     p0 += Pf;
@@ -331,6 +364,7 @@ static factor_type_t product_type = {
   1,                                             /* initial D */
   0,                                             /* initial P */
   1,                                             /* initial K */
+  NULL,                                          /* parnames  */
   product_mean,                                  /* mean      */
   product_var,                                   /* var       */
   product_diff_mean,                             /* diff_mean */

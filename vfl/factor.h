@@ -15,17 +15,6 @@
 /* factor_t: defined type for the factor structure. */
 typedef struct factor factor_t;
 
-/* factor_init_fn(): initialize a factor structure
- * in a type-specific manner.
- *
- * arguments:
- *  @f: factor structure pointer to initialize.
- *
- * returns:
- *  integer indicating initialization success (1) or failure (0).
- */
-typedef int (*factor_init_fn) (factor_t *f);
-
 /* factor_mean_fn(): return the first moment of a basis element.
  *
  * arguments:
@@ -131,6 +120,17 @@ typedef int (*factor_meanfield_fn) (factor_t *f, const factor_t *fp,
  */
 typedef double (*factor_div_fn) (const factor_t *f, const factor_t *f2);
 
+/* factor_init_fn(): initialize a factor structure
+ * in a type-specific manner.
+ *
+ * arguments:
+ *  @f: factor structure pointer to initialize.
+ *
+ * returns:
+ *  integer indicating initialization success (1) or failure (0).
+ */
+typedef int (*factor_init_fn) (factor_t *f);
+
 /* factor_set_fn(): assign a variational parameter in a factor.
  *
  * arguments:
@@ -163,12 +163,6 @@ typedef int (*factor_copy_fn) (const factor_t *f, factor_t *fdup);
  *  @f: factor structure pointer to free.
  */
 typedef void (*factor_free_fn) (factor_t *f);
-
-/* FACTOR_INIT(): macro function for declaring and defining
- * functions conforming to factor_init_fn().
- */
-#define FACTOR_INIT(name) \
-int name ## _init (factor_t *f)
 
 /* FACTOR_MEAN(): macro function for declaring and defining
  * functions conforming to factor_mean_fn().
@@ -225,6 +219,12 @@ int name ## _meanfield (factor_t *f, const factor_t *fp, \
 #define FACTOR_DIV(name) \
 double name ## _div (const factor_t *f, const factor_t *f2)
 
+/* FACTOR_INIT(): macro function for declaring and defining
+ * functions conforming to factor_init_fn().
+ */
+#define FACTOR_INIT(name) \
+int name ## _init (factor_t *f)
+
 /* FACTOR_SET(): macro function for declaring and defining
  * functions conforming to factor_set_fn().
  */
@@ -264,6 +264,9 @@ typedef struct {
    *  @K: number of weights.
    */
   unsigned int D, P, K;
+
+  /* @parnames: initial factor parameter names. */
+  char **parnames;
 
   /* factor type-specific functions:
    *
@@ -331,9 +334,11 @@ struct factor {
   /* storage of core data:
    *  @inf: fisher information matrix.
    *  @par: parameter vector.
+   *  @parnames: parameter name strings.
    */
   matrix_t *inf;
   vector_t *par;
+  char **parnames;
 };
 
 /* function declarations (factor.c): */
@@ -348,6 +353,16 @@ int factor_resize (factor_t *f,
                    const unsigned int D,
                    const unsigned int P,
                    const unsigned int K);
+
+unsigned int factor_dims (const factor_t *f);
+
+unsigned int factor_parms (const factor_t *f);
+
+unsigned int factor_weights (const factor_t *f);
+
+char *factor_parname (const factor_t *f, const unsigned int i);
+
+double factor_get_by_name (const factor_t *f, const char *name);
 
 double factor_get (const factor_t *f, const unsigned int i);
 

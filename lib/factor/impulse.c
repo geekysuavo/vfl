@@ -112,6 +112,13 @@ FACTOR_SET (impulse) {
   return 0;
 }
 
+/* impulse_names: table of impulse factor parameter names.
+ */
+char *impulse_names[] = {
+  "mu",
+  "tau"
+};
+
 /* impulse_type: impulse factor type structure.
  */
 static factor_type_t impulse_type = {
@@ -120,6 +127,7 @@ static factor_type_t impulse_type = {
   1,                                             /* initial D */
   2,                                             /* initial P */
   1,                                             /* initial K */
+  impulse_names,                                 /* parnames  */
   impulse_mean,                                  /* mean      */
   impulse_var,                                   /* var       */
   impulse_diff_mean,                             /* diff_mean */

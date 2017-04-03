@@ -149,6 +149,13 @@ FACTOR_SET (decay) {
   return 0;
 }
 
+/* decay_names: table of decay factor parameter names.
+ */
+char *decay_names[] = {
+  "alpha",
+  "beta"
+};
+
 /* decay_type: decay factor type structure.
  */
 static factor_type_t decay_type = {
@@ -157,6 +164,7 @@ static factor_type_t decay_type = {
   1,                                             /* initial D */
   2,                                             /* initial P */
   1,                                             /* initial K */
+  decay_names,                                   /* parnames  */
   decay_mean,                                    /* mean      */
   decay_var,                                     /* var       */
   decay_diff_mean,                               /* diff_mean */

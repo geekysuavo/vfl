@@ -158,6 +158,12 @@ int fixed_impulse_set_location (factor_t *f, const double mu) {
   return 1;
 }
 
+/* fixed_impulse_names: table of fixed impulse factor parameter names.
+ */
+char *fixed_impulse_names[] = {
+  "tau"
+};
+
 /* fixed_impulse_type: fixed impulse factor type structure.
  */
 static factor_type_t fixed_impulse_type = {
@@ -166,6 +172,7 @@ static factor_type_t fixed_impulse_type = {
   1,                                             /* initial D */
   1,                                             /* initial P */
   1,                                             /* initial K */
+  fixed_impulse_names,                           /* names     */
   fixed_impulse_mean,                            /* mean      */
   fixed_impulse_var,                             /* var       */
   fixed_impulse_diff_mean,                       /* diff_mean */
