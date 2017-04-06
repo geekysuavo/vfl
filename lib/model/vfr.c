@@ -327,6 +327,97 @@ MODEL_GRADIENT (vfr) {
   return 1;
 }
 
+/* vfr_meanfield(): return the coefficients required for an
+ * assumed-density mean-field update of a factor in a vfr model.
+ *  - see model_meanfield_fn() for more information.
+ */
+MODEL_MEANFIELD (vfr) {
+  /* get the weight offset and count of the current factor. */
+  const unsigned int k0 = model_weight_idx(mdl, j, 0);
+  const unsigned int K = mdl->factors[j]->K;
+
+  /* gain access to the dataset structure members. */
+  const unsigned int N = mdl->dat->N;
+  const unsigned int M = mdl->M;
+  data_t *dat = mdl->dat;
+  datum_t *di;
+
+  /* compute the expected noise precision. */
+  const double tau = mdl->alpha / mdl->beta;
+
+  /* create views into the factor weight means and covariances. */
+  vector_view_t wk = vector_subvector(mdl->wbar, k0, K);
+  matrix_view_t Sk = matrix_submatrix(mdl->Sigma, k0, k0, K, K);
+
+  /* compute first-order same-factor contributions. */
+  for (unsigned int i = 0; i < N; i++) {
+    /* get the current observation. */
+    di = data_get(dat, i);
+
+    /* loop over the weights of the current factor. */
+    for (unsigned int k = 0; k < K; k++) {
+      /* compute and store the contribution. */
+      const double aik = tau * di->y * vector_get(&wk, k);
+      matrix_set(A, i, k, aik);
+    }
+  }
+
+  /* compute first-order other-factor contributions. */
+  for (unsigned int i = 0; i < N; i++) {
+    /* get the current observation. */
+    di = data_get(dat, i);
+
+    /* loop over the model factors. */
+    for (unsigned int j2 = 0, i2 = 0; j2 < M; j2++) {
+      /* get the number of other-factor weights. */
+      const unsigned int K2 = mdl->factors[j2]->K;
+
+      /* exclude the factor being updated. */
+      if (j2 == j) {
+        i2 += K2;
+        continue;
+      }
+
+      /* loop over the weights of the other factor. */
+      for (unsigned int k2 = 0; k2 < K2; k2++) {
+        /* get the other factor mean. */
+        const double phi2 = model_mean(mdl, di->x, di->p, j2, k2);
+
+        /* loop over the weights of the current factor. */
+        for (unsigned int k = 0; k < K; k++) {
+          /* compute the weight second moment. */
+          const double w2 = matrix_get(mdl->Sigma, k0 + k, i2 + k2) +
+                            vector_get(mdl->wbar, k0 + k) *
+                            vector_get(mdl->wbar, i2 + k2);
+
+          /* update the matrix element accordingly. */
+          const double aik = matrix_get(A, i, k);
+          matrix_set(A, i, k, aik - tau * w2 * phi2);
+        }
+      }
+
+      /* move to the next set of other-factor weights. */
+      i2 += K2;
+    }
+  }
+
+  /* compute second-order contributions. */
+  for (unsigned int k = 0; k < K; k++) {
+    for (unsigned int k2 = 0; k2 < K; k2++) {
+      /* compute the current matrix element. */
+      const double bkk = -0.5 * tau * (matrix_get(&Sk, k, k2) +
+                                       vector_get(&wk, k) *
+                                       vector_get(&wk, k2));
+
+      /* store the result. */
+      matrix_set(B, k, k2, bkk);
+    }
+  }
+
+  /* return success. */
+  return 1;
+}
+
 /* vfr_type: model type structure for variational feature regression.
  */
 static model_type_t vfr_type = {
@@ -338,7 +429,7 @@ static model_type_t vfr_type = {
   vfr_infer,                                     /* infer     */
   vfr_update,                                    /* update    */
   vfr_gradient,                                  /* gradient  */
-  NULL                                           /* meanfield */
+  vfr_meanfield                                  /* meanfield */
 };
 
 /* model_type_vfr: address of the vfr_type structure. */

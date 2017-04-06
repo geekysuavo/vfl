@@ -105,8 +105,8 @@ typedef void (*factor_diff_var_fn) (const factor_t *f,
  */
 typedef int (*factor_meanfield_fn) (factor_t *f, const factor_t *fp,
                                     const data_t *dat,
-                                    const matrix_t *A,
-                                    const matrix_t *B);
+                                    matrix_t *A,
+                                    matrix_t *B);
 
 /* factor_div_fn(): return the kullback-liebler divergence between
  * two factors of the same type, but different parameters.
@@ -224,8 +224,8 @@ void name ## _diff_var (const factor_t *f, \
 #define FACTOR_MEANFIELD(name) \
 int name ## _meanfield (factor_t *f, const factor_t *fp, \
                         const data_t *dat, \
-                        const matrix_t *A, \
-                        const matrix_t *B)
+                        matrix_t *A, \
+                        matrix_t *B)
 
 /* FACTOR_DIV(): macro function for declaring and defining
  * functions conforming to factor_div_fn().
@@ -415,7 +415,7 @@ int factor_diff_var (const factor_t *f,
                      vector_t *df);
 
 int factor_meanfield (factor_t *f, const factor_t *fp, const data_t *dat,
-                      const matrix_t *A, const matrix_t *B);
+                      matrix_t *A, matrix_t *B);
 
 double factor_div (const factor_t *f, const factor_t *f2);
 

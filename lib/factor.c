@@ -378,7 +378,7 @@ int factor_diff_var (const factor_t *f,
  *  - see factor_meanfield_fn() for more information.
  */
 int factor_meanfield (factor_t *f, const factor_t *fp, const data_t *dat,
-                      const matrix_t *A, const matrix_t *B) {
+                      matrix_t *A, matrix_t *B) {
   /* check the input pointers. */
   if (!f || !fp || !dat || !A || !B)
     return 0;
