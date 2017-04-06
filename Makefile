@@ -33,6 +33,11 @@ clean:
 # full recompilation target.
 again: clean all
 
+# installation target.
+install:
+	@$(MAKE) -sC lib install
+	@$(MAKE) -sC vfl install
+
 # line-count reporting target.
 lines:
 	@echo " WC lib"
