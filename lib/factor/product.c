@@ -372,6 +372,7 @@ static factor_type_t product_type = {
   NULL,                                          /* meanfield */
   product_div,                                   /* div       */
   product_init,                                  /* init      */
+  NULL,                                          /* resize    */
   product_set,                                   /* set       */
   product_copy,                                  /* copy      */
   product_free                                   /* free      */

@@ -65,6 +65,7 @@ static factor_type_t polynomial_type = {
   NULL,                                          /* meanfield */
   NULL,                                          /* div       */
   NULL,                                          /* init      */
+  NULL,                                          /* resize    */
   NULL,                                          /* set       */
   NULL,                                          /* copy      */
   NULL                                           /* free      */

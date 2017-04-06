@@ -159,6 +159,11 @@ int factor_resize (factor_t *f,
   matrix_set_zero(f->inf);
   vector_set_zero(f->par);
 
+  /* check for a resize function pointer. */
+  factor_resize_fn resize_fn = FACTOR_TYPE(f)->resize;
+  if (resize_fn && !resize_fn(f, D, P, K))
+    return 0;
+
   /* store the new factor sizes. */
   f->D = D;
   f->P = P;
@@ -373,9 +378,9 @@ int factor_diff_var (const factor_t *f,
  *  - see factor_meanfield_fn() for more information.
  */
 int factor_meanfield (factor_t *f, const factor_t *fp, const data_t *dat,
-                      const vector_t *c, const matrix_t *C) {
+                      const matrix_t *A, const matrix_t *B) {
   /* check the input pointers. */
-  if (!f || !fp || !dat || !c || !C)
+  if (!f || !fp || !dat || !A || !B)
     return 0;
 
   /* check the function pointer. */
@@ -384,7 +389,7 @@ int factor_meanfield (factor_t *f, const factor_t *fp, const data_t *dat,
     return 0;
 
   /* execute the mean-field update function. */
-  return meanfield_fn(f, fp, dat, c, C);
+  return meanfield_fn(f, fp, dat, A, B);
 }
 
 /* factor_div(): evaluate the divergence function of a factor.

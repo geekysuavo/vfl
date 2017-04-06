@@ -55,10 +55,11 @@ int main (int argc, char **argv) {
   }
 
   /* optimize. */
-  optim_t *opt = optim_alloc(optim_type_fg, mdl);
-  opt->max_iters = 50;
-  opt->l0 = 1.0;
-  opt->dl = 0.1;
+  optim_t *opt = optim_alloc(optim_type_fg);
+  optim_set_model(opt, mdl);
+  optim_set_max_iters(opt, 50);
+  optim_set_lipschitz_init(opt, 1.0);
+  optim_set_lipschitz_step(opt, 0.1);
   optim_execute(opt);
 
   /* allocate datasets for prediction. */

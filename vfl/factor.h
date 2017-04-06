@@ -97,16 +97,16 @@ typedef void (*factor_diff_var_fn) (const factor_t *f,
  *  @f: factor structure pointer.
  *  @fp: prior factor structure pointer.
  *  @dat: dataset structure pointer.
- *  @c: vector of first-order coefficients.
- *  @C: matrix of second-order coefficients.
+ *  @A: matrix of first-order coefficients.
+ *  @B: matrix of second-order coefficients.
  *
  * returns:
  *  integer indicating success (1) or failure (0).
  */
 typedef int (*factor_meanfield_fn) (factor_t *f, const factor_t *fp,
                                     const data_t *dat,
-                                    const vector_t *c,
-                                    const matrix_t *C);
+                                    const matrix_t *A,
+                                    const matrix_t *B);
 
 /* factor_div_fn(): return the kullback-liebler divergence between
  * two factors of the same type, but different parameters.
@@ -130,6 +130,20 @@ typedef double (*factor_div_fn) (const factor_t *f, const factor_t *f2);
  *  integer indicating initialization success (1) or failure (0).
  */
 typedef int (*factor_init_fn) (factor_t *f);
+
+/* factor_resize_fn(): resize a factor structure.
+ *
+ * arguments:
+ *  @f: factor structure pointer to modify.
+ *  @D, @P, @K: new factor sizes.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+typedef int (*factor_resize_fn) (factor_t *f,
+                                 const unsigned int D,
+                                 const unsigned int P,
+                                 const unsigned int K);
 
 /* factor_set_fn(): assign a variational parameter in a factor.
  *
@@ -210,8 +224,8 @@ void name ## _diff_var (const factor_t *f, \
 #define FACTOR_MEANFIELD(name) \
 int name ## _meanfield (factor_t *f, const factor_t *fp, \
                         const data_t *dat, \
-                        const vector_t *c, \
-                        const matrix_t *C)
+                        const matrix_t *A, \
+                        const matrix_t *B)
 
 /* FACTOR_DIV(): macro function for declaring and defining
  * functions conforming to factor_div_fn().
@@ -224,6 +238,13 @@ double name ## _div (const factor_t *f, const factor_t *f2)
  */
 #define FACTOR_INIT(name) \
 int name ## _init (factor_t *f)
+
+/* FACTOR_RESIZE(): macro function for declaring and defining
+ * functions conforming to factor_resize_fn().
+ */
+#define FACTOR_RESIZE(name) \
+int name ## _resize (factor_t *f, const unsigned int D, \
+                     const unsigned int P, const unsigned int K)
 
 /* FACTOR_SET(): macro function for declaring and defining
  * functions conforming to factor_set_fn().
@@ -290,16 +311,17 @@ typedef struct {
    *   @copy: hook for copying extra memory between factors.
    *   @free: hook for extra functionality during deallocation.
    */
-  factor_mean_fn mean;
-  factor_var_fn var;
+  factor_mean_fn      mean;
+  factor_var_fn       var;
   factor_diff_mean_fn diff_mean;
-  factor_diff_var_fn diff_var;
+  factor_diff_var_fn  diff_var;
   factor_meanfield_fn meanfield;
-  factor_div_fn div;
-  factor_init_fn init;
-  factor_set_fn set;
-  factor_copy_fn copy;
-  factor_free_fn free;
+  factor_div_fn       div;
+  factor_init_fn      init;
+  factor_resize_fn    resize;
+  factor_set_fn       set;
+  factor_copy_fn      copy;
+  factor_free_fn      free;
 }
 factor_type_t;
 
@@ -393,7 +415,7 @@ int factor_diff_var (const factor_t *f,
                      vector_t *df);
 
 int factor_meanfield (factor_t *f, const factor_t *fp, const data_t *dat,
-                      const vector_t *c, const matrix_t *C);
+                      const matrix_t *A, const matrix_t *B);
 
 double factor_div (const factor_t *f, const factor_t *f2);
 

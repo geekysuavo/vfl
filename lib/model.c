@@ -18,19 +18,31 @@ static inline unsigned int model_tmp (const model_t *mdl) {
    */
   unsigned int ntmp, kmax;
 
+  /* gain access to the observation, parameter, factor, and weight counts.
+   */
+  const unsigned int N = (mdl->dat ? mdl->dat->N : 0);
+  const unsigned int P = mdl->P;
+  const unsigned int M = mdl->M;
+  const unsigned int K = mdl->K;
+
   /* in order to conserve memory, determine the largest number of
    * factor weights that will be updated at the same time.
    */
   kmax = 0;
-  for (unsigned int j = 0; j < mdl->M; j++)
+  for (unsigned int j = 0; j < M; j++)
     kmax = (mdl->factors[j]->K > kmax ? mdl->factors[j]->K : kmax);
 
-  /* the scalars are laid out as follows:
-   *  z: (K, 1)
-   *  U: (max(k), K)
-   *  V: (max(k), K)
+  /* determine the larger of the number of observations and the
+   * total number of model weights.
    */
-  ntmp = mdl->K + mdl->P + 2 * kmax * mdl->K;
+  const unsigned int nk = (N > K ? N : K);
+
+  /* the scalars are laid out as follows:
+   *  z:   (K, 1)
+   *  U/B: (max(k), K)
+   *  V/A: (max(k), max(N, K))
+   */
+  ntmp = K + P + kmax * (K + nk);
 
   /* return the computed scalar count. */
   return ntmp;
@@ -241,7 +253,7 @@ int model_set_parms (model_t *mdl, const unsigned int j,
  *  integer indicating success (1) or failure (0).
  */
 int model_set_data (model_t *mdl, data_t *dat) {
-  /* check the input pointers. */
+  /* check the structure pointers. */
   if (!mdl || !dat)
     return 0;
 
@@ -251,18 +263,26 @@ int model_set_data (model_t *mdl, data_t *dat) {
   if (mdl->D && dat->N && dat->D < mdl->D)
     return 0;
 
-  /* free the existing dataset and store the new dataset. */
-  data_free(mdl->dat);
-  mdl->dat = dat;
+  /* drop the current dataset. */
+  mdl->dat = NULL;
 
-  /* reallocate the logistic parameters. */
+  /* free the logistic parameters and temporary coefficients. */
+  vector_free(mdl->tmp);
   vector_free(mdl->xi);
+  mdl->tmp = NULL;
+  mdl->xi = NULL;
+
+  /* reallocate the logistic parameters and temporary coefficients. */
+  mdl->tmp = vector_alloc(model_tmp(mdl));
   mdl->xi = vector_alloc(dat->N);
-  if (!mdl->xi)
+  if (!mdl->tmp || !mdl->xi)
     return 0;
 
   /* initialize the logistic parameters. */
   vector_set_all(mdl->xi, 1.0);
+
+  /* store the new dataset. */
+  mdl->dat = dat;
 
   /* return succes. */
   return 1;
@@ -597,6 +617,9 @@ int model_meanfield (const model_t *mdl, const unsigned int j) {
   if (!mdl || !mdl->dat || j >= mdl->M)
     return 0;
 
+  /* gain access to the number of observations. */
+  const unsigned int N = mdl->dat->N;
+
   /* gain access to the factor and its number of weights and parameters. */
   factor_t *f = mdl->factors[j];
   const unsigned int K = f->K;
@@ -615,16 +638,16 @@ int model_meanfield (const model_t *mdl, const unsigned int j) {
   /* gain access to the associated prior. */
   const factor_t *fp = mdl->priors[j];
 
-  /* create a vector and matrix of coefficients for mean-field updates. */
-  vector_view_t c = vector_view_array(mdl->tmp->data, K);
-  matrix_view_t C = matrix_view_array(mdl->tmp->data + K, K, K);
+  /* create matrices of coefficients for mean-field updates. */
+  matrix_view_t A = matrix_view_array(mdl->tmp->data, N, K);
+  matrix_view_t B = matrix_view_array(mdl->tmp->data + N * K, K, K);
 
   /* prepare the coefficients for use by the factor. */
-  if (!mdl_fn(mdl, j, &c, &C))
+  if (!mdl_fn(mdl, j, &A, &B))
     return 0;
 
   /* execute the factor update function using the coefficients. */
-  if (!fac_fn(f, fp, mdl->dat, &c, &C))
+  if (!fac_fn(f, fp, mdl->dat, &A, &B))
     return 0;
 
   /* return success. */

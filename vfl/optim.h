@@ -130,9 +130,11 @@ struct optim {
 
 /* function declarations (optim.c): */
 
-optim_t *optim_alloc (const optim_type_t *type, model_t *mdl);
+optim_t *optim_alloc (const optim_type_t *type);
 
 void optim_free (optim_t *opt);
+
+int optim_set_model (optim_t *opt, model_t *mdl);
 
 int optim_set_max_steps (optim_t *opt, const unsigned int n);
 

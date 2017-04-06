@@ -135,6 +135,7 @@ static factor_type_t impulse_type = {
   NULL,                                          /* meanfield */
   impulse_div,                                   /* div       */
   NULL,                                          /* init      */
+  NULL,                                          /* resize    */
   impulse_set,                                   /* set       */
   NULL,                                          /* copy      */
   NULL                                           /* free      */

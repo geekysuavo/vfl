@@ -172,6 +172,7 @@ static factor_type_t decay_type = {
   NULL,                                          /* meanfield */
   decay_div,                                     /* div       */
   NULL,                                          /* init      */
+  NULL,                                          /* resize    */
   decay_set,                                     /* set       */
   NULL,                                          /* copy      */
   NULL                                           /* free      */

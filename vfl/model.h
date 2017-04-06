@@ -100,14 +100,14 @@ typedef int (*model_gradient_fn) (const model_t *mdl, const unsigned int i,
  * arguments:
  *  @mdl: model structure pointer.
  *  @j: variational factor index.
- *  @c: vector for storing first-order coefficients.
- *  @C: matrix for storing second-order coefficients.
+ *  @A: matrix for storing first-order coefficients.
+ *  @B: matrix for storing second-order coefficients.
  *
  * returns:
  *  integer indicating success (1) or failure (0).
  */
 typedef int (*model_meanfield_fn) (const model_t *mdl, const unsigned int j,
-                                   const vector_t *c, const matrix_t *C);
+                                   const matrix_t *A, const matrix_t *B);
 
 /* MODEL_INIT(): macro function for declaring and defining
  * functions conforming to model_init_fn().
@@ -154,7 +154,7 @@ int name ## _gradient (const model_t *mdl, const unsigned int i, \
  */
 #define MODEL_MEANFIELD(name) \
 int name ## _meanfield (const model_t *mdl, const unsigned int j, \
-                        const vector_t *c, const matrix_t *C)
+                        const matrix_t *A, const matrix_t *B)
 
 /* MODEL_TYPE(): macro function for casting model structure pointers
  * to their associated type structures.

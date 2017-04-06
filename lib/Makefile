@@ -26,7 +26,7 @@ C_MODEL=vfc vfr tauvfr
 C_OPTIM=fg
 
 # basenames of all C source files.
-C=  data-alloc data-entries data-fileio factor model optim
+C=  vfl data-alloc data-entries data-fileio factor model optim
 C+= $(addprefix factor/,$(C_FACTOR))
 C+= $(addprefix model/,$(C_MODEL))
 C+= $(addprefix optim/,$(C_OPTIM))
@@ -37,6 +37,11 @@ SRC=$(addsuffix .c,$(C))
 
 # filenames of compiled objects.
 OBJ=$(addsuffix .o,$(C))
+
+# installation directories.
+DESTDIR=
+PREFIX=$(DESTDIR)/usr/local
+LIBDIR=$(PREFIX)/lib
 
 # non-file targets and accepted filename extensions.
 .PHONY: all clean again lines fixme
@@ -62,6 +67,12 @@ clean:
 
 # full recompilation target.
 again: clean all
+
+# installation target.
+install: $(LIB)
+	@echo " INSTALL $(LIB)"
+	@install -d $(LIBDIR)
+	@install $(LIB) $(LIBDIR)
 
 # line-count reporting target.
 lines:

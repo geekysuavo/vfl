@@ -180,6 +180,7 @@ static factor_type_t fixed_impulse_type = {
   NULL,                                          /* meanfield */
   fixed_impulse_div,                             /* div       */
   fixed_impulse_init,                            /* init      */
+  NULL,                                          /* resize    */
   fixed_impulse_set,                             /* set       */
   fixed_impulse_copy,                            /* copy      */
   NULL                                           /* free      */

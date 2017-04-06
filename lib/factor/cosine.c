@@ -171,6 +171,7 @@ static factor_type_t cosine_type = {
   NULL,                                          /* meanfield */
   cosine_div,                                    /* div       */
   NULL,                                          /* init      */
+  NULL,                                          /* resize    */
   cosine_set,                                    /* set       */
   NULL,                                          /* copy      */
   NULL                                           /* free      */

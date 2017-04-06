@@ -6,18 +6,13 @@
  *
  * arguments:
  *  @type: pointer to an optimizer type structure.
- *  @mdl: model structure pointer.
  *
  * returns:
  *  newly allocated and initialized optimizer structure pointer.
  */
-optim_t *optim_alloc (const optim_type_t *type, model_t *mdl) {
+optim_t *optim_alloc (const optim_type_t *type) {
   /* check the type structure pointer. */
   if (!type)
-    return NULL;
-
-  /* return null if the model is null or incapable of inference. */
-  if (!mdl || !model_infer(mdl))
     return NULL;
 
   /* allocate the structure pointer. */
@@ -28,16 +23,11 @@ optim_t *optim_alloc (const optim_type_t *type, model_t *mdl) {
   /* initialize the optimizer type. */
   opt->type = *type;
 
-  /* store the associated model. */
-  opt->mdl = mdl;
+  /* initialize the model field. */
+  opt->mdl = NULL;
 
-  /* determine the maximum parameter count of the model factors. */
-  unsigned int pmax = 0;
-  for (unsigned int j = 0; j < mdl->M; j++) {
-    const unsigned int pj = mdl->factors[j]->P;
-    if (pj > pmax)
-      pmax = pj;
-  }
+  /* without a model, iteration vectors and temporaries will be empty. */
+  const unsigned int pmax = 0;
 
   /* allocate the iteration vectors. */
   opt->xa = vector_alloc(pmax);
@@ -62,7 +52,7 @@ optim_t *optim_alloc (const optim_type_t *type, model_t *mdl) {
   opt->dl = 0.1;
 
   /* initialize the lower bound. */
-  opt->bound0 = opt->bound = model_bound(mdl);
+  opt->bound0 = opt->bound = -INFINITY;
 
   /* execute the initialization function, if defined. */
   optim_init_fn init_fn = OPTIM_TYPE(opt)->init;
@@ -102,6 +92,73 @@ void optim_free (optim_t *opt) {
 
   /* free the structure pointer. */
   free(opt);
+}
+
+/* optim_set_model(): associate a variational feature model with an
+ * optimizer.
+ *
+ * arguments:
+ *  @opt: optimizer structure pointer to modify.
+ *  @mdl: model structure pointer to assign.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int optim_set_model (optim_t *opt, model_t *mdl) {
+  /* check the structure pointers. */
+  if (!opt || !mdl)
+    return 0;
+
+  /* check that the model is incapable of inference. */
+  if (!model_infer(mdl))
+    return 0;
+
+  /* drop the current model. */
+  opt->mdl = NULL;
+
+  /* free the iteration vectors. */
+  vector_free(opt->xa);
+  vector_free(opt->xb);
+  vector_free(opt->x);
+  vector_free(opt->g);
+  opt->xa = NULL;
+  opt->xb = NULL;
+  opt->x = NULL;
+  opt->g = NULL;
+
+  /* free the temporaries. */
+  matrix_free(opt->Fs);
+  opt->Fs = NULL;
+
+  /* determine the maximum parameter count of the model factors. */
+  unsigned int pmax = 0;
+  for (unsigned int j = 0; j < mdl->M; j++) {
+    const unsigned int pj = mdl->factors[j]->P;
+    if (pj > pmax)
+      pmax = pj;
+  }
+
+  /* allocate the iteration vectors. */
+  opt->xa = vector_alloc(pmax);
+  opt->xb = vector_alloc(pmax);
+  opt->x = vector_alloc(pmax);
+  opt->g = vector_alloc(pmax);
+
+  /* allocate the temporaries. */
+  opt->Fs = matrix_alloc(pmax, pmax);
+
+  /* check that allocation was successful. */
+  if (!opt->xa || !opt->xb || !opt->x || !opt->g || !opt->Fs)
+    return 0;
+
+  /* initialize the lower bound. */
+  opt->bound0 = opt->bound = model_bound(mdl);
+
+  /* store the associated model. */
+  opt->mdl = mdl;
+
+  /* return success. */
+  return 1;
 }
 
 /* optim_set_max_steps(): set the maximum number of steps per iteration
