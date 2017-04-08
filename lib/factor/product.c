@@ -65,6 +65,24 @@ FACTOR_VAR (product) {
   return var;
 }
 
+/* product_cov(): evaluate the product factor covariance.
+ *  - see factor_cov_fn() for more information.
+ */
+FACTOR_COV (product) {
+  /* get the extended structure pointer. */
+  product_t *fx = (product_t*) f;
+
+  /* include the covariances of each factor. */
+  double cov = 1.0;
+  for (unsigned int n = 0; n < fx->F; n++) {
+    factor_t *fn = fx->factors[n];
+    cov *= factor_cov(fn, x1, x2, p1, p2);
+  }
+
+  /* return the computed expectation. */
+  return cov;
+}
+
 /* product_diff_mean(): evaluate the product factor mean gradient.
  *  - see factor_diff_mean_fn() for more information.
  */
@@ -367,6 +385,7 @@ static factor_type_t product_type = {
   NULL,                                          /* parnames  */
   product_mean,                                  /* mean      */
   product_var,                                   /* var       */
+  product_cov,                                   /* cov       */
   product_diff_mean,                             /* diff_mean */
   product_diff_var,                              /* diff_var  */
   NULL,                                          /* meanfield */

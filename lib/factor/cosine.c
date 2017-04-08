@@ -44,6 +44,22 @@ FACTOR_VAR (cosine) {
   return 0.5 * (ep + em);
 }
 
+/* cosine_cov(): evaluate the cosine factor covariance.
+ *  - see factor_cov_fn() for more information.
+ */
+FACTOR_COV (cosine) {
+  /* get the factor parameters. */
+  const double mu = vector_get(f->par, P_MU);
+  const double tau = vector_get(f->par, P_TAU);
+
+  /* compute the difference of the inputs and the phase offset. */
+  const double xm = vector_get(x1, f->d) - vector_get(x2, f->d);
+  const int zm = (p1 == p2 ? 0 : p1 ? -1 : 1);
+
+  /* compute and return the covariance. */
+  return exp(-0.5 * xm * xm / tau) * cos(mu * xm + zm);
+}
+
 /* cosine_diff_mean(): evaluate the cosine factor mean gradient.
  *  - see factor_diff_mean_fn() for more information.
  */
@@ -166,6 +182,7 @@ static factor_type_t cosine_type = {
   cosine_names,                                  /* parnames  */
   cosine_mean,                                   /* mean      */
   cosine_var,                                    /* var       */
+  cosine_cov,                                    /* cov       */
   cosine_diff_mean,                              /* diff_mean */
   cosine_diff_var,                               /* diff_var  */
   NULL,                                          /* meanfield */

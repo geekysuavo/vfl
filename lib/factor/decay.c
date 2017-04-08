@@ -36,6 +36,21 @@ FACTOR_VAR (decay) {
   return pow(beta / (beta + xp), alpha);
 }
 
+/* decay_cov(): evaluate the decay factor covariance.
+ *  - see factor_cov_fn() for more information.
+ */
+FACTOR_COV (decay) {
+  /* get the summed input values along the factor dimension. */
+  const double xp = vector_get(x1, f->d) + vector_get(x2, f->d);
+
+  /* get the factor parameters. */
+  const double alpha = vector_get(f->par, P_ALPHA);
+  const double beta = vector_get(f->par, P_BETA);
+
+  /* compute and return the expectation. */
+  return pow(beta / (beta + xp), alpha);
+}
+
 /* decay_diff_mean(): evaluate the decay factor mean gradient.
  *  - see factor_diff_mean_fn() for more information.
  */
@@ -167,6 +182,7 @@ static factor_type_t decay_type = {
   decay_names,                                   /* parnames  */
   decay_mean,                                    /* mean      */
   decay_var,                                     /* var       */
+  decay_cov,                                     /* cov       */
   decay_diff_mean,                               /* diff_mean */
   decay_diff_var,                                /* diff_var  */
   NULL,                                          /* meanfield */

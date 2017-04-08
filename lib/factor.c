@@ -329,6 +329,27 @@ double factor_var (const factor_t *f,
   return var_fn(f, x, p, i, j);
 }
 
+/* factor_cov(): evaluate the covariance function of a factor.
+ *  - see factor_cov_fn() for more information.
+ */
+double factor_cov (const factor_t *f,
+                   const vector_t *x1,
+                   const vector_t *x2,
+                   const unsigned int p1,
+                   const unsigned int p2) {
+  /* check the input pointers. */
+  if (!f || !x1 || !x2)
+    return 0.0;
+
+  /* check the function pointer. */
+  factor_cov_fn cov_fn = FACTOR_TYPE(f)->cov;
+  if (!cov_fn)
+    return 0.0;
+
+  /* execute the covariance function. */
+  return cov_fn(f, x1, x2, p1, p2);
+}
+
 /* factor_diff_mean(): evaluate the mean gradient function of a factor.
  *  - see factor_diff_mean_fn() for more information.
  */

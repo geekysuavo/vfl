@@ -49,6 +49,24 @@ typedef double (*factor_var_fn) (const factor_t *f,
                                  const unsigned int i,
                                  const unsigned int j);
 
+/* factor_cov_fn(): return the covariance of basis elements.
+ *
+ * arguments:
+ *  @f: factor structure pointer.
+ *  @x1: first observation input vector.
+ *  @x2: second observation input vector.
+ *  @p1: first function output index.
+ *  @p2: second function output index.
+ *
+ * returns:
+ *  E[ phi^{p1}(x1 | theta(f)) phi^{p2}(x2 | theta(f)) ]
+ */
+typedef double (*factor_cov_fn) (const factor_t *f,
+                                 const vector_t *x1,
+                                 const vector_t *x2,
+                                 const unsigned int p1,
+                                 const unsigned int p2);
+
 /* factor_diff_mean_fn(): return the gradient of the first moment
  * of a basis element.
  *
@@ -197,6 +215,14 @@ double name ## _var (const factor_t *f, \
                      const unsigned int i, \
                      const unsigned int j)
 
+/* FACTOR_COV(): macro function for declaring and defining
+ * functions conforming to factor_cov_fn().
+ */
+#define FACTOR_COV(name) \
+double name ## _cov (const factor_t *f, \
+                     const vector_t *x1, const vector_t *x2, \
+                     const unsigned int p1, const unsigned int p2)
+
 /* FACTOR_DIFF_MEAN(): macro function for declaring and defining
  * functions conforming to factor_diff_mean_fn().
  */
@@ -294,6 +320,7 @@ typedef struct {
    *  expectations:
    *   @mean: first moment.
    *   @var: second moment.
+   *   @cov: covariance.
    *
    *  gradients:
    *   @diff_mean: gradient of the first moment.
@@ -313,6 +340,7 @@ typedef struct {
    */
   factor_mean_fn      mean;
   factor_var_fn       var;
+  factor_cov_fn       cov;
   factor_diff_mean_fn diff_mean;
   factor_diff_var_fn  diff_var;
   factor_meanfield_fn meanfield;
@@ -400,6 +428,12 @@ double factor_var (const factor_t *f,
                    const unsigned int p,
                    const unsigned int i,
                    const unsigned int j);
+
+double factor_cov (const factor_t *f,
+                   const vector_t *x1,
+                   const vector_t *x2,
+                   const unsigned int p1,
+                   const unsigned int p2);
 
 int factor_diff_mean (const factor_t *f,
                       const vector_t *x,

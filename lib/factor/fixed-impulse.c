@@ -175,6 +175,7 @@ static factor_type_t fixed_impulse_type = {
   fixed_impulse_names,                           /* names     */
   fixed_impulse_mean,                            /* mean      */
   fixed_impulse_var,                             /* var       */
+  NULL,                                          /* cov       */
   fixed_impulse_diff_mean,                       /* diff_mean */
   fixed_impulse_diff_var,                        /* diff_var  */
   NULL,                                          /* meanfield */

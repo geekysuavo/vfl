@@ -130,6 +130,7 @@ static factor_type_t impulse_type = {
   impulse_names,                                 /* parnames  */
   impulse_mean,                                  /* mean      */
   impulse_var,                                   /* var       */
+  NULL,                                          /* cov       */
   impulse_diff_mean,                             /* diff_mean */
   impulse_diff_var,                              /* diff_var  */
   NULL,                                          /* meanfield */
