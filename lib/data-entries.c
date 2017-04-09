@@ -93,12 +93,13 @@ int data_augment (data_t *dat, const datum_t *d) {
 int data_augment_from_grid (data_t *dat, const unsigned int p,
                             const matrix_t *grid) {
   /* declare required variables:
+   *  @N0: previous dataset size.
    *  @N, @D: new dataset sizes.
    *  @idx: current grid index.
    *  @sz: maximum grid indices.
    *  @x: vector of grid locations.
    */
-  unsigned int status, N, D, *idx, *sz;
+  unsigned int status, N0, N, D, *idx, *sz;
   vector_t *x;
 
   /* initialize the return status. */
@@ -119,6 +120,7 @@ int data_augment_from_grid (data_t *dat, const unsigned int p,
 
   /* initialize the new sizes. */
   D = grid->rows;
+  N0 = dat->N;
   N = 1;
 
   /* allocate indices for grid traversal. */
@@ -143,7 +145,7 @@ int data_augment_from_grid (data_t *dat, const unsigned int p,
   }
 
   /* attempt to resize the dataset. */
-  if (!data_resize(dat, dat->N + N, D))
+  if (!data_resize(dat, N0 + N, D))
     goto fail;
 
   /* allocate a vector for holding observations. */
@@ -157,9 +159,9 @@ int data_augment_from_grid (data_t *dat, const unsigned int p,
   /* loop over every grid point. */
   for (unsigned int i = 0; i < N; i++) {
     /* store the current grid point. */
-    vector_copy(dat->data[i].x, x);
-    dat->data[i].y = 0.0;
-    dat->data[i].p = p;
+    vector_copy(dat->data[N0 + i].x, x);
+    dat->data[N0 + i].y = 0.0;
+    dat->data[N0 + i].p = p;
 
     /* move to the next grid point. */
     for (unsigned int d = 0; d < D; d++) {

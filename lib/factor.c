@@ -34,17 +34,17 @@ factor_t *factor_alloc (const factor_type_t *type) {
   f->inf = NULL;
   f->par = NULL;
 
-  /* initialize the factor sizes from their defaults. */
-  if (!factor_resize(f, type->D, type->P, type->K)) {
-    /* failed to resize. */
-    factor_free(f);
-    return NULL;
-  }
-
   /* execute the initialization function, if defined. */
   factor_init_fn init_fn = FACTOR_TYPE(f)->init;
   if (init_fn && !init_fn(f)) {
     /* initialization failed. */
+    factor_free(f);
+    return NULL;
+  }
+
+  /* initialize the factor sizes from their defaults. */
+  if (!factor_resize(f, type->D, type->P, type->K)) {
+    /* failed to resize. */
     factor_free(f);
     return NULL;
   }
