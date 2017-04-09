@@ -444,6 +444,39 @@ double model_var (const model_t *mdl,
   return factor_var(mdl->factors[j1], x, p, k1, k2);
 }
 
+/* model_cov(): return the covariance of a model function at
+ * two input locations.
+ *
+ * arguments:
+ *  @mdl: model structure pointer.
+ *  @x1: first observation input vector.
+ *  @x2: second observation input vector.
+ *  @p1: first function output index.
+ *  @p2: second function output index.
+ *
+ * returns:
+ *  expectation of the requested product of basis elements.
+ */
+double model_cov (const model_t *mdl,
+                  const vector_t *x1,
+                  const vector_t *x2,
+                  const unsigned int p1,
+                  const unsigned int p2) {
+  /* check the input pointers. */
+  if (!mdl || !x1 || !x2)
+    return 0.0;
+
+  /* initialize the computation. */
+  double cov = 0.0;
+
+  /* sum together the contributions from each factor. */
+  for (unsigned int j = 0; j < mdl->M; j++)
+    cov += factor_cov(mdl->factors[j], x1, x2, p1, p2);
+
+  /* return the computed result. */
+  return cov;
+}
+
 /* model_bound(): return the model variational lower bound.
  *  - see model_bound_fn() for more information.
  */

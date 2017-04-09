@@ -287,6 +287,12 @@ double model_var (const model_t *mdl,
                   const unsigned int j1, const unsigned int j2,
                   const unsigned int k1, const unsigned int k2);
 
+double model_cov (const model_t *mdl,
+                  const vector_t *x1,
+                  const vector_t *x2,
+                  const unsigned int p1,
+                  const unsigned int p2);
+
 double model_bound (const model_t *mdl);
 
 int model_predict (const model_t *mdl, const vector_t *x,
