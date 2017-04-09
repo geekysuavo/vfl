@@ -264,10 +264,25 @@ double factor_get (const factor_t *f, const unsigned int i) {
   return vector_get(f->par, i);
 }
 
+/* factor_set_fixed(): set the fixed flag of a variational factor.
+ *
+ * arguments:
+ *  @f: factor structure pointer to modify.
+ *  @fixed: whether or not the factor is fixed.
+ */
+void factor_set_fixed (factor_t *f, const unsigned int fixed) {
+  /* return if the input pointer is null. */
+  if (!f)
+    return;
+
+  /* set the fixed flag of the factor. */
+  f->fixed = fixed;
+}
+
 /* factor_set(): store a parameter into a variational factor.
  *
  * arguments:
- *  @f: factor structure pointer to access.
+ *  @f: factor structure pointer to modify.
  *  @i: factor parameter index.
  *  @value: parameter value.
  *
@@ -362,6 +377,12 @@ int factor_diff_mean (const factor_t *f,
   if (!f || !x || !df || i >= f->K || df->len != f->P)
     return 0;
 
+  /* return zero gradient if the factor is fixed. */
+  if (f->fixed) {
+    vector_set_zero(df);
+    return 1;
+  }
+
   /* check the function pointer. */
   factor_diff_mean_fn diff_mean_fn = FACTOR_TYPE(f)->diff_mean;
   if (!diff_mean_fn)
@@ -384,6 +405,12 @@ int factor_diff_var (const factor_t *f,
   /* check the input pointers, basis indices, and gradient length. */
   if (!f || !x || !df || i >= f->K || j >= f->K || df->len != f->P)
     return 0;
+
+  /* return zero gradient if the factor is fixed. */
+  if (f->fixed) {
+    vector_set_zero(df);
+    return 1;
+  }
 
   /* check the function pointer. */
   factor_diff_var_fn diff_var_fn = FACTOR_TYPE(f)->diff_var;

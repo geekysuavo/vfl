@@ -416,6 +416,8 @@ double factor_get_by_name (const factor_t *f, const char *name);
 
 double factor_get (const factor_t *f, const unsigned int i);
 
+void factor_set_fixed (factor_t *f, const unsigned int fixed);
+
 int factor_set (factor_t *f, const unsigned int i, const double value);
 
 double factor_mean (const factor_t *f,
