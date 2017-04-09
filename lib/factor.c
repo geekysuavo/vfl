@@ -431,6 +431,10 @@ int factor_meanfield (factor_t *f, const factor_t *fp, const data_t *dat,
   if (!f || !fp || !dat || !A || !B)
     return 0;
 
+  /* perform no update if the factor is fixed. */
+  if (f->fixed)
+    return 1;
+
   /* check the function pointer. */
   factor_meanfield_fn meanfield_fn = FACTOR_TYPE(f)->meanfield;
   if (!meanfield_fn)
