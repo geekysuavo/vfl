@@ -137,6 +137,7 @@ static factor_type_t impulse_type = {
   impulse_div,                                   /* div       */
   NULL,                                          /* init      */
   NULL,                                          /* resize    */
+  NULL,                                          /* kernel    */
   impulse_set,                                   /* set       */
   NULL,                                          /* copy      */
   NULL                                           /* free      */

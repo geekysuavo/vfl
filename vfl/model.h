@@ -293,6 +293,8 @@ double model_cov (const model_t *mdl,
                   const unsigned int p1,
                   const unsigned int p2);
 
+char *model_kernel (const model_t *mdl);
+
 double model_bound (const model_t *mdl);
 
 int model_predict (const model_t *mdl, const vector_t *x,
