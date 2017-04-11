@@ -164,6 +164,20 @@ typedef int (*factor_resize_fn) (factor_t *f,
                                  const unsigned int P,
                                  const unsigned int K);
 
+/* factor_kernel_fn(): write the kernel code of a factor structure.
+ *
+ * arguments:
+ *  @f: factor structure pointer.
+ *  @p0: parameter vector offset.
+ *
+ * returns:
+ *  newly allocated string that contains the kernel code, or NULL
+ *  on failure. the calling function is responsible for freeing
+ *  the string after use.
+ */
+typedef char* (*factor_kernel_fn) (const factor_t *f,
+                                   const unsigned int p0);
+
 /* factor_set_fn(): assign a variational parameter in a factor.
  *
  * arguments:
@@ -273,6 +287,12 @@ int name ## _init (factor_t *f)
 int name ## _resize (factor_t *f, const unsigned int D, \
                      const unsigned int P, const unsigned int K)
 
+/* FACTOR_KERNEL(): macro function for declaring and defining
+ * functions conforming to factor_kernel_fn().
+ */
+#define FACTOR_KERNEL(name) \
+char* name ## _kernel (const factor_t *f, const unsigned int p0)
+
 /* FACTOR_SET(): macro function for declaring and defining
  * functions conforming to factor_set_fn().
  */
@@ -335,6 +355,8 @@ typedef struct {
    *
    *  maintenance hooks:
    *   @init: hook for initialization.
+   *   @resize: hook for resize handling.
+   *   @kernel: hook for kernel construction.
    *   @set: hook for setting parameter values.
    *   @copy: hook for copying extra memory between factors.
    *   @free: hook for extra functionality during deallocation.
@@ -348,6 +370,7 @@ typedef struct {
   factor_div_fn       div;
   factor_init_fn      init;
   factor_resize_fn    resize;
+  factor_kernel_fn    kernel;
   factor_set_fn       set;
   factor_copy_fn      copy;
   factor_free_fn      free;
@@ -455,6 +478,8 @@ int factor_meanfield (factor_t *f, const factor_t *fp, const data_t *dat,
                       matrix_t *A, matrix_t *B);
 
 double factor_div (const factor_t *f, const factor_t *f2);
+
+char *factor_kernel (const factor_t *f, const unsigned int p0);
 
 /* function declarations (factor/fixed-impulse.c): */
 

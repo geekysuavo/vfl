@@ -99,6 +99,7 @@ static factor_type_t polynomial_type = {
   NULL,                                          /* div       */
   NULL,                                          /* init      */
   NULL,                                          /* resize    */
+  NULL,                                          /* kernel    */
   NULL,                                          /* set       */
   NULL,                                          /* copy      */
   NULL                                           /* free      */

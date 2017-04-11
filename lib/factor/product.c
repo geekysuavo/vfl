@@ -190,6 +190,69 @@ FACTOR_DIV (product) {
   return div;
 }
 
+/* product_kernel(): write the kernel code of a product factor.
+ *  - see factor_kernel_fn() for more information.
+ */
+FACTOR_KERNEL (product) {
+  /* get the extended structure pointer. */
+  product_t *fx = (product_t*) f;
+
+  /* define kernel code format strings. */
+  const char *fmtA = "float prod = 1.0;\n";
+  const char *fmtB = "{\n%s}\nprod *= cov;\n";
+  const char *fmtC = "cov = prod;\n";
+
+  /* allocate an array for storing sub-factor kernel code. */
+  char **fstr = malloc(fx->F * sizeof(char*));
+  if (!fstr)
+    return NULL;
+
+  /* get the strings of each sub-factor. */
+  for (unsigned int n = 0, pn = p0; n < fx->F; n++) {
+    /* get the current sub-factor string. */
+    const factor_t *fn = fx->factors[n];
+    fstr[n] = factor_kernel(fn, pn);
+
+    /* check for failure. */
+    if (!fstr[n])
+      return NULL;
+
+    /* advance the sub-factor parameter offset. */
+    pn += fn->P;
+  }
+
+  /* determine the length of the kernel code string. */
+  unsigned int len = strlen(fmtA) + strlen(fmtC) + 8;
+  for (unsigned int n = 0; n < fx->F; n++)
+    len += strlen(fmtB) + strlen(fstr[n]);
+
+  /* allocate the kernel code string. */
+  char *kstr = malloc(len);
+  if (!kstr)
+    return NULL;
+
+  /* write the header. */
+  char *pos = kstr;
+  pos += sprintf(pos, fmtA);
+
+  /* write each sub-factor string. */
+  for (unsigned int n = 0; n < fx->F; n++)
+    pos += sprintf(pos, fmtB, fstr[n]);
+
+  /* write the footer. */
+  sprintf(pos, fmtC);
+
+  /* free the sub-factor strings. */
+  for (unsigned int n = 0; n < fx->F; n++)
+    free(fstr[n]);
+
+  /* free the sub-factor string array. */
+  free(fstr);
+
+  /* return the new string. */
+  return kstr;
+}
+
 /* product_set(): store a parameter into a product factor.
  *  - see factor_set_fn() for more information.
  */
@@ -392,6 +455,7 @@ static factor_type_t product_type = {
   product_div,                                   /* div       */
   product_init,                                  /* init      */
   NULL,                                          /* resize    */
+  product_kernel,                                /* kernel    */
   product_set,                                   /* set       */
   product_copy,                                  /* copy      */
   product_free                                   /* free      */

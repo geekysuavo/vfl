@@ -461,3 +461,20 @@ double factor_div (const factor_t *f, const factor_t *f2) {
   return div_fn(f, f2);
 }
 
+/* factor_kernel(): write covariance kernel code of a factor.
+ *  - see factor_kernel_fn() for more information.
+ */
+char *factor_kernel (const factor_t *f, const unsigned int p0) {
+  /* check the input pointer. */
+  if (!f)
+    return NULL;
+
+  /* check the function pointer. */
+  factor_kernel_fn kernel_fn = FACTOR_TYPE(f)->kernel;
+  if (!kernel_fn)
+    return NULL;
+
+  /* execute the kernel function. */
+  return kernel_fn(f, p0);
+}
+

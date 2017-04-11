@@ -182,6 +182,7 @@ static factor_type_t fixed_impulse_type = {
   fixed_impulse_div,                             /* div       */
   fixed_impulse_init,                            /* init      */
   NULL,                                          /* resize    */
+  NULL,                                          /* kernel    */
   fixed_impulse_set,                             /* set       */
   fixed_impulse_copy,                            /* copy      */
   NULL                                           /* free      */

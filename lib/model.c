@@ -489,6 +489,92 @@ double model_cov (const model_t *mdl,
   return cov;
 }
 
+/* model_kernel(): write the covariance kernel function code
+ * of a variational feature model.
+ *
+ * arguments:
+ *  @mdl: model structure pointer to access.
+ *
+ * returns:
+ *  newly allocated string that contains the covariance kernel
+ *  function code required to evaluate model covariances in
+ *  opencl.
+ */
+char *model_kernel (const model_t *mdl) {
+  /* check the input pointer. */
+  if (!mdl)
+    return NULL;
+
+  /* define kernel code format strings. */
+  const char *fmtA = "\
+inline float vfl_covkernel (const __global float *par,\n\
+                            const __local float *x1,\n\
+                            const __local float *x2,\n\
+                            const __local uint p1,\n\
+                            const __local uint p2) {\n\
+float cov, sum = 0.0, diag = 1.0;\n\
+const float tau = par[0];\n\
+const float nu = par[1];\n";
+  const char *fmtB = "{\n%s}\nsum += cov;\n";
+  const char *fmtC = "diag *= (x1[%u] == x2[%u]);\n";
+  const char *fmtD = "return (sum / nu + diag) / tau;\n}\n\n";
+
+  /* allocate an array for storing factor kernel code. */
+  char **fstr = malloc(mdl->M * sizeof(char*));
+  if (!fstr)
+    return NULL;
+
+  /* get the strings of each factor. */
+  for (unsigned int j = 0, pj = 2; j < mdl->M; j++) {
+    /* get the current factor string. */
+    const factor_t *fj = mdl->factors[j];
+    fstr[j] = factor_kernel(fj, pj);
+
+    /* check for failure. */
+    if (!fstr[j])
+      return NULL;
+
+    /* advance the factor parameter offset. */
+    pj += fj->P;
+  }
+
+  /* determine the length of the kernel code string. */
+  unsigned int len = strlen(fmtA) + strlen(fmtD) + 8;
+  len += mdl->D * strlen(fmtC);
+  for (unsigned int j = 0; j < mdl->M; j++)
+    len += strlen(fmtB) + strlen(fstr[j]);
+
+  /* allocate the kernel code string. */
+  char *kstr = malloc(len);
+  if (!kstr)
+    return NULL;
+
+  /* write the header. */
+  char *pos = kstr;
+  pos += sprintf(pos, fmtA);
+
+  /* write each factor string. */
+  for (unsigned int j = 0; j < mdl->M; j++)
+    pos += sprintf(pos, fmtB, fstr[j]);
+
+  /* write the diagonal tests. */
+  for (unsigned int d = 0; d < mdl->D; d++)
+    pos += sprintf(pos, fmtC, d, d);
+
+  /* write the footer. */
+  sprintf(pos, fmtD);
+
+  /* free the factor strings. */
+  for (unsigned int j = 0; j < mdl->M; j++)
+    free(fstr[j]);
+
+  /* free the factor string array. */
+  free(fstr);
+
+  /* return the new string. */
+  return kstr;
+}
+
 /* model_bound(): return the model variational lower bound.
  *  - see model_bound_fn() for more information.
  */

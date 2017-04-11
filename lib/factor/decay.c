@@ -118,6 +118,27 @@ FACTOR_DIV (decay) {
        + (beta - beta2) * (alpha / beta);
 }
 
+/* decay_kernel(): write the kernel code of a decay factor.
+ *  - see factor_kernel_fn() for more information.
+ */
+FACTOR_KERNEL (decay) {
+  /* define the kernel code format string. */
+  const char *fmt = "\
+const float xd = x1[%u] + x2[%u];\n\
+const float alpha = par[%u];\n\
+const float beta  = par[%u];\n\
+cov = pow(beta / (beta + xd), alpha);\n\
+";
+
+  /* allocate and write the kernel code string. */
+  char *kstr = malloc(strlen(fmt) + 8);
+  if (kstr)
+    sprintf(kstr, fmt, f->d, f->d, p0 + P_ALPHA, p0 + P_BETA);
+
+  /* return the new string. */
+  return kstr;
+}
+
 /* decay_set(): store a parameter into a decay factor.
  *  - see factor_set_fn() for more information.
  */
@@ -189,6 +210,7 @@ static factor_type_t decay_type = {
   decay_div,                                     /* div       */
   NULL,                                          /* init      */
   NULL,                                          /* resize    */
+  decay_kernel,                                  /* kernel    */
   decay_set,                                     /* set       */
   NULL,                                          /* copy      */
   NULL                                           /* free      */

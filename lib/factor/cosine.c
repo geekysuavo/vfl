@@ -133,6 +133,28 @@ FACTOR_DIV (cosine) {
        - 0.5 * log(tau2 / tau) - 0.5;
 }
 
+/* cosine_kernel(): write the kernel code of a cosine factor.
+ *  - see factor_kernel_fn() for more information.
+ */
+FACTOR_KERNEL (cosine) {
+  /* define the kernel code format string. */
+  const char *fmt = "\
+const float xd = x1[%u] - x2[%u];\n\
+const float mu = par[%u];\n\
+const float tau = par[%u];\n\
+const int zd = (p1 == p2 ? 0 : p1 ? -1 : 1);\n\
+cov = exp(-0.5 * xd * xd / tau) * cos(mu * xd + zd);\n\
+";
+
+  /* allocate and write the kernel code string. */
+  char *kstr = malloc(strlen(fmt) + 8);
+  if (kstr)
+    sprintf(kstr, fmt, f->d, f->d, p0 + P_MU, p0 + P_TAU);
+
+  /* return the new string. */
+  return kstr;
+}
+
 /* cosine_set(): store a parameter into a cosine factor.
  *  - see factor_set_fn() for more information.
  */
@@ -189,6 +211,7 @@ static factor_type_t cosine_type = {
   cosine_div,                                    /* div       */
   NULL,                                          /* init      */
   NULL,                                          /* resize    */
+  cosine_kernel,                                 /* kernel    */
   cosine_set,                                    /* set       */
   NULL,                                          /* copy      */
   NULL                                           /* free      */
