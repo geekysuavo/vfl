@@ -10,6 +10,7 @@
 
 /* include application headers. */
 #include <vfl/util/specfun.h>
+#include <vfl/util/blas.h>
 #include <vfl/data.h>
 
 /* factor_t: defined type for the factor structure. */

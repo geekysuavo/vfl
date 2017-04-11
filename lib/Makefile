@@ -1,4 +1,7 @@
 
+# whether or not to use atlas blas/lapack.
+USE_ATLAS=y
+
 # executable filenames.
 CC=gcc
 RM=rm -f
@@ -6,9 +9,18 @@ WC=wc -l
 GREP=grep -RHni --color
 
 # compilation and linkage flags.
-CFLAGS=-fPIC -ggdb -O3 -std=gnu99 -I.. -Wall -Wextra -Wno-unused-parameter
-LDFLAGS=-shared
+CFLAGS+= -fPIC -ggdb -O3 -std=gnu99 -I..
+CFLAGS+= -Wall -Wextra -Wno-unused-parameter
+LDFLAGS+= -shared
 LIBS=-lm
+
+# extra flags for using atlas blas/lapack.
+ifeq ($(USE_ATLAS),y)
+ATLAS=/usr/local/atlas
+CFLAGS+= -D__VFL_USE_ATLAS -I$(ATLAS)/include
+LDFLAGS+= -L$(ATLAS)/lib
+LIBS+= -ltatlas
+endif
 
 # output library filename.
 LIB=libvfl.so

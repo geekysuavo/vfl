@@ -140,7 +140,7 @@ MODEL_INFER (vfr) {
 
   /* compute the model inner product. */
   vector_view_t z = vector_subvector(mdl->tmp, 0, mdl->K);
-  blas_dtrmv(BLAS_TRANS, 1.0, mdl->L, mdl->wbar, 0.0, &z);
+  blas_dtrmv(BLAS_TRANS, mdl->L, mdl->wbar, &z);
   const double wSw = blas_ddot(&z, &z);
 
   /* compute the data inner product. */
@@ -229,7 +229,7 @@ MODEL_UPDATE (vfr) {
 
   /* compute the model inner product. */
   vector_view_t z = vector_subvector(mdl->tmp, 0, mdl->K);
-  blas_dtrmv(BLAS_TRANS, 1.0, mdl->L, mdl->wbar, 0.0, &z);
+  blas_dtrmv(BLAS_TRANS, mdl->L, mdl->wbar, &z);
   const double wSw = blas_ddot(&z, &z);
 
   /* compute the data inner product. */

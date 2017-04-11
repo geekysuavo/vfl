@@ -66,8 +66,6 @@ void vector_add (vector_t *a, const vector_t *b);
 
 void vector_add_const (vector_t *v, const double beta);
 
-void vector_scale (vector_t *v, const double alpha);
-
 int vector_equal (const vector_t *a, const vector_t *b);
 
 int vector_positive (const vector_t *v);

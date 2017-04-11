@@ -15,6 +15,10 @@
  *  sum of absolute values of the vector elements.
  */
 double blas_dasum (const vector_t *x) {
+#ifdef __VFL_USE_ATLAS
+  /* use atlas blas. */
+  return cblas_dasum(x->len, x->data, x->stride);
+#else
   /* initialize the result. */
   double result = 0.0;
 
@@ -24,6 +28,7 @@ double blas_dasum (const vector_t *x) {
 
   /* return the result. */
   return result;
+#endif
 }
 
 /* blas_dnrm2(): compute the euclidean norm of a vector, equivalent to
@@ -39,8 +44,13 @@ double blas_dasum (const vector_t *x) {
  *  euclidean norm of the input vector.
  */
 inline double blas_dnrm2 (const vector_t *x) {
+#ifdef __VFL_USE_ATLAS
+  /* use atlas blas. */
+  return cblas_dnrm2(x->len, x->data, x->stride);
+#else
   /* compute and return the result. */
   return sqrt(blas_ddot(x, x));
+#endif
 }
 
 /* blas_ddot(): compute the euclidean inner product between two vectors,
@@ -56,6 +66,10 @@ inline double blas_dnrm2 (const vector_t *x) {
  *  euclidean inner product (dot product) of the two input vectors.
  */
 double blas_ddot (const vector_t *x, const vector_t *y) {
+#ifdef __VFL_USE_ATLAS
+  /* use atlas blas. */
+  return cblas_ddot(x->len, x->data, x->stride, y->data, y->stride);
+#else
   /* initialize the result. */
   double result = 0.0;
 
@@ -65,6 +79,7 @@ double blas_ddot (const vector_t *x, const vector_t *y) {
 
   /* return the result. */
   return result;
+#endif
 }
 
 /* blas_daxpy(): compute the element-wise sum of two vectors.
@@ -78,9 +93,34 @@ double blas_ddot (const vector_t *x, const vector_t *y) {
  *  @y: input and output vector of the sum.
  */
 void blas_daxpy (double alpha, const vector_t *x, vector_t *y) {
+#ifdef __VFL_USE_ATLAS
+  /* use atlas blas. */
+  cblas_daxpy(x->len, alpha, x->data, x->stride, y->data, y->stride);
+#else
   /* compute the sum over all vector elements. */
   for (unsigned int i = 0; i < x->len; i++)
     vector_set(y, i, vector_get(y, i) + alpha * vector_get(x, i));
+#endif
+}
+
+/* blas_dscal(): compute the scaled value of a vector.
+ *
+ * operation:
+ *  y <- alpha y
+ *
+ * arguments:
+ *  @alpha: scale factor to apply to @y.
+ *  @y: input and output vector.
+ */
+void blas_dscal (double alpha, vector_t *y) {
+#ifdef __VFL_USE_BLAS
+  /* use atlas blas. */
+  cblas_dscal(y->len, alpha, y->data, y->stride);
+#else
+  /* compute the scaled value of each vector element. */
+  for (unsigned int i = 0; i < y->len; i++)
+    vector_set(y, i, vector_get(y, i) * alpha);
+#endif
 }
 
 /* --- */
@@ -105,11 +145,17 @@ void blas_daxpy (double alpha, const vector_t *x, vector_t *y) {
  */
 void blas_dgemv (blas_transpose_t trans, double alpha, const matrix_t *A,
                  const vector_t *x, double beta, vector_t *y) {
+#ifdef __VFL_USE_ATLAS
+  /* use atlas blas. */
+  cblas_dgemv(CblasRowMajor, trans, A->rows, A->cols, alpha,
+              A->data, A->stride, x->data, x->stride, beta,
+              y->data, y->stride);
+#else
   /* perform: y <- beta y */
   if (beta == 0.0)
     vector_set_zero(y);
   else
-    vector_scale(y, beta);
+    blas_dscal(beta, y);
 
   /* if the scale factor to the matrix-vector portion is zero, return. */
   if (alpha == 0.0)
@@ -132,60 +178,56 @@ void blas_dgemv (blas_transpose_t trans, double alpha, const matrix_t *A,
       vector_set(y, j, vector_get(y, j) + alpha * ax);
     }
   }
+#endif
 }
 
-/* blas_dtrmv(): compute the linear combination of a vector and the product
- * of a lower-triangular matrix with a vector.
+/* blas_dtrmv(): compute the product of a lower-triangular matrix
+ * with a vector.
  *
  * the user is responsible for ensuring that all matrix and vector operands
  * are non-null and of conformal sizes. only the lower triangle of the
  * input matrix is accessed.
  *
  * operation:
- *  y <- alpha L x  + beta y      if trans == BLAS_NO_TRANS
- *  y <- alpha L' x + beta y      if trans == BLAS_TRANS
+ *  y <- L x       if trans == BLAS_NO_TRANS
+ *  y <- L' x      if trans == BLAS_TRANS
  *
  * arguments:
  *  @trans: transposition state of the matrix in the product.
- *  @alpha: scale factor for the matrix-vector product.
  *  @L: input lower-triangular matrix to the product.
- *  @x: input vector to the product operation
- *  @beta: scale factor for the output vector.
- *  @y: input and output vector to the combined operation.
+ *  @x: input vector to the product operation.
+ *  @y: output vector to the product operation.
  */
-void blas_dtrmv (blas_transpose_t trans, double alpha, const matrix_t *L,
-                 const vector_t *x, double beta, vector_t *y) {
-  /* perform: y <- beta y */
-  if (beta == 0.0)
-    vector_set_zero(y);
-  else
-    vector_scale(y, beta);
-
-  /* if the scale factor to the matrix-vector portion is zero, return. */
-  if (alpha == 0.0)
-    return;
-
+void blas_dtrmv (blas_transpose_t trans, const matrix_t *L,
+                 const vector_t *x, vector_t *y) {
+#ifdef __VFL_USE_ATLAS
+  /* use atlas blas. */
+  vector_copy(y, x);
+  cblas_dtrmv(CblasRowMajor, CblasLower, trans, CblasNonUnit,
+              L->rows, L->data, L->stride, y->data, y->stride);
+#else
   /* locally store the problem size. */
   const unsigned int n = x->len;
 
   /* perform the triangular multiplication operation. */
   if (trans == BLAS_NO_TRANS) {
-    /* perform: y <- y + alpha L x */
+    /* perform: y <- L x */
     for (unsigned int i = 0; i < n; i++) {
       vector_view_t li = matrix_subrow(L, i, 0, i + 1);
       const double lx = blas_ddot(&li, x);
-      vector_set(y, i, vector_get(y, i) + alpha * lx);
+      vector_set(y, i, lx);
     }
   }
   else if (trans == BLAS_TRANS) {
-    /* perform: y <- y + alpha L' x */
+    /* perform: y <- L' x */
     for (unsigned int j = 0; j < n; j++) {
       vector_view_t lj = matrix_subcol(L, j, j, n - j);
       vector_view_t sj = vector_subvector(x, j, n - j);
       const double lx = blas_ddot(&lj, &sj);
-      vector_set(y, j, vector_get(y, j) + alpha * lx);
+      vector_set(y, j, lx);
     }
   }
+#endif
 }
 
 /* blas_dtrsv(): perform forward or backward substitution to solve a system
@@ -204,6 +246,11 @@ void blas_dtrmv (blas_transpose_t trans, double alpha, const matrix_t *L,
  *  @x: input and output vector.
  */
 void blas_dtrsv (blas_triangle_t tri, const matrix_t *A, vector_t *x) {
+#ifdef __VFL_USE_ATLAS
+  /* use atlas blas. */
+  cblas_dtrsv(CblasRowMajor, tri, CblasNoTrans, CblasNonUnit,
+              A->rows, A->data, A->stride, x->data, x->stride);
+#else
   /* locally store the problem size. */
   const unsigned int n = x->len;
 
@@ -229,5 +276,6 @@ void blas_dtrsv (blas_triangle_t tri, const matrix_t *A, vector_t *x) {
       vector_set(x, i, xi / Uii);
     }
   }
+#endif
 }
 
