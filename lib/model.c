@@ -508,13 +508,13 @@ char *model_kernel (const model_t *mdl) {
   /* define kernel code format strings. */
   const char *fmtA = "\
 inline float vfl_covkernel (const __global float *par,\n\
-                            const __global float tau,\n\
-                            const __global float nu,\n\
                             const __local float *x1,\n\
                             const __local float *x2,\n\
                             const __local uint p1,\n\
                             const __local uint p2) {\n\
-float cov, sum = 0.0, diag = 1.0;\n";
+float cov, sum = 0.0, diag = 1.0;\n\
+const float tau = par[0];\n\
+const float nu = par[1];\n";
   const char *fmtB = "{\n%s}\nsum += cov;\n";
   const char *fmtC = "diag *= (x1[%u] == x2[%u]);\n";
   const char *fmtD = "return (sum / nu + diag) / tau;\n}\n\n";
@@ -525,7 +525,7 @@ float cov, sum = 0.0, diag = 1.0;\n";
     return NULL;
 
   /* get the strings of each factor. */
-  for (unsigned int j = 0, pj = 0; j < mdl->M; j++) {
+  for (unsigned int j = 0, pj = 2; j < mdl->M; j++) {
     /* get the current factor string. */
     const factor_t *fj = mdl->factors[j];
     fstr[j] = factor_kernel(fj, pj);
