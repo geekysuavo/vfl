@@ -90,7 +90,7 @@ double eigen_minev (const matrix_t *A, matrix_t *B,
       return evub;
 
     /* upate the eigenvector estimate. */
-    vector_scale(z, 1.0 / znrm);
+    blas_dscal(1.0 / znrm, z);
     vector_copy(b, z);
 
     /* update the eigenvalue estimate. */

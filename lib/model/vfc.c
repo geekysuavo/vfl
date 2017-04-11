@@ -37,7 +37,7 @@ MODEL_BOUND (vfc) {
 
   /* include the data fit term. */
   vector_view_t b = vector_subvector(mdl->tmp, 0, mdl->K);
-  blas_dtrmv(BLAS_TRANS, 1.0, mdl->L, mdl->wbar, 0.0, &b);
+  blas_dtrmv(BLAS_TRANS, mdl->L, mdl->wbar, &b);
   bound += 0.5 * blas_ddot(&b, &b);
 
   /* include the logistic terms. */
@@ -150,7 +150,7 @@ MODEL_INFER (vfc) {
 
   /* update the weight means. */
   chol_solve(mdl->L, mdl->h, mdl->wbar);
-  vector_scale(mdl->wbar, 0.5);
+  blas_dscal(0.5, mdl->wbar);
 
   /* update the weight covariances. */
   chol_invert(mdl->L, mdl->Sigma);
@@ -256,7 +256,7 @@ MODEL_UPDATE (vfc) {
 
   /* update the weight means. */
   chol_solve(mdl->L, mdl->h, mdl->wbar);
-  vector_scale(mdl->wbar, 0.5);
+  blas_dscal(0.5, mdl->wbar);
 
   /* update the logistic parameters. */
   for (unsigned int i = 0; i < N; i++) {

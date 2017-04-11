@@ -16,7 +16,7 @@ MODEL_BOUND (tauvfr) {
 
   /* include the data fit term. */
   vector_view_t b = vector_subvector(mdl->tmp, 0, mdl->K);
-  blas_dtrmv(BLAS_TRANS, 1.0, mdl->L, mdl->wbar, 0.0, &b);
+  blas_dtrmv(BLAS_TRANS, mdl->L, mdl->wbar, &b);
   bound += 0.5 * tau * blas_ddot(&b, &b);
 
   /* return the computed result. */

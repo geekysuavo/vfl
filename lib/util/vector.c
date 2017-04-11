@@ -227,21 +227,6 @@ void vector_add_const (vector_t *v, const double beta) {
     vector_set(v, i, vector_get(v, i) + beta);
 }
 
-/* vector_scale(): scale all elements of a vector by a constant value.
- *
- * operation:
- *  v <- v alpha
- *
- * arguments:
- *  @v: input and output vector.
- *  @alpha: scale factor.
- */
-void vector_scale (vector_t *v, const double alpha) {
-  /* perform the element-wise scaling. */
-  for (unsigned int i = 0; i < v->len; i++)
-    vector_set(v, i, vector_get(v, i) * alpha);
-}
-
 /* vector_equal(): test if two vectors are element-wise equal.
  *
  * arguments:

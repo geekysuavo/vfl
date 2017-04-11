@@ -119,7 +119,7 @@ FACTOR_DIFF_MEAN (product) {
       /* include only "other-factor" contributions. */
       if (n2 != n1) {
         vector_view_t df2 = vector_subvector(df, p0, Pf);
-        vector_scale(&df2, mean1);
+        blas_dscal(mean1, &df2);
       }
 
       /* increment the parameter offset. */
@@ -164,7 +164,7 @@ FACTOR_DIFF_VAR (product) {
       /* include only "other-factor" contributions. */
       if (n2 != n1) {
         vector_view_t df2 = vector_subvector(df, p0, Pf);
-        vector_scale(&df2, var1);
+        blas_dscal(var1, &df2);
       }
 
       /* increment the parameter offset. */

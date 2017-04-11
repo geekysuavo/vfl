@@ -38,7 +38,7 @@ int chol_decomp (matrix_t *A) {
       return 0;
 
     /* v <- v ./ sqrt(A(j,j)) */
-    vector_scale(&v, 1.0 / sqrt(Ajj));
+    blas_dscal(1.0 / sqrt(Ajj), &v);
   }
 
   /* symmetrize the cholesky factor matrix. */
@@ -128,11 +128,11 @@ void chol_update (matrix_t *L, vector_t *x) {
 
     /* lk <- (lk + s yk) / c */
     blas_daxpy(s, &yk, &lk);
-    vector_scale(&lk, 1.0 / c);
+    blas_dscal(1.0 / c, &lk);
 
     /* yk <- c yk - s lk */
     blas_daxpy(-s / c, &lk, &yk);
-    vector_scale(&yk, c);
+    blas_dscal(c, &yk);
   }
 
   /* re-symmetrize the cholesky factor matrix. */
@@ -184,11 +184,11 @@ int chol_downdate (matrix_t *L, vector_t *y) {
 
     /* lk <- (lk - s zk) / c */
     blas_daxpy(-s, &zk, &lk);
-    vector_scale(&lk, 1.0 / c);
+    blas_dscal(1.0 / c, &lk);
 
     /* zk <- c zk - s lk */
     blas_daxpy(-s / c, &lk, &zk);
-    vector_scale(&zk, c);
+    blas_dscal(c, &zk);
   }
 
   /* re-symmetrize the cholesky factor matrix. */
