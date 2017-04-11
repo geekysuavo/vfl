@@ -112,19 +112,27 @@ typedef void (*factor_diff_var_fn) (const factor_t *f,
  * of a factor, given its associated prior factor and a set of required
  * coefficients.
  *
+ * if all arguments except the factor structure pointer are null,
+ * then the factor shall interpret the function call as a request
+ * to prepare itself for receiving data.
+ *
+ * if all arguments except the factor and its prior are null,
+ * then the factor shall interpret the function call as a
+ * request to finalize its mean-field update.
+ *
  * arguments:
  *  @f: factor structure pointer.
  *  @fp: prior factor structure pointer.
- *  @dat: dataset structure pointer.
- *  @A: matrix of first-order coefficients.
+ *  @dat: observed data for updates.
+ *  @b: vector of first-order coefficients.
  *  @B: matrix of second-order coefficients.
  *
  * returns:
  *  integer indicating success (1) or failure (0).
  */
 typedef int (*factor_meanfield_fn) (factor_t *f, const factor_t *fp,
-                                    const data_t *dat,
-                                    matrix_t *A,
+                                    const datum_t *dat,
+                                    vector_t *b,
                                     matrix_t *B);
 
 /* factor_div_fn(): return the kullback-liebler divergence between
@@ -264,9 +272,14 @@ void name ## _diff_var (const factor_t *f, \
  */
 #define FACTOR_MEANFIELD(name) \
 int name ## _meanfield (factor_t *f, const factor_t *fp, \
-                        const data_t *dat, \
-                        matrix_t *A, \
+                        const datum_t *dat, \
+                        vector_t *b, \
                         matrix_t *B)
+
+/* macro functions for handling the specific types of mean-field calls.
+ */
+#define FACTOR_MEANFIELD_INIT  !fp && !dat
+#define FACTOR_MEANFIELD_END    fp && !dat
 
 /* FACTOR_DIV(): macro function for declaring and defining
  * functions conforming to factor_div_fn().
@@ -474,8 +487,8 @@ int factor_diff_var (const factor_t *f,
                      const unsigned int j,
                      vector_t *df);
 
-int factor_meanfield (factor_t *f, const factor_t *fp, const data_t *dat,
-                      matrix_t *A, matrix_t *B);
+int factor_meanfield (factor_t *f, const factor_t *fp, const datum_t *dat,
+                      vector_t *b, matrix_t *B);
 
 double factor_div (const factor_t *f, const factor_t *f2);
 

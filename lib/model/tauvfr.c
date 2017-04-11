@@ -305,10 +305,8 @@ MODEL_MEANFIELD (tauvfr) {
   const unsigned int K = mdl->factors[j]->K;
 
   /* gain access to the dataset structure members. */
-  const unsigned int N = mdl->dat->N;
+  datum_t *dat = mdl->dat->data + i;
   const unsigned int M = mdl->M;
-  data_t *dat = mdl->dat;
-  datum_t *di;
 
   /* compute the expected noise precision. */
   const double tau = mdl->alpha;
@@ -317,56 +315,44 @@ MODEL_MEANFIELD (tauvfr) {
   vector_view_t wk = vector_subvector(mdl->wbar, k0, K);
   matrix_view_t Sk = matrix_submatrix(mdl->Sigma, k0, k0, K, K);
 
-  /* compute first-order same-factor contributions. */
-  for (unsigned int i = 0; i < N; i++) {
-    /* get the current observation. */
-    di = data_get(dat, i);
-
-    /* loop over the weights of the current factor. */
-    for (unsigned int k = 0; k < K; k++) {
-      /* compute and store the contribution. */
-      const double aik = tau * di->y * vector_get(&wk, k);
-      matrix_set(A, i, k, aik);
-    }
+  /* loop over the weights of the current factor. */
+  for (unsigned int k = 0; k < K; k++) {
+    /* compute and store the contribution. */
+    const double bk = tau * dat->y * vector_get(&wk, k);
+    vector_set(b, k, bk);
   }
 
-  /* compute first-order other-factor contributions. */
-  for (unsigned int i = 0; i < N; i++) {
-    /* get the current observation. */
-    di = data_get(dat, i);
+  /* loop over the model factors. */
+  for (unsigned int j2 = 0, i2 = 0; j2 < M; j2++) {
+    /* get the number of other-factor weights. */
+    const unsigned int K2 = mdl->factors[j2]->K;
 
-    /* loop over the model factors. */
-    for (unsigned int j2 = 0, i2 = 0; j2 < M; j2++) {
-      /* get the number of other-factor weights. */
-      const unsigned int K2 = mdl->factors[j2]->K;
-
-      /* exclude the factor being updated. */
-      if (j2 == j) {
-        i2 += K2;
-        continue;
-      }
-
-      /* loop over the weights of the other factor. */
-      for (unsigned int k2 = 0; k2 < K2; k2++) {
-        /* get the other factor mean. */
-        const double phi2 = model_mean(mdl, di->x, di->p, j2, k2);
-
-        /* loop over the weights of the current factor. */
-        for (unsigned int k = 0; k < K; k++) {
-          /* compute the weight second moment. */
-          const double w2 = matrix_get(mdl->Sigma, k0 + k, i2 + k2) +
-                            vector_get(mdl->wbar, k0 + k) *
-                            vector_get(mdl->wbar, i2 + k2);
-
-          /* update the matrix element accordingly. */
-          const double aik = matrix_get(A, i, k);
-          matrix_set(A, i, k, aik - tau * w2 * phi2);
-        }
-      }
-
-      /* move to the next set of other-factor weights. */
+    /* exclude the factor being updated. */
+    if (j2 == j) {
       i2 += K2;
+      continue;
     }
+
+    /* loop over the weights of the other factor. */
+    for (unsigned int k2 = 0; k2 < K2; k2++) {
+      /* get the other factor mean. */
+      const double phi2 = model_mean(mdl, dat->x, dat->p, j2, k2);
+
+      /* loop over the weights of the current factor. */
+      for (unsigned int k = 0; k < K; k++) {
+        /* compute the weight second moment. */
+        const double w2 = matrix_get(mdl->Sigma, k0 + k, i2 + k2) +
+                          vector_get(mdl->wbar, k0 + k) *
+                          vector_get(mdl->wbar, i2 + k2);
+
+        /* update the matrix element accordingly. */
+        const double bk = vector_get(b, k);
+        vector_set(b, k, bk - tau * w2 * phi2);
+      }
+    }
+
+    /* move to the next set of other-factor weights. */
+    i2 += K2;
   }
 
   /* compute second-order contributions. */

@@ -18,9 +18,8 @@ static inline unsigned int model_tmp (const model_t *mdl) {
    */
   unsigned int ntmp, kmax;
 
-  /* gain access to the observation, parameter, factor, and weight counts.
+  /* gain access to the parameter, factor, and weight counts.
    */
-  const unsigned int N = (mdl->dat ? mdl->dat->N : 0);
   const unsigned int P = mdl->P;
   const unsigned int M = mdl->M;
   const unsigned int K = mdl->K;
@@ -32,17 +31,12 @@ static inline unsigned int model_tmp (const model_t *mdl) {
   for (unsigned int j = 0; j < M; j++)
     kmax = (mdl->factors[j]->K > kmax ? mdl->factors[j]->K : kmax);
 
-  /* determine the larger of the number of observations and the
-   * total number of model weights.
-   */
-  const unsigned int nk = (N > K ? N : K);
-
   /* the scalars are laid out as follows:
-   *  z:   (K, 1)
-   *  U/B: (max(k), K)
-   *  V/A: (max(k), max(N, K))
+   *  z: (K, 1)         | b: (max(k), 1)
+   *  U: (max(k), K)    | B: (max(k), max(k))
+   *  V: (max(k), K)    |
    */
-  ntmp = K + P + kmax * (K + nk);
+  ntmp = K + P + 2 * kmax * K;
 
   /* return the computed scalar count. */
   return ntmp;
@@ -748,9 +742,6 @@ int model_meanfield (const model_t *mdl, const unsigned int j) {
   if (!mdl || !mdl->dat || j >= mdl->M)
     return 0;
 
-  /* gain access to the number of observations. */
-  const unsigned int N = mdl->dat->N;
-
   /* gain access to the factor and its number of weights and parameters. */
   factor_t *f = mdl->factors[j];
   const unsigned int K = f->K;
@@ -769,20 +760,27 @@ int model_meanfield (const model_t *mdl, const unsigned int j) {
   /* gain access to the associated prior. */
   const factor_t *fp = mdl->priors[j];
 
-  /* create matrices of coefficients for mean-field updates. */
-  matrix_view_t A = matrix_view_array(mdl->tmp->data, N, K);
-  matrix_view_t B = matrix_view_array(mdl->tmp->data + N * K, K, K);
+  /* create sets of coefficients for mean-field updates. */
+  vector_view_t b = vector_view_array(mdl->tmp->data, K);
+  matrix_view_t B = matrix_view_array(mdl->tmp->data + K, K, K);
 
-  /* prepare the coefficients for use by the factor. */
-  if (!mdl_fn(mdl, j, &A, &B))
+  /* initialize the factor update. */
+  if (!fac_fn(f, NULL, NULL, NULL, NULL))
     return 0;
 
-  /* execute the factor update function using the coefficients. */
-  if (!fac_fn(f, fp, mdl->dat, &A, &B))
-    return 0;
+  /* loop over each data point. */
+  datum_t *di = mdl->dat->data;
+  const unsigned int N = mdl->dat->N;
+  for (unsigned int i = 0; i < N; i++, di++) {
+    /* 1. compute the coefficients of the data point.
+     * 2. stream the data point and coefficients to the factor.
+     */
+    mdl_fn(mdl, i, j, &b, &B);
+    fac_fn(f, fp, di, &b, &B);
+  }
 
-  /* return success. */
-  return 1;
+  /* finalize the factor update. */
+  return fac_fn(f, fp, NULL, NULL, NULL);
 }
 
 /* --- */

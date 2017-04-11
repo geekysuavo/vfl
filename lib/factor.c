@@ -425,10 +425,10 @@ int factor_diff_var (const factor_t *f,
 /* factor_meanfield(): perform an assumed-density mean-field factor update.
  *  - see factor_meanfield_fn() for more information.
  */
-int factor_meanfield (factor_t *f, const factor_t *fp, const data_t *dat,
-                      matrix_t *A, matrix_t *B) {
+int factor_meanfield (factor_t *f, const factor_t *fp, const datum_t *dat,
+                      vector_t *b, matrix_t *B) {
   /* check the input pointers. */
-  if (!f || !fp || !dat || !A || !B)
+  if (!f || !fp || !dat || !b || !B)
     return 0;
 
   /* perform no update if the factor is fixed. */
@@ -441,7 +441,7 @@ int factor_meanfield (factor_t *f, const factor_t *fp, const data_t *dat,
     return 0;
 
   /* execute the mean-field update function. */
-  return meanfield_fn(f, fp, dat, A, B);
+  return meanfield_fn(f, fp, dat, b, B);
 }
 
 /* factor_div(): evaluate the divergence function of a factor.
