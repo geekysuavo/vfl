@@ -48,6 +48,7 @@ int vfl_init (void) {
 
   /* register core optimizer types. */
   res &= vfl_register_optim_type(optim_type_fg);
+  res &= vfl_register_optim_type(optim_type_mf);
 
   /* register core factor types. */
   res &= vfl_register_factor_type(factor_type_cosine);

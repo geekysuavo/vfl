@@ -427,8 +427,8 @@ int factor_diff_var (const factor_t *f,
  */
 int factor_meanfield (factor_t *f, const factor_t *fp, const datum_t *dat,
                       vector_t *b, matrix_t *B) {
-  /* check the input pointers. */
-  if (!f || !fp || !dat || !b || !B)
+  /* check the input pointer. */
+  if (!f)
     return 0;
 
   /* perform no update if the factor is fixed. */

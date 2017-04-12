@@ -35,7 +35,7 @@ C_FACTOR=cosine decay impulse fixed-impulse polynomial product
 C_MODEL=vfc vfr tauvfr
 
 # basenames of C optimizer source files.
-C_OPTIM=fg
+C_OPTIM=fg mf
 
 # basenames of all C source files.
 C=  vfl data-alloc data-entries data-fileio factor model optim

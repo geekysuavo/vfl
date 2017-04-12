@@ -8,11 +8,19 @@ typedef struct {
   /* @base: core factor structure members. */
   factor_t base;
 
-  /* @factors: array of factors in the product.
-   * @F: number of factors in the product.
+  /* product sub-factors:
+   *  @factors: array of factors in the product.
+   *  @F: number of factors in the product.
    */
   factor_t **factors;
   unsigned int F;
+
+  /* mean-field update variables:
+   *  @b0: backup vector of coefficients.
+   *  @B0: backup matrix of coefficients.
+   */
+  vector_t *b0;
+  matrix_t *B0;
 }
 product_t;
 
@@ -24,6 +32,10 @@ FACTOR_INIT (product) {
   product_t *fx = (product_t*) f;
   fx->factors = NULL;
   fx->F = 0;
+
+  /* initialize the mean-field variables. */
+  fx->b0 = NULL;
+  fx->B0 = NULL;
 
   /* return success. */
   return 1;
@@ -173,6 +185,98 @@ FACTOR_DIFF_VAR (product) {
   }
 }
 
+/* product_meanfield(): perform a mean-field update of a product factor.
+ *  - see factor_meanfield_fn() for more information.
+ */
+FACTOR_MEANFIELD (product) {
+  /* get the extended structure pointers. */
+  product_t *fx = (product_t*) f;
+  product_t *fpx = (product_t*) fp;
+
+  /* check for initialization calls. */
+  if (FACTOR_MEANFIELD_INIT) {
+    /* initialize all sub-factors. */
+    unsigned int ret = 1;
+    for (unsigned int n = 0; n < fx->F; n++)
+      ret &= factor_meanfield(fx->factors[n], NULL, NULL, NULL, NULL);
+
+    /* return the result of the initializations. */
+    return ret;
+  }
+
+  /* check for finalization calls. */
+  if (FACTOR_MEANFIELD_END) {
+    /* finalize all sub-factors. */
+    unsigned int ret = 1;
+    for (unsigned int n = 0; n < fx->F; n++)
+      ret &= factor_meanfield(fx->factors[n], fpx->factors[n],
+                              NULL, NULL, NULL);
+
+    /* return the result of the finalizations. */
+    return ret;
+  }
+
+  /* include sub-factor expectations in the coefficients. */
+  for (unsigned int n = 0; n < fx->F; n++) {
+    /* get the current sub-factor. */
+    factor_t *fn = fx->factors[n];
+
+    /* adjust the coefficient vector. */
+    for (unsigned int k = 0; k < f->K; k++) {
+      double bk = vector_get(b, k);
+      bk *= factor_mean(fn, dat->x, dat->p, k % fn->K);
+      vector_set(b, k, bk);
+    }
+
+    /* adjust the coefficient matrix. */
+    for (unsigned int k = 0; k < f->K; k++) {
+      for (unsigned int k2 = 0; k2 < f->K; k2++) {
+        double bkk = matrix_get(B, k, k2);
+        bkk *= factor_var(fn, dat->x, dat->p, k % fn->K, k2 % fn->K);
+        matrix_set(B, k, k2, bkk);
+      }
+    }
+  }
+
+  /* loop over the sub-factors. */
+  unsigned int ret = 1;
+  for (unsigned int n = 0; n < fx->F; n++) {
+    /* get the current sub-factor and sub-prior. */
+    factor_t *fn = fx->factors[n];
+    factor_t *fpn = fpx->factors[n];
+
+    /* compute the sub-factor coefficient vector. */
+    for (unsigned int k = 0; k < f->K; k++) {
+      double bk = factor_mean(fn, dat->x, dat->p, k % fn->K);
+      vector_set(b, k, vector_get(b, k) / bk);
+      vector_set(fx->b0, k, bk);
+    }
+
+    /* compute the sub-factor coefficient matrix. */
+    for (unsigned int k = 0; k < f->K; k++) {
+      for (unsigned int k2 = 0; k2 < f->K; k2++) {
+        double bkk = factor_var(fn, dat->x, dat->p, k % fn->K, k2 % fn->K);
+        matrix_set(B, k, k2, matrix_get(B, k, k2) / bkk);
+        matrix_set(fx->B0, k, k2, bkk);
+      }
+    }
+
+    /* execute the sub-factor meanfield function. */
+    ret &= factor_meanfield(fn, fpn, dat, b, B);
+
+    /* re-adjust the coefficients. */
+    for (unsigned int k = 0; k < f->K; k++) {
+      vector_set(b, k, vector_get(b, k) * vector_get(fx->b0, k));
+      for (unsigned int k2 = 0; k2 < f->K; k2++)
+        matrix_set(B, k, k2, matrix_get(B, k, k2) *
+                             matrix_get(fx->B0, k, k2));
+    }
+  }
+
+  /* return success. */
+  return 1;
+}
+
 /* product_div(): evaluate the product factor divergence.
  *  - see factor_div_fn() for more information.
  */
@@ -188,6 +292,27 @@ FACTOR_DIV (product) {
 
   /* return the computed divergence. */
   return div;
+}
+
+/* product_resize(): handle resizes of the product factor.
+ *  - see factor_resize_fn() for more information.
+ */
+FACTOR_RESIZE (product) {
+  /* get the extended structure pointer. */
+  product_t *fx = (product_t*) f;
+
+  /* free the mean-field variables. */
+  vector_free(fx->b0);
+  matrix_free(fx->B0);
+
+  /* allocate new mean-field variables. */
+  fx->b0 = vector_alloc(K);
+  fx->B0 = matrix_alloc(K, K);
+  if (!fx->b0 || !fx->B0)
+    return 0;
+
+  /* return success. */
+  return 1;
 }
 
 /* product_kernel(): write the kernel code of a product factor.
@@ -348,6 +473,10 @@ FACTOR_FREE (product) {
 
   /* free the array of factors. */
   free(fx->factors);
+
+  /* free the mean-field variables. */
+  vector_free(fx->b0);
+  matrix_free(fx->B0);
 }
 
 /* product_add_factor(): add a new factor to a product factor.
@@ -451,10 +580,10 @@ static factor_type_t product_type = {
   product_cov,                                   /* cov       */
   product_diff_mean,                             /* diff_mean */
   product_diff_var,                              /* diff_var  */
-  NULL,                                          /* meanfield */
+  product_meanfield,                             /* meanfield */
   product_div,                                   /* div       */
   product_init,                                  /* init      */
-  NULL,                                          /* resize    */
+  product_resize,                                /* resize    */
   product_kernel,                                /* kernel    */
   product_set,                                   /* set       */
   product_copy,                                  /* copy      */
