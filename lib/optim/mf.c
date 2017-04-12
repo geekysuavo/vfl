@@ -16,9 +16,9 @@ OPTIM_ITERATE (mf) {
   /* update each factor in the model. */
   const unsigned int M = opt->mdl->M;
   for (unsigned int j = 0; j < M; j++) {
-    /* update the factor and re-infer the weights. */
-    model_meanfield(opt->mdl, j);
-    model_update(opt->mdl, j);
+    /* update the factor and, if necessary, re-infer the weights. */
+    if (model_meanfield(opt->mdl, j))
+      model_update(opt->mdl, j);
 
     /* recalculate the bound. */
     bound = model_bound(opt->mdl);
