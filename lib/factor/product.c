@@ -216,9 +216,9 @@ FACTOR_MEANFIELD (product) {
     return ret;
   }
 
-  /* back up the original coefficients. */
-  vector_copy(fx->b0, b);
-  matrix_copy(fx->B0, B);
+  /* get the sub-factor coefficients. */
+  vector_t *bn = fx->b0;
+  matrix_t *Bn = fx->B0;
 
   /* loop over the sub-factors. */
   unsigned int ret = 1;
@@ -226,6 +226,10 @@ FACTOR_MEANFIELD (product) {
     /* get the current sub-factor and sub-prior. */
     factor_t *fn = fx->factors[n];
     factor_t *fpn = fpx->factors[n];
+
+    /* initialize the coefficients. */
+    vector_copy(bn, b);
+    matrix_copy(Bn, B);
 
     /* include the expectations from the other sub-factors. */
     for (unsigned int n2 = 0; n2 < fx->F; n2++) {
@@ -235,7 +239,7 @@ FACTOR_MEANFIELD (product) {
       /* adjust the coefficient vector. */
       for (unsigned int k = 0; k < f->K; k++) {
         const double phi1 = factor_mean(fn, dat->x, dat->p, k % fn->K);
-        vector_set(b, k, vector_get(b, k) * phi1);
+        vector_set(bn, k, vector_get(bn, k) * phi1);
       }
 
       /* adjust the coefficient matrix. */
@@ -243,19 +247,13 @@ FACTOR_MEANFIELD (product) {
         for (unsigned int k2 = 0; k2 < f->K; k2++) {
           const double phi2 = factor_var(fn, dat->x, dat->p,
                                          k % fn->K, k2 % fn->K);
-          matrix_set(B, k, k2, matrix_get(B, k, k2) * phi2);
+          matrix_set(Bn, k, k2, matrix_get(Bn, k, k2) * phi2);
         }
       }
     }
 
     /* execute the sub-factor meanfield function. */
-    ret &= factor_meanfield(fn, fpn, dat, b, B);
-
-    /* restore the original coefficients. */
-    if (n < fx->F - 1) {
-      vector_copy(b, fx->b0);
-      matrix_copy(B, fx->B0);
-    }
+    ret &= factor_meanfield(fn, fpn, dat, bn, Bn);
   }
 
   /* return success. */
