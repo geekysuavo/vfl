@@ -9,7 +9,7 @@
  */
 data_t *data_alloc (void) {
   /* allocate the structure pointer. */
-  data_t *dat = (data_t*) malloc(sizeof(data_t));
+  data_t *dat = malloc(sizeof(data_t));
   if (!dat)
     return NULL;
 
@@ -112,7 +112,7 @@ int data_resize (data_t *dat, const unsigned int N, const unsigned int D) {
   const unsigned int bytes = N * (sizeof(datum_t) + vbytes);
 
   /* allocate a new observation array. */
-  datum_t *data = (datum_t*) malloc(bytes);
+  datum_t *data = malloc(bytes);
   if (!data)
     return 0;
 

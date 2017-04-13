@@ -41,7 +41,7 @@ rng_t *rng_alloc (void) {
   char *sstr;
 
   /* allocate a new structure pointer, or fail. */
-  gen = (rng_t*) malloc(sizeof(rng_t));
+  gen = malloc(sizeof(rng_t));
   if (!gen)
     return NULL;
 

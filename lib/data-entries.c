@@ -124,8 +124,8 @@ int data_augment_from_grid (data_t *dat, const unsigned int p,
   N = 1;
 
   /* allocate indices for grid traversal. */
-  idx = (unsigned int*) malloc(D * sizeof(unsigned int));
-  sz = (unsigned int*) malloc(D * sizeof(unsigned int));
+  idx = malloc(D * sizeof(unsigned int));
+  sz = malloc(D * sizeof(unsigned int));
   if (!idx || !sz)
     goto fail;
 

@@ -52,7 +52,7 @@ void matrix_init (void *addr, const unsigned int rows,
 matrix_t *matrix_alloc (const unsigned int rows, const unsigned int cols) {
   /* allocate a new structure pointer, or fail. */
   const unsigned int bytes = matrix_bytes(rows, cols);
-  matrix_t *A = (matrix_t*) malloc(bytes);
+  matrix_t *A = malloc(bytes);
   if (!A)
     return NULL;
 

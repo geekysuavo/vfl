@@ -142,14 +142,19 @@ FACTOR_KERNEL (cosine) {
 const float xd = x1[%u] - x2[%u];\n\
 const float mu = par[%u];\n\
 const float tau = par[%u];\n\
-const int zd = (p1 == p2 ? 0 : p1 ? -1 : 1);\n\
-cov = exp(-0.5 * xd * xd / tau) * cos(mu * xd + zd);\n\
+const float zd = (p1 == p2 ? 0.0f : p1 ? -%lff : %lff);\n\
+cov = exp(-0.5f * xd * xd / tau) * cos(mu * xd + zd);\n\
 ";
 
-  /* allocate and write the kernel code string. */
+  /* allocate the kernel code string. */
   char *kstr = malloc(strlen(fmt) + 8);
-  if (kstr)
-    sprintf(kstr, fmt, f->d, f->d, p0 + P_MU, p0 + P_TAU);
+  if (!kstr)
+    return NULL;
+
+  /* write the kernel code string. */
+  sprintf(kstr, fmt, f->d, f->d,
+          p0 + P_MU, p0 + P_TAU,
+          M_PI_2, M_PI_2);
 
   /* return the new string. */
   return kstr;

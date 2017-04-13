@@ -237,16 +237,17 @@ FACTOR_MEANFIELD (product) {
       if (n2 == n) continue;
 
       /* adjust the coefficient vector. */
+      const factor_t *fn2 = fx->factors[n2];
       for (unsigned int k = 0; k < f->K; k++) {
-        const double phi1 = factor_mean(fn, dat->x, dat->p, k % fn->K);
+        const double phi1 = factor_mean(fn2, dat->x, dat->p, k % fn2->K);
         vector_set(bn, k, vector_get(bn, k) * phi1);
       }
 
       /* adjust the coefficient matrix. */
       for (unsigned int k = 0; k < f->K; k++) {
         for (unsigned int k2 = 0; k2 < f->K; k2++) {
-          const double phi2 = factor_var(fn, dat->x, dat->p,
-                                         k % fn->K, k2 % fn->K);
+          const double phi2 = factor_var(fn2, dat->x, dat->p,
+                                         k % fn2->K, k2 % fn2->K);
           matrix_set(Bn, k, k2, matrix_get(Bn, k, k2) * phi2);
         }
       }
@@ -306,7 +307,7 @@ FACTOR_KERNEL (product) {
   product_t *fx = (product_t*) f;
 
   /* define kernel code format strings. */
-  const char *fmtA = "float prod = 1.0;\n";
+  const char *fmtA = "float prod = 1.0f;\n";
   const char *fmtB = "{\n%s}\nprod *= cov;\n";
   const char *fmtC = "cov = prod;\n";
 

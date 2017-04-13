@@ -46,7 +46,7 @@ void vector_init (void *addr, const unsigned int len) {
 vector_t *vector_alloc (const unsigned int len) {
   /* allocate a new structure pointer, or fail. */
   const unsigned int bytes = vector_bytes(len);
-  vector_t *v = (vector_t*) malloc(bytes);
+  vector_t *v = malloc(bytes);
   if (!v)
     return NULL;
 

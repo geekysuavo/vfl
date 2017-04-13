@@ -506,7 +506,7 @@ inline float vfl_covkernel (const __global float *par,\n\
                             const __local float *x2,\n\
                             const __local uint p1,\n\
                             const __local uint p2) {\n\
-float cov, sum = 0.0, diag = 1.0;\n\
+float cov, sum = 0.0f, diag = 1.0f;\n\
 const float tau = par[0];\n\
 const float nu = par[1];\n";
   const char *fmtB = "{\n%s}\nsum += cov;\n";

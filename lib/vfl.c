@@ -79,7 +79,7 @@ int vfl_register_model_type (const model_type_t *type) {
   /* resize the model type array. */
   n_model_types++;
   const unsigned int bytes = n_model_types * sizeof(model_type_t*);
-  model_types = (model_type_t**) realloc(model_types, bytes);
+  model_types = realloc(model_types, bytes);
   if (!model_types)
     return 0;
 
@@ -105,7 +105,7 @@ int vfl_register_optim_type (const optim_type_t *type) {
   /* resize the optimizer type array. */
   n_optim_types++;
   const unsigned int bytes = n_optim_types * sizeof(optim_type_t*);
-  optim_types = (optim_type_t**) realloc(optim_types, bytes);
+  optim_types = realloc(optim_types, bytes);
   if (!optim_types)
     return 0;
 
@@ -131,7 +131,7 @@ int vfl_register_factor_type (const factor_type_t *type) {
   /* resize the factor type array. */
   n_factor_types++;
   const unsigned int bytes = n_factor_types * sizeof(factor_type_t*);
-  factor_types = (factor_type_t**) realloc(factor_types, bytes);
+  factor_types = realloc(factor_types, bytes);
   if (!factor_types)
     return 0;
 
