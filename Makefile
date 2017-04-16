@@ -24,6 +24,7 @@ clean:
 	@$(MAKE) -sC tests/gauss clean
 	@$(MAKE) -sC tests/methane clean
 	@$(MAKE) -sC tests/multexp clean
+	@$(MAKE) -sC tests/ping clean
 	@$(MAKE) -sC tests/poly clean
 	@$(MAKE) -sC tests/ripley clean
 	@$(MAKE) -sC tests/ripley-fixed clean
