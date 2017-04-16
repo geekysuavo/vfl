@@ -671,6 +671,32 @@ int model_predict_all (const model_t *mdl,
   return 1;
 }
 
+/* model_reset(): reset the factor parameters of a model to those
+ * of their respective prior factors.
+ *
+ * arguments:
+ *  @mdl: model structure pointer.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int model_reset (model_t *mdl) {
+  /* check the input pointer. */
+  if (!mdl)
+    return 0;
+
+  /* loop over the factors, copying parameters from the priors. */
+  for (unsigned int j = 0; j < mdl->M; j++) {
+    /* set the factor parameters from the prior. */
+    const factor_t *fp = mdl->priors[j];
+    if (!model_set_parms(mdl, j, fp->par))
+      return 0;
+  }
+
+  /* return success. */
+  return model_infer(mdl);
+}
+
 /* model_infer(): fully update the nuisance parameters of a model.
  *  - see model_infer_fn() for more information.
  */

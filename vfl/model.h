@@ -314,6 +314,8 @@ int model_predict_all (const model_t *mdl,
                        data_t *mean,
                        data_t *var);
 
+int model_reset (model_t *mdl);
+
 int model_infer (model_t *mdl);
 
 int model_update (model_t *mdl, const unsigned int j);
