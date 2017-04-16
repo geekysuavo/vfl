@@ -41,6 +41,24 @@ FACTOR_INIT (product) {
   return 1;
 }
 
+/* product_eval(): evaluate the product factor at its mode.
+ *  - see factor_mean_fn() for more information.
+ */
+FACTOR_EVAL (product) {
+  /* get the extended structure pointer. */
+  product_t *fx = (product_t*) f;
+
+  /* include the values of each factor. */
+  double mode = 1.0;
+  for (unsigned int n = 0; n < fx->F; n++) {
+    factor_t *fn = fx->factors[n];
+    mode *= factor_eval(fn, x, p, i % fn->K);
+  }
+
+  /* return the computed mode. */
+  return mode;
+}
+
 /* product_mean(): evaluate the product factor mean.
  *  - see factor_mean_fn() for more information.
  */
@@ -559,6 +577,7 @@ static factor_type_t product_type = {
   0,                                             /* initial P */
   1,                                             /* initial K */
   NULL,                                          /* parnames  */
+  product_eval,                                  /* eval      */
   product_mean,                                  /* mean      */
   product_var,                                   /* var       */
   product_cov,                                   /* cov       */

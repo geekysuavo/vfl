@@ -1,6 +1,9 @@
 
-# whether or not to use atlas blas/lapack.
+# whether or not to use:
+#  USE_ATLAS: atlas for blas/lapack.
+#  USE_OPENCL: gpu-accelerated searches.
 USE_ATLAS=y
+USE_OPENCL=n
 
 # executable filenames.
 CC=gcc
@@ -13,14 +16,6 @@ CFLAGS+= -fPIC -ggdb -O3 -std=gnu99 -I..
 CFLAGS+= -Wall -Wextra -Wno-unused-parameter
 LDFLAGS+= -shared
 LIBS=-lm
-
-# extra flags for using atlas blas/lapack.
-ifeq ($(USE_ATLAS),y)
-ATLAS=/usr/local/atlas
-CFLAGS+= -D__VFL_USE_ATLAS -I$(ATLAS)/include
-LDFLAGS+= -L$(ATLAS)/lib
-LIBS+= -ltatlas
-endif
 
 # output library filename.
 LIB=libvfl.so
@@ -37,8 +32,25 @@ C_MODEL=vfc vfr tauvfr
 # basenames of C optimizer source files.
 C_OPTIM=fg mf
 
-# basenames of all C source files.
+# basenames of core C source files.
 C=  vfl data-alloc data-entries data-fileio factor model optim
+
+# extra flags for using atlas blas/lapack.
+ifeq ($(USE_ATLAS),y)
+ATLAS=/usr/local/atlas
+CFLAGS+= -D__VFL_USE_ATLAS -I$(ATLAS)/include
+LDFLAGS+= -L$(ATLAS)/lib
+LIBS+= -ltatlas
+endif
+
+# extra flags for using opencl.
+ifeq ($(USE_OPENCL),y)
+CFLAGS+= -D__VFL_USE_OPENCL
+LIBS+= -lOpenCL
+C_UTIL+= search
+endif
+
+# basenames of all C source files.
 C+= $(addprefix factor/,$(C_FACTOR))
 C+= $(addprefix model/,$(C_MODEL))
 C+= $(addprefix optim/,$(C_OPTIM))

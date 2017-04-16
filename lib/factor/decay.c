@@ -6,7 +6,25 @@
 #define P_ALPHA  0
 #define P_BETA   1
 
-/* decay_mean(): evalute the decay factor mean.
+/* decay_eval(): evaluate the decay factor at its mode
+ *  - see factor_mean_fn() for more information.
+ */
+FACTOR_EVAL (decay) {
+  /* get the input value along the factor dimension. */
+  const double xd = vector_get(x, f->d);
+
+  /* get the factor parameters. */
+  const double alpha = vector_get(f->par, P_ALPHA);
+  const double beta = vector_get(f->par, P_BETA);
+
+  /* compute the most probable decay rate. */
+  const double rho = (alpha - 1.0) / beta;
+
+  /* evaluate the factor. */
+  return exp(-rho * xd);
+}
+
+/* decay_mean(): evaluate the decay factor mean.
  *  - see factor_mean_fn() for more information.
  */
 FACTOR_MEAN (decay) {
@@ -21,7 +39,7 @@ FACTOR_MEAN (decay) {
   return pow(beta / (beta + xd), alpha);
 }
 
-/* decay_var(): evalute the decay factor variance.
+/* decay_var(): evaluate the decay factor variance.
  *  - see factor_var_fn() for more information.
  */
 FACTOR_VAR (decay) {
@@ -201,6 +219,7 @@ static factor_type_t decay_type = {
   2,                                             /* initial P */
   1,                                             /* initial K */
   decay_names,                                   /* parnames  */
+  decay_eval,                                    /* eval      */
   decay_mean,                                    /* mean      */
   decay_var,                                     /* var       */
   decay_cov,                                     /* cov       */

@@ -13,7 +13,7 @@ FACTOR_INIT (polynomial) {
   return 1;
 }
 
-/* polynomial_mean(): evalute the polynomial factor mean.
+/* polynomial_mean(): evaluate the polynomial factor mean.
  *  - see factor_mean_fn() for more information.
  */
 FACTOR_MEAN (polynomial) {
@@ -24,7 +24,7 @@ FACTOR_MEAN (polynomial) {
   return pow(xd, i);
 }
 
-/* polynomial_var(): evalute the polynomial factor variance.
+/* polynomial_var(): evaluate the polynomial factor variance.
  *  - see factor_var_fn() for more information.
  */
 FACTOR_VAR (polynomial) {
@@ -35,7 +35,7 @@ FACTOR_VAR (polynomial) {
   return pow(xd, i) * pow(xd, j);
 }
 
-/* polynomial_cov(): evalute the polynomial factor covariance.
+/* polynomial_cov(): evaluate the polynomial factor covariance.
  *  - see factor_cov_fn() for more information.
  */
 FACTOR_COV (polynomial) {
@@ -90,6 +90,7 @@ static factor_type_t polynomial_type = {
   0,                                             /* initial P */
   1,                                             /* initial K */
   NULL,                                          /* parnames  */
+  polynomial_mean,                               /* eval      */
   polynomial_mean,                               /* mean      */
   polynomial_var,                                /* var       */
   polynomial_cov,                                /* cov       */

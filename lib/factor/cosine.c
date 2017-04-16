@@ -6,7 +6,21 @@
 #define P_MU   0
 #define P_TAU  1
 
-/* cosine_mean(): evalute the cosine factor mean.
+/* cosine_eval(): evaluate the cosine factor at its mode.
+ *  - see factor_mean_fn() for more information.
+ */
+FACTOR_EVAL (cosine) {
+  /* get the input value along the factor dimension. */
+  const double xd = vector_get(x, f->d);
+
+  /* get the factor frequency mean. */
+  const double mu = vector_get(f->par, P_MU);
+
+  /* evaluate the factor. */
+  return cos(mu * xd + M_PI_2 * (double) i);
+}
+
+/* cosine_mean(): evaluate the cosine factor mean.
  *  - see factor_mean_fn() for more information.
  */
 FACTOR_MEAN (cosine) {
@@ -21,7 +35,7 @@ FACTOR_MEAN (cosine) {
   return exp(-0.5 * xd * xd / tau) * cos(mu * xd + M_PI_2 * (double) i);
 }
 
-/* cosine_var(): evalute the cosine factor variance.
+/* cosine_var(): evaluate the cosine factor variance.
  *  - see factor_var_fn() for more information.
  */
 FACTOR_VAR (cosine) {
@@ -207,6 +221,7 @@ static factor_type_t cosine_type = {
   2,                                             /* initial P */
   2,                                             /* initial K */
   cosine_names,                                  /* parnames  */
+  cosine_eval,                                   /* eval      */
   cosine_mean,                                   /* mean      */
   cosine_var,                                    /* var       */
   cosine_cov,                                    /* cov       */

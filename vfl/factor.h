@@ -16,7 +16,8 @@
 /* factor_t: defined type for the factor structure. */
 typedef struct factor factor_t;
 
-/* factor_mean_fn(): return the first moment of a basis element.
+/* factor_mean_fn(): return the a first-order mode or moment
+ * of a basis element.
  *
  * arguments:
  *  @f: factor structure pointer.
@@ -219,8 +220,17 @@ typedef int (*factor_copy_fn) (const factor_t *f, factor_t *fdup);
  */
 typedef void (*factor_free_fn) (factor_t *f);
 
+/* FACTOR_EVAL(): macro function for declaring and defining
+ * functions conforming to factor_mean_fn() for evaluation.
+ */
+#define FACTOR_EVAL(name) \
+double name ## _eval (const factor_t *f, \
+                      const vector_t *x, \
+                      const unsigned int p, \
+                      const unsigned int i)
+
 /* FACTOR_MEAN(): macro function for declaring and defining
- * functions conforming to factor_mean_fn().
+ * functions conforming to factor_mean_fn() for expectations.
  */
 #define FACTOR_MEAN(name) \
 double name ## _mean (const factor_t *f, \
@@ -352,6 +362,7 @@ typedef struct {
   /* factor type-specific functions:
    *
    *  expectations:
+   *   @eval: value at mode.
    *   @mean: first moment.
    *   @var: second moment.
    *   @cov: covariance.
@@ -374,6 +385,7 @@ typedef struct {
    *   @copy: hook for copying extra memory between factors.
    *   @free: hook for extra functionality during deallocation.
    */
+  factor_mean_fn      eval;
   factor_mean_fn      mean;
   factor_var_fn       var;
   factor_cov_fn       cov;
@@ -456,6 +468,11 @@ double factor_get (const factor_t *f, const unsigned int i);
 void factor_set_fixed (factor_t *f, const unsigned int fixed);
 
 int factor_set (factor_t *f, const unsigned int i, const double value);
+
+double factor_eval (const factor_t *f,
+                    const vector_t *x,
+                    const unsigned int p,
+                    const unsigned int i);
 
 double factor_mean (const factor_t *f,
                     const vector_t *x,

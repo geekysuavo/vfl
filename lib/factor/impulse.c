@@ -6,7 +6,7 @@
 #define P_MU   0
 #define P_TAU  1
 
-/* impulse_mean(): evalute the impulse factor mean.
+/* impulse_mean(): evaluate the impulse factor mean.
  *  - see factor_mean_fn() for more information.
  */
 FACTOR_MEAN (impulse) {
@@ -24,7 +24,7 @@ FACTOR_MEAN (impulse) {
   return exp(-0.5 * tau * u * u);
 }
 
-/* impulse_var(): evalute the impulse factor variance.
+/* impulse_var(): evaluate the impulse factor variance.
  *  - see factor_var_fn() for more information.
  */
 FACTOR_VAR (impulse) {
@@ -128,6 +128,7 @@ static factor_type_t impulse_type = {
   2,                                             /* initial P */
   1,                                             /* initial K */
   impulse_names,                                 /* parnames  */
+  NULL,                                          /* eval      */
   impulse_mean,                                  /* mean      */
   impulse_var,                                   /* var       */
   NULL,                                          /* cov       */

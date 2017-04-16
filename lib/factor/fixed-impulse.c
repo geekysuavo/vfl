@@ -24,7 +24,7 @@ FACTOR_INIT (fixed_impulse) {
   return fixed_impulse_set_location(f, 0.0);
 }
 
-/* fixed_impulse_mean(): evalute the fixed impulse factor mean.
+/* fixed_impulse_mean(): evaluate the fixed impulse factor mean.
  *  - see factor_mean_fn() for more information.
  */
 FACTOR_MEAN (fixed_impulse) {
@@ -45,7 +45,7 @@ FACTOR_MEAN (fixed_impulse) {
   return exp(-0.5 * tau * u * u);
 }
 
-/* fixed_impulse_var(): evalute the fixed impulse factor variance.
+/* fixed_impulse_var(): evaluate the fixed impulse factor variance.
  *  - see factor_var_fn() for more information.
  */
 FACTOR_VAR (fixed_impulse) {
@@ -173,6 +173,7 @@ static factor_type_t fixed_impulse_type = {
   1,                                             /* initial P */
   1,                                             /* initial K */
   fixed_impulse_names,                           /* names     */
+  NULL,                                          /* eval      */
   fixed_impulse_mean,                            /* mean      */
   fixed_impulse_var,                             /* var       */
   NULL,                                          /* cov       */

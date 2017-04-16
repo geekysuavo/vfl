@@ -379,6 +379,38 @@ int model_add_factor (model_t *mdl, factor_t *f) {
   return 1;
 }
 
+/* model_eval(): evalute the underlying linear function of a model
+ * at the current mode of its variational distribution.
+ *
+ * arguments:
+ *  @mdl: model structure pointer.
+ *  @x: observation input vector.
+ *  @p: function output index.
+ *
+ * returns:
+ *  maximum posterior estimate of the model function.
+ */
+double model_eval (const model_t *mdl, const vector_t *x,
+                   const unsigned int p) {
+  /* check the input pointers. */
+  if (!mdl || !x)
+    return 0.0;
+
+  /* compute the model estimate. */
+  double mode = 0.0;
+  for (unsigned int j = 0, i = 0; j < mdl->M; j++) {
+    /* get the current factor. */
+    const factor_t *fj = mdl->factors[j];
+
+    /* loop over the weights assigned to the factor. */
+    for (unsigned int k = 0; k < fj->K; k++, i++)
+      mode += vector_get(mdl->wbar, i) * factor_eval(fj, x, p, k);
+  }
+
+  /* return computed estimate. */
+  return mode;
+}
+
 /* model_mean(): return the first moment of a model basis element.
  *
  * arguments:
@@ -499,19 +531,8 @@ char *model_kernel (const model_t *mdl) {
   if (!mdl)
     return NULL;
 
-  /* define kernel code format strings. */
-  const char *fmtA = "\
-inline float vfl_covkernel (const __global float *par,\n\
-                            const __local float *x1,\n\
-                            const __local float *x2,\n\
-                            const __local uint p1,\n\
-                            const __local uint p2) {\n\
-float cov, sum = 0.0f, diag = 1.0f;\n\
-const float tau = par[0];\n\
-const float nu = par[1];\n";
-  const char *fmtB = "{\n%s}\nsum += cov;\n";
-  const char *fmtC = "diag *= (x1[%u] == x2[%u]);\n";
-  const char *fmtD = "return (sum / nu + diag) / tau;\n}\n\n";
+  /* define the kernel code format string. */
+  const char *fmt = "{\n%s}\nsum += cov;\n";
 
   /* allocate an array for storing factor kernel code. */
   char **fstr = malloc(mdl->M * sizeof(char*));
@@ -533,34 +554,21 @@ const float nu = par[1];\n";
   }
 
   /* determine the length of the kernel code string. */
-  unsigned int len = strlen(fmtA) + strlen(fmtD) + 8;
-  len += mdl->D * strlen(fmtC);
+  unsigned int len = 8;
   for (unsigned int j = 0; j < mdl->M; j++)
-    len += strlen(fmtB) + strlen(fstr[j]);
+    len += strlen(fmt) + strlen(fstr[j]);
 
   /* allocate the kernel code string. */
   char *kstr = malloc(len);
   if (!kstr)
     return NULL;
 
-  /* write the header. */
-  char *pos = kstr;
-  pos += sprintf(pos, fmtA);
-
   /* write each factor string. */
-  for (unsigned int j = 0; j < mdl->M; j++)
-    pos += sprintf(pos, fmtB, fstr[j]);
-
-  /* write the diagonal tests. */
-  for (unsigned int d = 0; d < mdl->D; d++)
-    pos += sprintf(pos, fmtC, d, d);
-
-  /* write the footer. */
-  sprintf(pos, fmtD);
-
-  /* free the factor strings. */
-  for (unsigned int j = 0; j < mdl->M; j++)
+  char *pos = kstr;
+  for (unsigned int j = 0; j < mdl->M; j++) {
+    pos += sprintf(pos, fmt, fstr[j]);
     free(fstr[j]);
+  }
 
   /* free the factor string array. */
   free(fstr);

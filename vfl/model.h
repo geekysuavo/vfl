@@ -283,6 +283,9 @@ int model_set_data (model_t *mdl, data_t *dat);
 
 int model_add_factor (model_t *mdl, factor_t *f);
 
+double model_eval (const model_t *mdl, const vector_t *x,
+                   const unsigned int p);
+
 double model_mean (const model_t *mdl,
                    const vector_t *x, const unsigned int p,
                    const unsigned int j, const unsigned int k);

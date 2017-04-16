@@ -303,6 +303,26 @@ int factor_set (factor_t *f, const unsigned int i, const double value) {
   return set_fn(f, i, value);
 }
 
+/* factor_eval(): evaluate a factor at its mode.
+ *  - see factor_mean_fn() for more information.
+ */
+double factor_eval (const factor_t *f,
+                    const vector_t *x,
+                    const unsigned int p,
+                    const unsigned int i) {
+  /* check the input pointers and the basis index. */
+  if (!f || !x || i >= f->K)
+    return 0.0;
+
+  /* check the function pointer. */
+  factor_mean_fn eval_fn = FACTOR_TYPE(f)->eval;
+  if (!eval_fn)
+    return 0.0;
+
+  /* execute the evaluation function. */
+  return eval_fn(f, x, p, i);
+}
+
 /* factor_mean(): evaluate the mean function of a factor.
  *  - see factor_mean_fn() for more information.
  */
