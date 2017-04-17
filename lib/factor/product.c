@@ -230,6 +230,9 @@ FACTOR_MEANFIELD (product) {
       ret &= factor_meanfield(fx->factors[n], fpx->factors[n],
                               NULL, NULL, NULL);
 
+    /* update the parameter vector and information matrix. */
+    if (ret) product_update(f);
+
     /* return the result of the finalizations. */
     return ret;
   }
@@ -528,20 +531,13 @@ int product_add_factor (factor_t *f, const unsigned int d, factor_t *fd) {
   /* set the argument dimension index. */
   fd->d = d;
 
-  /* initialize the combined information matrix and parameter vector. */
+  /* initialize the information matrix and parameter vector. */
+  product_update(f);
+
+  /* initialize the parameter names. */
   for (unsigned int fidx = 0, p0 = 0; fidx < F; fidx++) {
     /* get the current factor parameter count. */
     const unsigned int Pf = fx->factors[fidx]->P;
-    if (Pf == 0)
-      continue;
-
-    /* get views of the combined matrix and vector. */
-    matrix_view_t inf = matrix_submatrix(f->inf, p0, p0, Pf, Pf);
-    vector_view_t par = vector_subvector(f->par, p0, Pf);
-
-    /* copy the contents from the factor into the views. */
-    matrix_copy(&inf, fx->factors[fidx]->inf);
-    vector_copy(&par, fx->factors[fidx]->par);
 
     /* initialize the new parameter names. */
     if (fidx == F - 1) {
@@ -559,6 +555,42 @@ int product_add_factor (factor_t *f, const unsigned int d, factor_t *fd) {
                    FACTOR_TYPE(fd)->name, fidx, parname);
       }
     }
+
+    /* increment the parameter offset. */
+    p0 += Pf;
+  }
+
+  /* return success. */
+  return 1;
+}
+
+/* product_update(): set the information matrix and parameter vector
+ * of a product factor from the values of its underlying child factors.
+ *
+ * arguments:
+ *  @f: factor structure pointer.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int product_update (factor_t *f) {
+  /* get the extended structure pointer. */
+  product_t *fx = (product_t*) f;
+
+  /* update the combined information matrix and parameter vector. */
+  for (unsigned int n = 0, p0 = 0; n < fx->F; n++) {
+    /* get the current factor parameter count. */
+    const unsigned int Pf = fx->factors[n]->P;
+    if (Pf == 0)
+      continue;
+
+    /* get views of the combined matrix and vector. */
+    matrix_view_t inf = matrix_submatrix(f->inf, p0, p0, Pf, Pf);
+    vector_view_t par = vector_subvector(f->par, p0, Pf);
+
+    /* copy the contents from the factor into the views. */
+    matrix_copy(&inf, fx->factors[n]->inf);
+    vector_copy(&par, fx->factors[n]->par);
 
     /* increment the parameter offset. */
     p0 += Pf;

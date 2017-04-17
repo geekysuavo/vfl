@@ -523,6 +523,8 @@ int polynomial_set_order (factor_t *f, const unsigned int order);
 
 int product_add_factor (factor_t *f, const unsigned int d, factor_t *fd);
 
+int product_update (factor_t *f);
+
 /* available factor types: */
 
 extern const factor_type_t *vfl_factor_cosine;
