@@ -20,26 +20,26 @@ int main (int argc, char **argv) {
   data_t *dat = data_alloc_from_file("ripley.dat");
 
   /* set up a classification model. */
-  model_t *mdl = model_alloc(model_type_vfc);
+  model_t *mdl = model_alloc(vfl_model_vfc);
   model_set_nu(mdl, 1.0e-6);
   model_set_data(mdl, dat);
 
   /* add factors to the model. */
   for (unsigned int i = 0; i < dat->N; i += 10) {
     /* create a factor along the x-dimension. */
-    factor_t *fx = factor_alloc(factor_type_fixed_impulse);
+    factor_t *fx = factor_alloc(vfl_factor_fixed_impulse);
     const double x = vector_get(dat->data[i].x, 0);
     fixed_impulse_set_location(fx, x);
     factor_set(fx, 0, 0.1);
 
     /* create a factor along the y-dimension. */
-    factor_t *fy = factor_alloc(factor_type_fixed_impulse);
+    factor_t *fy = factor_alloc(vfl_factor_fixed_impulse);
     const double y = vector_get(dat->data[i].x, 1);
     fixed_impulse_set_location(fy, y);
     factor_set(fy, 0, 0.1);
 
     /* add the combined factor. */
-    factor_t *f = factor_alloc(factor_type_product);
+    factor_t *f = factor_alloc(vfl_factor_product);
     product_add_factor(f, 0, fx);
     product_add_factor(f, 1, fy);
     model_add_factor(mdl, f);
@@ -50,7 +50,7 @@ int main (int argc, char **argv) {
   }
 
   /* optimize. */
-  optim_t *opt = optim_alloc(optim_type_fg);
+  optim_t *opt = optim_alloc(vfl_optim_fg);
   optim_set_model(opt, mdl);
   optim_set_max_iters(opt, 50);
   optim_set_lipschitz_init(opt, 0.001);

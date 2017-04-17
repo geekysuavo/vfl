@@ -42,21 +42,21 @@ int vfl_init (void) {
   n_factor_types = 0;
 
   /* register core model types. */
-  res &= vfl_register_model_type(model_type_vfc);
-  res &= vfl_register_model_type(model_type_vfr);
-  res &= vfl_register_model_type(model_type_tauvfr);
+  res &= vfl_register_model_type(vfl_model_vfc);
+  res &= vfl_register_model_type(vfl_model_vfr);
+  res &= vfl_register_model_type(vfl_model_tauvfr);
 
   /* register core optimizer types. */
-  res &= vfl_register_optim_type(optim_type_fg);
-  res &= vfl_register_optim_type(optim_type_mf);
+  res &= vfl_register_optim_type(vfl_optim_fg);
+  res &= vfl_register_optim_type(vfl_optim_mf);
 
   /* register core factor types. */
-  res &= vfl_register_factor_type(factor_type_cosine);
-  res &= vfl_register_factor_type(factor_type_decay);
-  res &= vfl_register_factor_type(factor_type_fixed_impulse);
-  res &= vfl_register_factor_type(factor_type_impulse);
-  res &= vfl_register_factor_type(factor_type_polynomial);
-  res &= vfl_register_factor_type(factor_type_product);
+  res &= vfl_register_factor_type(vfl_factor_cosine);
+  res &= vfl_register_factor_type(vfl_factor_decay);
+  res &= vfl_register_factor_type(vfl_factor_fixed_impulse);
+  res &= vfl_register_factor_type(vfl_factor_impulse);
+  res &= vfl_register_factor_type(vfl_factor_polynomial);
+  res &= vfl_register_factor_type(vfl_factor_product);
 
   /* return the result. */
   return res;

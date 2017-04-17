@@ -418,6 +418,6 @@ static model_type_t vfr_type = {
   vfr_meanfield                                  /* meanfield */
 };
 
-/* model_type_vfr: address of the vfr_type structure. */
-const model_type_t *model_type_vfr = &vfr_type;
+/* vfl_model_vfr: address of the vfr_type structure. */
+const model_type_t *vfl_model_vfr = &vfr_type;
 

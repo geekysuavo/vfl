@@ -61,6 +61,6 @@ static optim_type_t mf_type = {
   NULL                                           /* free    */
 };
 
-/* optim_type_mf: address of the mf_type structure. */
-const optim_type_t *optim_type_mf = &mf_type;
+/* vfl_optim_mf: address of the mf_type structure. */
+const optim_type_t *vfl_optim_mf = &mf_type;
 

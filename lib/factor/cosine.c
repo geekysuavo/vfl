@@ -237,6 +237,6 @@ static factor_type_t cosine_type = {
   NULL                                           /* free      */
 };
 
-/* factor_type_cosine: address of the cosine_type structure. */
-const factor_type_t *factor_type_cosine = &cosine_type;
+/* vfl_factor_cosine: address of the cosine_type structure. */
+const factor_type_t *vfl_factor_cosine = &cosine_type;
 

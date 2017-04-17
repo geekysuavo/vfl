@@ -40,7 +40,7 @@ int main (int argc, char **argv) {
     dat->data[i].x->data[0] -= 2000.0;
 
   /* set up a regression model. */
-  model_t *mdl = model_alloc(model_type_vfr);
+  model_t *mdl = model_alloc(vfl_model_vfr);
   model_set_alpha0(mdl, 100.0);
   model_set_beta0(mdl, 100.0);
   model_set_nu(mdl, 1.0e-6);
@@ -48,14 +48,14 @@ int main (int argc, char **argv) {
 
   /* add cosine factors to the model. */
   for (unsigned int j = 0; cosines[j].tau; j++) {
-    factor_t *f = factor_alloc(factor_type_cosine);
+    factor_t *f = factor_alloc(vfl_factor_cosine);
     factor_set(f, 0, cosines[j].mu);
     factor_set(f, 1, cosines[j].tau);
     model_add_factor(mdl, f);
   }
 
   /* optimize. */
-  optim_t *opt = optim_alloc(optim_type_fg);
+  optim_t *opt = optim_alloc(vfl_optim_fg);
   optim_set_model(opt, mdl);
   optim_set_max_iters(opt, 2000);
   optim_set_lipschitz_init(opt, 0.00001);

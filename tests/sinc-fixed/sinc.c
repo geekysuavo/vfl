@@ -20,7 +20,7 @@ int main (int argc, char **argv) {
   data_t *dat = data_alloc_from_file("sinc.dat");
 
   /* set up a regression model. */
-  model_t *mdl = model_alloc(model_type_vfr);
+  model_t *mdl = model_alloc(vfl_model_vfr);
   model_set_alpha0(mdl, 1000.0);
   model_set_beta0(mdl, 10.0);
   model_set_nu(mdl, 1.0e-3);
@@ -29,7 +29,7 @@ int main (int argc, char **argv) {
   /* add factors to the model. */
   for (unsigned int i = 0; i < dat->N; i++) {
     const double xi = vector_get(dat->data[i].x, 0);
-    factor_t *f = factor_alloc(factor_type_fixed_impulse);
+    factor_t *f = factor_alloc(vfl_factor_fixed_impulse);
     fixed_impulse_set_location(f, xi);
     factor_set(f, 0, 0.001);
     model_add_factor(mdl, f);
@@ -40,7 +40,7 @@ int main (int argc, char **argv) {
     factor_set(mdl->factors[j], 0, 1.0);
 
   /* optimize. */
-  optim_t *opt = optim_alloc(optim_type_fg);
+  optim_t *opt = optim_alloc(vfl_optim_fg);
   optim_set_model(opt, mdl);
   optim_set_lipschitz_init(opt, 0.001);
   optim_execute(opt);

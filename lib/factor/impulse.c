@@ -144,6 +144,6 @@ static factor_type_t impulse_type = {
   NULL                                           /* free      */
 };
 
-/* factor_type_impulse: address of the impulse_type structure. */
-const factor_type_t *factor_type_impulse = &impulse_type;
+/* vfl_factor_impulse: address of the impulse_type structure. */
+const factor_type_t *vfl_factor_impulse = &impulse_type;
 

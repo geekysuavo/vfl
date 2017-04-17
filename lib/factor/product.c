@@ -593,8 +593,8 @@ static factor_type_t product_type = {
   product_free                                   /* free      */
 };
 
-/* factor_type_product: address of the product_type
+/* vfl_factor_product: address of the product_type
  * structure.
  */
-const factor_type_t *factor_type_product = &product_type;
+const factor_type_t *vfl_factor_product = &product_type;
 

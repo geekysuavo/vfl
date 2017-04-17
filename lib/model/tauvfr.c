@@ -387,6 +387,6 @@ static model_type_t tauvfr_type = {
   tauvfr_meanfield                               /* meanfield */
 };
 
-/* model_type_tauvfr: address of the tauvfr_type structure. */
-const model_type_t *model_type_tauvfr = &tauvfr_type;
+/* vfl_model_tauvfr: address of the tauvfr_type structure. */
+const model_type_t *vfl_model_tauvfr = &tauvfr_type;
 

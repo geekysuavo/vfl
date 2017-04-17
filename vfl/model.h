@@ -337,9 +337,9 @@ int model_weight_adjust (model_t *mdl, const unsigned int j);
 
 /* available model types: */
 
-extern const model_type_t *model_type_vfc;
-extern const model_type_t *model_type_vfr;
-extern const model_type_t *model_type_tauvfr;
+extern const model_type_t *vfl_model_vfc;
+extern const model_type_t *vfl_model_vfr;
+extern const model_type_t *vfl_model_tauvfr;
 
 #endif /* !__VFL_MODEL_H__ */
 

@@ -235,6 +235,6 @@ static factor_type_t decay_type = {
   NULL                                           /* free      */
 };
 
-/* factor_type_decay: address of the decay_type structure. */
-const factor_type_t *factor_type_decay = &decay_type;
+/* vfl_factor_decay: address of the decay_type structure. */
+const factor_type_t *vfl_factor_decay = &decay_type;
 

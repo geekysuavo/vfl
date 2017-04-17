@@ -525,12 +525,12 @@ int product_add_factor (factor_t *f, const unsigned int d, factor_t *fd);
 
 /* available factor types: */
 
-extern const factor_type_t *factor_type_cosine;
-extern const factor_type_t *factor_type_decay;
-extern const factor_type_t *factor_type_impulse;
-extern const factor_type_t *factor_type_fixed_impulse;
-extern const factor_type_t *factor_type_polynomial;
-extern const factor_type_t *factor_type_product;
+extern const factor_type_t *vfl_factor_cosine;
+extern const factor_type_t *vfl_factor_decay;
+extern const factor_type_t *vfl_factor_impulse;
+extern const factor_type_t *vfl_factor_fixed_impulse;
+extern const factor_type_t *vfl_factor_polynomial;
+extern const factor_type_t *vfl_factor_product;
 
 #endif /* !__VFL_FACTOR_H__ */
 

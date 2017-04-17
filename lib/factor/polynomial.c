@@ -106,8 +106,8 @@ static factor_type_t polynomial_type = {
   NULL                                           /* free      */
 };
 
-/* factor_type_polynomial: address of the polynomial_type
+/* vfl_factor_polynomial: address of the polynomial_type
  * structure.
  */
-const factor_type_t *factor_type_polynomial = &polynomial_type;
+const factor_type_t *vfl_factor_polynomial = &polynomial_type;
 

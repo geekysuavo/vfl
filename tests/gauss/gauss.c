@@ -31,7 +31,7 @@ int main (int argc, char **argv) {
   data_t *dat = data_alloc_from_file("gauss.dat");
 
   /* set up a regression model. */
-  model_t *mdl = model_alloc(model_type_vfr);
+  model_t *mdl = model_alloc(vfl_model_vfr);
   model_set_alpha0(mdl, 100.0);
   model_set_beta0(mdl, 100.0);
   model_set_nu(mdl, 1.0e-2);
@@ -39,14 +39,14 @@ int main (int argc, char **argv) {
 
   /* add factors to the model. */
   for (unsigned int j = 0; parms[j].pb; j++) {
-    factor_t *f = factor_alloc(j ? factor_type_impulse : factor_type_decay);
+    factor_t *f = factor_alloc(j ? vfl_factor_impulse : vfl_factor_decay);
     factor_set(f, 0, parms[j].pa);
     factor_set(f, 1, parms[j].pb);
     model_add_factor(mdl, f);
   }
   
   /* optimize. */
-  optim_t *opt = optim_alloc(optim_type_fg);
+  optim_t *opt = optim_alloc(vfl_optim_fg);
   optim_set_model(opt, mdl);
   optim_execute(opt);
 

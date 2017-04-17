@@ -20,14 +20,14 @@ int main (int argc, char **argv) {
   data_t *dat = data_alloc_from_file("../sinc/sinc.dat");
 
   /* set up a regression model. */
-  model_t *mdl = model_alloc(model_type_vfr);
+  model_t *mdl = model_alloc(vfl_model_vfr);
   model_set_alpha0(mdl, 1000.0);
   model_set_beta0(mdl, 2.5);
   model_set_nu(mdl, 1.0e-3);
   model_set_data(mdl, dat);
 
   /* add a polynomial factor to the model. */
-  factor_t *f = factor_alloc(factor_type_polynomial);
+  factor_t *f = factor_alloc(vfl_factor_polynomial);
   polynomial_set_order(f, 10);
   model_add_factor(mdl, f);
   model_infer(mdl);

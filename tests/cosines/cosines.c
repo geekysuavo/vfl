@@ -24,7 +24,7 @@ int main (int argc, char **argv) {
   data_t *dat = data_alloc_from_file("cosines.dat");
 
   /* set up a fixed-tau regression model. */
-  model_t *mdl = model_alloc(model_type_tauvfr);
+  model_t *mdl = model_alloc(vfl_model_tauvfr);
   model_set_alpha0(mdl, 1.0);
   model_set_nu(mdl, 1.0e-6);
   model_set_data(mdl, dat);
@@ -32,7 +32,7 @@ int main (int argc, char **argv) {
   /* add factors to the model. */
   const unsigned int M = 4;
   for (unsigned int j = 0; j < M; j++) {
-    factor_t *f = factor_alloc(factor_type_cosine);
+    factor_t *f = factor_alloc(vfl_factor_cosine);
     factor_set(f, 0, 0.0);
     factor_set(f, 1, 1.0e-5);
     model_add_factor(mdl, f);
@@ -43,7 +43,7 @@ int main (int argc, char **argv) {
     factor_set(mdl->factors[j], 0, 300.0 * rng_normal(R));
 
   /* optimize. */
-  optim_t *opt = optim_alloc(optim_type_fg);
+  optim_t *opt = optim_alloc(vfl_optim_fg);
   optim_set_model(opt, mdl);
   optim_set_lipschitz_init(opt, 0.001);
   optim_execute(opt);

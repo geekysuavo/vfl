@@ -161,6 +161,6 @@ static optim_type_t fg_type = {
   NULL                                           /* free    */
 };
 
-/* optim_type_fg: address of the fg_type structure. */
-const optim_type_t *optim_type_fg = &fg_type;
+/* vfl_optim_fg: address of the fg_type structure. */
+const optim_type_t *vfl_optim_fg = &fg_type;
 

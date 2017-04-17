@@ -189,8 +189,8 @@ static factor_type_t fixed_impulse_type = {
   NULL                                           /* free      */
 };
 
-/* factor_type_fixed_impulse: address of the fixed_impulse_type
+/* vfl_factor_fixed_impulse: address of the fixed_impulse_type
  * structure.
  */
-const factor_type_t *factor_type_fixed_impulse = &fixed_impulse_type;
+const factor_type_t *vfl_factor_fixed_impulse = &fixed_impulse_type;
 

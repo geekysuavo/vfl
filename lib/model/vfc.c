@@ -373,6 +373,6 @@ static model_type_t vfc_type = {
   NULL                                           /* meanfield */
 };
 
-/* model_type_vfc: address of the vfc_type structure. */
-const model_type_t *model_type_vfc = &vfc_type;
+/* vfl_model_vfc: address of the vfc_type structure. */
+const model_type_t *vfl_model_vfc = &vfc_type;
 

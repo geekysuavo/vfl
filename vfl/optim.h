@@ -150,8 +150,8 @@ int optim_execute (optim_t *opt);
 
 /* available optimizer types: */
 
-extern const optim_type_t *optim_type_fg;
-extern const optim_type_t *optim_type_mf;
+extern const optim_type_t *vfl_optim_fg;
+extern const optim_type_t *vfl_optim_mf;
 
 #endif /* !__VFL_OPTIM_H__ */
 
