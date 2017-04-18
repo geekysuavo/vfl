@@ -3,7 +3,7 @@
 #  USE_ATLAS: atlas for blas/lapack.
 #  USE_OPENCL: gpu-accelerated searches.
 USE_ATLAS=y
-USE_OPENCL=n
+USE_OPENCL=y
 
 # executable filenames.
 CC=gcc
@@ -37,9 +37,7 @@ C=  vfl data-alloc data-entries data-fileio factor model optim
 
 # extra flags for using atlas blas/lapack.
 ifeq ($(USE_ATLAS),y)
-ATLAS=/usr/local/atlas
-CFLAGS+= -D__VFL_USE_ATLAS -I$(ATLAS)/include
-LDFLAGS+= -L$(ATLAS)/lib
+CFLAGS+= -D__VFL_USE_ATLAS
 LIBS+= -ltatlas
 endif
 

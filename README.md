@@ -11,19 +11,44 @@ in preparation for submission in:
 
 ## Introduction
 
-FIXME.
+The core of a VFL model is a linear combination of feature functions,
+which take a multidimensional input and return one or more outputs.
+In VFL models, each feature function is called a _factor_, as the
+joint distribution _factorizes_ with respect to the priors and
+approximate posteriors placed over the feature parameters.
+Furthermore, the prior and posterior distributions over
+parameters of a given factor are constrained to be the
+same type.
+
+In general, VFL aims for modularity, flexibility, and extensibility.
+Users can introduce new factors, models, and optimizers in order to
+achieve radically different behavior.
 
 ### Factors
 
-FIXME.
+The current VFL framework supports the following built-in factors:
+
+ * **cosine**: sinusoids, inferred phase.
+ * **decay**: exponential decays.
+ * **fixed-impulse**: delta functions, fixed location.
+ * **impulse**: delta functions, inferred location.
+ * **polynomial**: polynomials of fixed order.
+ * **product**: products of two or more factors.
 
 ### Models
 
-FIXME.
+The VFL framework supports three basic model types:
+
+ * **vfc**: variational feature classification.
+ * **vfr**: variational feature regression, inferred noise precision.
+ * **tauvfr**: variational feature regression, fixed noise precision.
 
 ### Optimizers
 
-FIXME.
+At present two optimizers ship with VFL:
+
+ * **fg**: full-gradient optimization.
+ * **mf**: mean-field optimization.
 
 ## Installation
 

@@ -4,7 +4,7 @@
 #define __VFL_SEARCH_H__
 
 /* include the opencl header. */
-#include <OpenCL/opencl.h>
+#include <CL/opencl.h>
 
 /* include required vfl headers. */
 #include <vfl/model.h>
