@@ -77,6 +77,7 @@ model_t *model_alloc (const model_type_t *type) {
   /* initialize the posterior noise parameters. */
   mdl->alpha = mdl->alpha0;
   mdl->beta = mdl->beta0;
+  mdl->tau = mdl->alpha / mdl->beta;
 
   /* initialize the posterior weight parameters. */
   mdl->wbar = NULL;
@@ -167,6 +168,7 @@ int model_set_alpha0 (model_t *mdl, const double alpha0) {
 
   /* store the parameter and return success. */
   mdl->alpha = mdl->alpha0 = alpha0;
+  mdl->tau = mdl->alpha / mdl->beta;
   return 1;
 }
 
@@ -186,6 +188,7 @@ int model_set_beta0 (model_t *mdl, const double beta0) {
 
   /* store the parameter and return success. */
   mdl->beta = mdl->beta0 = beta0;
+  mdl->tau = mdl->alpha / mdl->beta;
   return 1;
 }
 
@@ -495,24 +498,12 @@ double model_cov (const model_t *mdl,
   /* initialize the computation. */
   double cov = 0.0;
 
-  /* compute the noise precision, and variances for the covariance. */
-  const double tau = mdl->alpha / mdl->beta;
-  const double d2 = 1.0 / (tau * mdl->nu);
-  const double s2 = 1.0 / tau;
-
   /* sum together the contributions from each factor. */
   for (unsigned int j = 0; j < mdl->M; j++)
     cov += factor_cov(mdl->factors[j], x1, x2, p1, p2);
 
-  /* scale the model contribution and add a noise contribution
-   * when the inputs are equal.
-   */
-  cov *= d2;
-  if (vector_equal(x1, x2))
-    cov += s2;
-
   /* return the computed result. */
-  return cov;
+  return (cov / mdl->nu + (double) vector_equal(x1, x2)) / mdl->tau;
 }
 
 /* model_kernel(): write the covariance kernel function code

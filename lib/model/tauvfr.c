@@ -7,7 +7,7 @@
  */
 MODEL_BOUND (tauvfr) {
   /* initialize the computation. */
-  const double tau = mdl->alpha;
+  const double tau = mdl->tau;
   double bound = 0.0;
 
   /* include the complexity term. */
@@ -41,7 +41,7 @@ MODEL_PREDICT (tauvfr) {
   /* compute the expected noise variance and initialize
    * the predicted variance.
    */
-  const double tauinv = 1.0 / mdl->alpha;
+  const double tauinv = 1.0 / mdl->tau;
   double eta = tauinv - mu * mu;
 
   /* loop over the first trace dimension. */
@@ -237,8 +237,8 @@ MODEL_GRADIENT (tauvfr) {
   const vector_t *x = di->x;
   const double y = di->y;
 
-  /* compute the expected noise precision. */
-  const double tau = mdl->alpha;
+  /* gain access to the fixed noise precision. */
+  const double tau = mdl->tau;
 
   /* create the vector view for individual gradient terms. */
   vector_view_t g = vector_subvector(mdl->tmp, mdl->K, grad->len);
@@ -308,8 +308,8 @@ MODEL_MEANFIELD (tauvfr) {
   datum_t *dat = mdl->dat->data + i;
   const unsigned int M = mdl->M;
 
-  /* compute the expected noise precision. */
-  const double tau = mdl->alpha;
+  /* gain access to the fixed noise precision. */
+  const double tau = mdl->tau;
 
   /* create views into the factor weight means and covariances. */
   vector_view_t wk = vector_subvector(mdl->wbar, k0, K);
@@ -367,6 +367,31 @@ MODEL_MEANFIELD (tauvfr) {
       matrix_set(B, k, k2, bkk);
     }
   }
+
+  /* return success. */
+  return 1;
+}
+
+/* tauvfr_set_tau(): set the noise precision of a fixed-tau vfr model.
+ *
+ * arguments:
+ *  @mdl: model structure pointer.
+ *  @tau: noise precision value.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int tauvfr_set_tau (model_t *mdl, const double tau) {
+  /* check the input pointer and value. */
+  if (!mdl || tau <= 0.0)
+    return 0;
+
+  /* set the noise precision. */
+  mdl->tau = tau;
+
+  /* set the noise parameters to 'spoof' a fixed precision. */
+  mdl->alpha = 1.0e6;
+  mdl->beta = 1.0e6 / tau;
 
   /* return success. */
   return 1;

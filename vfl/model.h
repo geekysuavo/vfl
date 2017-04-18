@@ -225,6 +225,7 @@ struct model {
    *  noise:
    *   @alpha: noise precision, posterior shape.
    *   @beta: noise precision, posterior rate.
+   *   @tau: noise precision.
    *
    *  weights:
    *   @wbar: weight means.
@@ -233,7 +234,7 @@ struct model {
    *  logistic coefficients:
    *   @xi: variational parameters of the logistic functions.
    */
-  double alpha, beta;
+  double alpha, beta, tau;
   vector_t *wbar;
   matrix_t *Sigma;
   vector_t *xi;
@@ -334,6 +335,10 @@ unsigned int model_weight_idx (const model_t *mdl,
 void model_weight_adjust_init (const model_t *mdl, const unsigned int j);
 
 int model_weight_adjust (model_t *mdl, const unsigned int j);
+
+/* function declarations (model/tauvfr.c): */
+
+int tauvfr_set_tau (model_t *mdl, const double tau);
 
 /* available model types: */
 

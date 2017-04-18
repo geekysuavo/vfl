@@ -25,7 +25,7 @@ int main (int argc, char **argv) {
 
   /* set up a fixed-tau regression model. */
   model_t *mdl = model_alloc(vfl_model_tauvfr);
-  model_set_alpha0(mdl, 1.0);
+  tauvfr_set_tau(mdl, 1.0);
   model_set_nu(mdl, 1.0e-6);
   model_set_data(mdl, dat);
 

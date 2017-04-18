@@ -154,6 +154,9 @@ MODEL_INFER (vfr) {
   mdl->alpha = mdl->alpha0 + 0.5 * (double) N;
   mdl->beta = mdl->beta0 + 0.5 * (yy - wSw);
 
+  /* update the noise precision. */
+  mdl->tau = mdl->alpha / mdl->beta;
+
   /* return success. */
   return 1;
 }
@@ -243,6 +246,9 @@ MODEL_UPDATE (vfr) {
   mdl->alpha = mdl->alpha0 + 0.5 * (double) N;
   mdl->beta = mdl->beta0 + 0.5 * (yy - wSw);
 
+  /* update the noise precision. */
+  mdl->tau = mdl->alpha / mdl->beta;
+
   /* if the update failed to yield reasonable values, perform
    * a full re-inference.
    */
@@ -270,8 +276,8 @@ MODEL_GRADIENT (vfr) {
   const vector_t *x = di->x;
   const double y = di->y;
 
-  /* compute the expected noise precision. */
-  const double tau = mdl->alpha / mdl->beta;
+  /* gain access to the expected noise precision. */
+  const double tau = mdl->tau;
 
   /* create the vector view for individual gradient terms. */
   vector_view_t g = vector_subvector(mdl->tmp, mdl->K, grad->len);
@@ -340,8 +346,8 @@ MODEL_MEANFIELD (vfr) {
   datum_t *dat = mdl->dat->data + i;
   const unsigned int M = mdl->M;
 
-  /* compute the expected noise precision. */
-  const double tau = mdl->alpha / mdl->beta;
+  /* gain access to the expected noise precision. */
+  const double tau = mdl->tau;
 
   /* create views into the factor weight means and covariances. */
   vector_view_t wk = vector_subvector(mdl->wbar, k0, K);
