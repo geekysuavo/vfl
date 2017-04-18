@@ -724,8 +724,8 @@ int model_update (model_t *mdl, const unsigned int j) {
 
   /* if an update function is assigned, execute it. */
   model_update_fn update_fn = MODEL_TYPE(mdl)->update;
-  if (update_fn)
-    return update_fn(mdl, j);
+  if (update_fn && update_fn(mdl, j))
+    return 1;
 
   /* fall back to the infer function, if assigned. */
   model_infer_fn infer_fn = MODEL_TYPE(mdl)->infer;
@@ -913,6 +913,17 @@ int model_weight_adjust (model_t *mdl, const unsigned int j) {
 
   /* compute the difference between the precision matrix rows. */
   matrix_sub(&V, &U);
+
+  /* compute the magnitude of the differences. */
+  double vss = 0.0;
+  for (unsigned int k = 0; k < K; k++) {
+    v = matrix_row(&V, k);
+    vss += blas_ddot(&v, &v);
+  }
+
+  /* fail if the differences have zero effective magnitude. */
+  if (vss == 0.0)
+    return 0;
 
   /* adjust the row differences for use in rank-1 updates. */
   for (unsigned int k = 0; k < K; k++) {
