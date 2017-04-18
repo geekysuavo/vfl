@@ -14,10 +14,10 @@ in preparation for submission in:
 The core of a VFL model is a linear combination of feature functions,
 which take a multidimensional input and return one or more outputs.
 In VFL models, each feature function is called a _factor_, as the
-joint distribution _factorizes_ with respect to the priors and
-approximate posteriors placed over the feature parameters.
-Furthermore, the prior and posterior distributions over
-parameters of a given factor are constrained to be the
+joint distribution _is assumed to factorize_ with respect to the
+priors and approximate posteriors placed over the feature
+parameters. Furthermore, the prior and posterior distributions
+over parameters of a given factor are constrained to be the
 same type.
 
 In general, VFL aims for modularity, flexibility, and extensibility.
