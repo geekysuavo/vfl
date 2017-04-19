@@ -4,8 +4,7 @@ RM=rm -rf
 WC=wc -l
 GREP=grep -RHni --color
 
-CFLAGS=-ggdb -O3 -std=gnu99 -I../.. -Wall -Wextra
-LDFLAGS=-L../../lib
+CFLAGS+= -ggdb -O3 -std=gnu99 -Wall -Wextra
 LIBS=-lvfl
 
 ENV=env $(TESTFLAGS)

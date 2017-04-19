@@ -121,7 +121,6 @@ int data_augment_from_grid (data_t *dat, const unsigned int p,
   /* initialize the new sizes. */
   D = grid->rows;
   N0 = dat->N;
-  N = 1;
 
   /* allocate indices for grid traversal. */
   idx = malloc(D * sizeof(unsigned int));
@@ -129,20 +128,10 @@ int data_augment_from_grid (data_t *dat, const unsigned int p,
   if (!idx || !sz)
     goto fail;
 
-  /* compute the size of the augmenting grid. */
-  for (unsigned int d = 0; d < D; d++) {
-    /* get the start, end, and step along the current dimension. */
-    const double x1 = matrix_get(grid, d, 0);
-    const double x2 = matrix_get(grid, d, 2);
-    const double dx = matrix_get(grid, d, 1);
-
-    /* compute the grid size along the current dimension. */
-    sz[d] = (unsigned int) floor((x2 - x1) / dx) + 1;
+  /* get the grid sizes and initialize the index array. */
+  N = data_count_grid(grid, sz);
+  for (unsigned int d = 0; d < D; d++)
     idx[d] = 0;
-
-    /* include the current dimension contribution to the size. */
-    N *= sz[d];
-  }
 
   /* attempt to resize the dataset. */
   if (!data_resize(dat, N0 + N, D))
@@ -194,5 +183,40 @@ fail:
   free(idx);
   free(sz);
   return status;
+}
+
+/* data_count_grid(): count the number of elements implied
+ * by a matrix of gridding information.
+ *
+ * arguments:
+ *  @grid: input gridding matrix.
+ *  @sz: output size array, or NULL.
+ *
+ * returns:
+ *  number of elements on the provided implicit grid.
+ */
+unsigned long data_count_grid (const matrix_t *grid, unsigned int *sz) {
+  /* initialize the total size computation. */
+  unsigned int N = 1;
+
+  /* compute the size of the augmenting grid. */
+  for (unsigned int d = 0; d < grid->rows; d++) {
+    /* get the start, end, and step along the current dimension. */
+    const double x1 = matrix_get(grid, d, 0);
+    const double x2 = matrix_get(grid, d, 2);
+    const double dx = matrix_get(grid, d, 1);
+
+    /* compute the grid size along the current dimension. */
+    const unsigned int szd = (unsigned int) floor((x2 - x1) / dx) + 1;
+
+    /* include the current dimension contribution to the size. */
+    N *= szd;
+
+    /* if requested, store the current dimension size. */
+    if (sz) sz[d] = szd;
+  }
+
+  /* return the total size. */
+  return N;
 }
 

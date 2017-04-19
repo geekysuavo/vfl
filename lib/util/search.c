@@ -49,7 +49,7 @@
 #define SEARCH_FORMAT "\n" \
 "inline float vfl_covkernel (const __global float *par,"            "\n" \
 "                            const __global float *x1,"             "\n" \
-"                            const __global float *x1,"             "\n" \
+"                            const __global float *x2,"             "\n" \
 "                            const unsigned int p1,"                "\n" \
 "                            const unsigned int p2,"                "\n" \
 "                            const unsigned int D) {"               "\n" \
@@ -90,7 +90,7 @@
 "    return;"                                                       "\n" \
 ""                                                                  "\n" \
 "  /* get the current grid location. */"                            "\n" \
-"  float *xs = xgrid[gid * D];"                                     "\n" \
+"  const __global float *xs = xgrid + (gid * D);"                   "\n" \
 ""                                                                  "\n" \
 "  /* initialize the variance computation. */"                      "\n" \
 "  float sum = 0.0f;"                                               "\n" \
@@ -103,13 +103,13 @@
 "    /* loop over the first matrix dimension. */"                   "\n" \
 "    for (unsigned int i = 0, cidx = 0; i < n; i++) {"              "\n" \
 "      /* get the first data value. */"                             "\n" \
-"      float *xi = xdat[i * D];"                                    "\n" \
+"      const __global float *xi = xdat + (i * D);"                  "\n" \
 "      unsigned int pi = pdat[i];"                                  "\n" \
 ""                                                                  "\n" \
 "      /* loop over the second matrix dimension. */"                "\n" \
 "      for (unsigned int j = 0; j < n; j++, cidx++) {"              "\n" \
 "        /* get the second data value. */"                          "\n" \
-"        float *xj = xdat[j * D];"                                  "\n" \
+"        const __global float *xj = xdat + (j * D);"                "\n" \
 "        unsigned int pj = pdat[j];"                                "\n" \
 ""                                                                  "\n" \
 "        /* include the current matrix element contribution. */"    "\n" \
@@ -123,6 +123,141 @@
 "  /* store the computed result. */"                                "\n" \
 "  var[gid] = sum;"                                                 "\n" \
 "}\n"
+
+/* * * * static function definitions: * * * */
+
+/* free_buffers(): free all allocated calculation-related buffers
+ * within a search structure.
+ *
+ * arguments:
+ *  @S: search structure pointer.
+ */
+static void free_buffers (search_t *S) {
+  /* free the host-side calculation variables. */
+  free(S->par);
+
+  /* free the device-side memory objects. */
+  clReleaseMemObject(S->dev_par);
+  clReleaseMemObject(S->dev_var);
+  clReleaseMemObject(S->dev_xgrid);
+  clReleaseMemObject(S->dev_xdat);
+  clReleaseMemObject(S->dev_pdat);
+  clReleaseMemObject(S->dev_C);
+
+  /* reset the host-side pointers. */
+  S->par = S->var = S->xgrid = S->xmax = S->xdat = S->C = NULL;
+  S->pdat = NULL;
+
+  /* reset the device-side pointers. */
+  S->dev_par = S->dev_var = S->dev_xgrid = NULL;
+  S->dev_xdat = S->dev_pdat = S->dev_C = NULL;
+}
+
+/* refresh_buffers(): ensure that all allocated calculation-related
+ * buffers have the correct size and are initialized properly.
+ *
+ * arguments:
+ *  @S: search structure pointer.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+static int refresh_buffers (search_t *S) {
+  /* get the new sizes. */
+  const unsigned int D = S->mdl->D;
+  const unsigned int P = S->mdl->P;
+  const unsigned int n = S->dat->N;
+  const unsigned int N = data_count_grid(S->grid, NULL);
+
+  /* check for any differences. */
+  if (S->D != D || S->P != P || S->N != N || S->n != n) {
+    /* free the buffers. */
+    free_buffers(S);
+
+    /* determine the sizes of the buffers. */
+    const size_t num_par   = sizeof(cl_float) * P;
+    const size_t num_var   = sizeof(cl_float) * N;
+    const size_t num_xgrid = sizeof(cl_float) * N;
+    const size_t num_xmax  = sizeof(cl_float) * D;
+    const size_t num_xdat  = sizeof(cl_float) * D * n;
+    const size_t num_C     = sizeof(cl_float) * n * n;
+    const size_t num_pdat  = sizeof(cl_uint)  * n;
+
+    /* determine the amount of host floats to allocate. */
+    const size_t bytes = num_par + num_var + num_xgrid + num_xmax
+                       + num_xdat + num_pdat + num_C;
+
+    /* allocate the host-side memory block. */
+    char *ptr = malloc(bytes);
+    if (!ptr)
+      return 0;
+
+    /* initialize par. */
+    S->par = (cl_float*) ptr;
+    ptr += num_par;
+
+    /* initialize var. */
+    S->var = (cl_float*) ptr;
+    ptr += num_var;
+
+    /* initialize xgrid. */
+    S->xgrid = (cl_float*) ptr;
+    ptr += num_xgrid;
+
+    /* initialize xmax. */
+    S->xmax = (cl_float*) ptr;
+    ptr += num_xmax;
+
+    /* initialize xdat. */
+    S->xdat = (cl_float*) ptr;
+    ptr += num_xdat;
+
+    /* initialize C. */
+    S->C = (cl_float*) ptr;
+    ptr += num_C;
+
+    /* initialize pdat. */
+    S->pdat = (cl_uint*) ptr;
+
+    /* allocate the device-side buffer: par. */
+    S->dev_par = clCreateBuffer(S->ctx, CL_MEM_READ_ONLY,
+                                num_par, NULL, NULL);
+
+    /* allocate the device-side buffer: var. */
+    S->dev_var = clCreateBuffer(S->ctx, CL_MEM_WRITE_ONLY,
+                                num_var, NULL, NULL);
+
+    /* allocate the device-side buffer: xgrid. */
+    S->dev_xgrid = clCreateBuffer(S->ctx, CL_MEM_READ_ONLY,
+                                  num_xgrid, NULL, NULL);
+
+    /* allocate the device-side buffer: xdat. */
+    S->dev_xdat = clCreateBuffer(S->ctx, CL_MEM_READ_ONLY,
+                                 num_xdat, NULL, NULL);
+
+    /* allocate the device-side buffer: pdat. */
+    S->dev_pdat = clCreateBuffer(S->ctx, CL_MEM_READ_ONLY,
+                                 num_pdat, NULL, NULL);
+
+    /* allocate the device-side buffer: C. */
+    S->dev_C = clCreateBuffer(S->ctx, CL_MEM_READ_ONLY,
+                              num_C, NULL, NULL);
+
+    /* check for allocation failures. */
+    if (!S->dev_par || !S->dev_var || !S->dev_xgrid ||
+        !S->dev_xdat || !S->dev_pdat || !S->dev_C)
+      return 0;
+
+    /* store the new sizes. */
+    S->D = D;
+    S->P = P;
+    S->N = N;
+    S->n = n;
+  }
+
+  /* return success. */
+  return 1;
+}
 
 /* * * * function definitions: * * * */
 
@@ -139,7 +274,7 @@
 search_t *search_alloc (model_t *mdl, data_t *dat,
                         const matrix_t *grid) {
   /* check the input structure pointers. */
-  if (!mdl || !dat)
+  if (!mdl || !dat | !grid)
     return NULL;
 
   /* allocate a new structure pointer. */
@@ -148,10 +283,15 @@ search_t *search_alloc (model_t *mdl, data_t *dat,
     return NULL;
 
   /* store the model and dataset. */
+  S->grid = grid;
   S->mdl = mdl;
   S->dat = dat;
 
+  /* initialize the buffer sizes. */
+  S->D = S->P = S->N = S->n = 0;
+
   /* initialize the opencl variables. */
+  S->plat = NULL;
   S->dev = NULL;
   S->ctx = NULL;
   S->queue = NULL;
@@ -159,12 +299,12 @@ search_t *search_alloc (model_t *mdl, data_t *dat,
   S->kern = NULL;
   S->src = NULL;
 
-  /* initialize the host variables. */
-  S->xgrid = S->xdat = S->xmax = S->par = S->C = NULL;
+  /* initialize the host-side pointers. */
+  S->xgrid = S->xdat = S->xmax = S->par = S->C = S->var = NULL;
   S->pdat = NULL;
   S->vmax = 0.0;
 
-  /* initialize the device memory variables. */
+  /* initialize the device-side pointers. */
   S->dev_xgrid = S->dev_xdat = S->dev_pdat = NULL;
   S->dev_par = S->dev_C = S->dev_var = NULL;
 
@@ -185,8 +325,13 @@ search_t *search_alloc (model_t *mdl, data_t *dat,
   sprintf(S->src, SEARCH_FORMAT, ksrc);
   free(ksrc);
 
+  /* get the first available compute platform. */
+  int ret = clGetPlatformIDs(1, &S->plat, NULL);
+  if (ret != CL_SUCCESS)
+    goto fail;
+
   /* connect to the first available compute device. */
-  int ret = clGetDeviceIDs(NULL, CL_DEVICE_TYPE_GPU, 1, &S->dev, NULL);
+  ret = clGetDeviceIDs(S->plat, CL_DEVICE_TYPE_GPU, 1, &S->dev, NULL);
   if (ret != CL_SUCCESS)
     goto fail;
 
@@ -213,7 +358,10 @@ search_t *search_alloc (model_t *mdl, data_t *dat,
   if (ret != CL_SUCCESS)
     goto fail;
 
-  /* FIXME: implement search_alloc() */
+  /* create the compute kernel. */
+  S->kern = clCreateKernel(S->prog, "vfl_variance", &ret);
+  if (!S->kern || ret != CL_SUCCESS)
+    goto fail;
 
   /* return the new structure pointer. */
   return S;
@@ -234,7 +382,17 @@ void search_free (search_t *S) {
   if (!S)
     return;
 
-  /* FIXME: implement search_free() */
+  /* release the opencl variables. */
+  clReleaseProgram(S->prog);
+  clReleaseKernel(S->kern);
+  clReleaseCommandQueue(S->queue);
+  clReleaseContext(S->ctx);
+
+  /* free the kernel source code string. */
+  free(S->src);
+
+  /* free the calculation buffers. */
+  free_buffers(S);
 
   /* free the structure pointer. */
   free(S);
@@ -256,7 +414,22 @@ int search_execute (search_t *S, vector_t *x) {
   if (!S || !x)
     return 0;
 
-  /* FIXME: implement search_execute() */
+  /* refresh the calculation buffers. */
+  if (!refresh_buffers(S))
+    return 0;
+
+  /* FIXME: implement search_execute():
+   *
+   *  1. fill S.par from S.mdl
+   *  2. fill S.xgrid from S.grid
+   *  3. fill S.xdat, S.pdat from S.dat
+   *  4. compute S.C using S.mdl, S.dat
+   *  5. enqueue host->dev buffer xfers
+   *  6. set up kernel arguments.
+   *  7. enqueue the kernel call.
+   *  8. enqueue dev->host buffer xfer
+   *  9. loop to find the maximum, store in x
+   */
 
   /* return success. */
   return 1;

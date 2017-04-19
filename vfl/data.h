@@ -65,6 +65,8 @@ int data_augment (data_t *dat, const datum_t *d);
 int data_augment_from_grid (data_t *dat, const unsigned int p,
                             const matrix_t *grid);
 
+unsigned long data_count_grid (const matrix_t *grid, unsigned int *sz);
+
 /* function declarations, input/output (data-fileio.c): */
 
 int data_fread (data_t *dat, const char *fname);
