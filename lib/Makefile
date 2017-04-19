@@ -32,9 +32,6 @@ C_MODEL=vfc vfr tauvfr
 # basenames of C optimizer source files.
 C_OPTIM=fg mf
 
-# basenames of core C source files.
-C=  vfl data-alloc data-entries data-fileio factor model optim
-
 # extra flags for using atlas blas/lapack.
 ifeq ($(USE_ATLAS),y)
 CFLAGS+= -D__VFL_USE_ATLAS
@@ -48,11 +45,14 @@ LIBS+= -lOpenCL
 C_UTIL+= search
 endif
 
-# basenames of all C source files.
+# basenames of C source files in sub-directories.
+C=  $(addprefix util/,$(C_UTIL))
 C+= $(addprefix factor/,$(C_FACTOR))
 C+= $(addprefix model/,$(C_MODEL))
 C+= $(addprefix optim/,$(C_OPTIM))
-C+= $(addprefix util/,$(C_UTIL))
+
+# basenames of core C source files.
+C+= vfl data-alloc data-entries data-fileio factor model optim
 
 # filenames of C sources.
 SRC=$(addsuffix .c,$(C))

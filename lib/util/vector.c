@@ -2,6 +2,37 @@
 /* include the vector header. */
 #include <vfl/util/vector.h>
 
+/* * * * inline function definitions: * * * */
+
+/* vector_get(): get the value of a vector element.
+ *
+ * arguments:
+ *  @v: vector to access.
+ *  @i: element index.
+ *
+ * returns:
+ *  value of the requested vector element.
+ */
+inline double vector_get (const vector_t *v, const unsigned int i) {
+  /* return the element without bounds checking. */
+  return v->data[i * v->stride];
+}
+
+/* vector_set(): set the value of a vector element.
+ *
+ * arguments:
+ *  @v: vector to modify.
+ *  @i: element index.
+ *  @vi: new element value
+ */
+inline void vector_set (vector_t *v, const unsigned int i,
+                        const double vi) {
+  /* set the element without bounds checking. */
+  v->data[i * v->stride] = vi;
+}
+
+/* * * * function definitions: * * * */
+
 /* vector_bytes(): compute the space required for a vector.
  *
  * arguments:
@@ -147,32 +178,6 @@ double vector_max (const vector_t *v) {
 
   /* return the identified value. */
   return vmax;
-}
-
-/* vector_get(): get the value of a vector element.
- *
- * arguments:
- *  @v: vector to access.
- *  @i: element index.
- *
- * returns:
- *  value of the requested vector element.
- */
-inline double vector_get (const vector_t *v, const unsigned int i) {
-  /* return the element without bounds checking. */
-  return v->data[i * v->stride];
-}
-
-/* vector_set(): set the value of a vector element.
- *
- * arguments:
- *  @v: vector to modify.
- *  @i: element index.
- *  @vi: new element value
- */
-inline void vector_set (vector_t *v, const unsigned int i, const double vi) {
-  /* set the element without bounds checking. */
-  v->data[i * v->stride] = vi;
 }
 
 /* vector_set_all(): set all elements of a vector to a specified value.

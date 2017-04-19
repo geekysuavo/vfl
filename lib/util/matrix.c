@@ -2,6 +2,43 @@
 /* include the matrix header. */
 #include <vfl/util/matrix.h>
 
+/* * * * inline function definitions: * * * */
+
+/* matrix_get(): get the value of a matrix element.
+ *
+ * arguments:
+ *  @A: matrix to access.
+ *  @i: row index.
+ *  @j: column index.
+ *
+ * returns:
+ *  value of the requested matrix element.
+ */
+inline double matrix_get (const matrix_t *A,
+                          const unsigned int i,
+                          const unsigned int j) {
+  /* return the element without bounds checking. */
+  return A->data[i * A->stride + j];
+}
+
+/* matrix_set(): set the value of a matrix element.
+ *
+ * arguments:
+ *  @A: matrix to access.
+ *  @i: row index.
+ *  @j: column index.
+ *  @Aij: new element value.
+ */
+inline void matrix_set (matrix_t *A,
+                        const unsigned int i,
+                        const unsigned int j,
+                        const double Aij) {
+  /* set the element without bounds checking. */
+  A->data[i * A->stride + j] = Aij;
+}
+
+/* * * * function definitions: * * * */
+
 /* matrix_bytes(): compute the space required for a matrix.
  *
  * arguments:
@@ -290,39 +327,6 @@ matrix_view_t matrix_submatrix (const matrix_t *A,
 
   /* return the view. */
   return view;
-}
-
-/* matrix_get(): get the value of a matrix element.
- *
- * arguments:
- *  @A: matrix to access.
- *  @i: row index.
- *  @j: column index.
- *
- * returns:
- *  value of the requested matrix element.
- */
-inline double matrix_get (const matrix_t *A,
-                          const unsigned int i,
-                          const unsigned int j) {
-  /* return the element without bounds checking. */
-  return A->data[i * A->stride + j];
-}
-
-/* matrix_set(): set the value of a matrix element.
- *
- * arguments:
- *  @A: matrix to access.
- *  @i: row index.
- *  @j: column index.
- *  @Aij: new element value.
- */
-inline void matrix_set (matrix_t *A,
-                        const unsigned int i,
-                        const unsigned int j,
-                        const double Aij) {
-  /* set the element without bounds checking. */
-  A->data[i * A->stride + j] = Aij;
 }
 
 /* matrix_set_all(): set all elements of a matrix to a specified value.
