@@ -21,7 +21,7 @@ LIBS=-lm
 LIB=libvfl.so
 
 # basenames of C utility source files.
-C_UTIL=rng specfun vector matrix blas chol eigen
+C_UTIL=rng specfun vector matrix grid blas chol eigen
 
 # basenames of C factor source files.
 C_FACTOR=cosine decay impulse fixed-impulse polynomial product

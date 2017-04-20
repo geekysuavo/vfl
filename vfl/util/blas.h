@@ -11,6 +11,7 @@
 #ifdef __VFL_USE_ATLAS
 /* include the atlas blas header. */
 #include <cblas.h>
+#include <clapack.h>
 #else
 /* define values for cblas enumerations. */
 #define CblasNoTrans 111

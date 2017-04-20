@@ -1,5 +1,6 @@
 
-/* include the dataset header. */
+/* include the gridding and dataset headers. */
+#include <vfl/util/grid.h>
 #include <vfl/data.h>
 
 /* data_get(): extract an observation from a dataset.
@@ -102,48 +103,24 @@ int data_augment_from_grid (data_t *dat, const unsigned int p,
   unsigned int status, N0, N, D, *idx, *sz;
   vector_t *x;
 
-  /* initialize the return status. */
-  status = 0;
-
-  /* initialize the pointers. */
-  idx = NULL;
-  sz = NULL;
-  x = NULL;
-
-  /* check the input pointers. */
-  if (!dat || !grid)
-    return 0;
-
-  /* check the gridding matrix. */
-  if (grid->cols != 3)
+  /* check the dataset and validate the gridding matrix. */
+  if (!dat || !grid_validate(grid))
     return 0;
 
   /* initialize the new sizes. */
-  D = grid->rows;
+  D = grid_dims(grid);
   N0 = dat->N;
 
-  /* allocate indices for grid traversal. */
-  idx = malloc(D * sizeof(unsigned int));
-  sz = malloc(D * sizeof(unsigned int));
-  if (!idx || !sz)
-    goto fail;
+  /* initialize the return status. */
+  status = 0;
 
-  /* get the grid sizes and initialize the index array. */
-  N = data_count_grid(grid, sz);
-  for (unsigned int d = 0; d < D; d++)
-    idx[d] = 0;
+  /* allocate memory for grid traversal. */
+  if (!grid_iterator_alloc(grid, &N, &idx, &sz, &x))
+    goto fail;
 
   /* attempt to resize the dataset. */
   if (!data_resize(dat, N0 + N, D))
     goto fail;
-
-  /* allocate a vector for holding observations. */
-  x = vector_alloc(D);
-  if (!x)
-    goto fail;
-
-  /* initialize the observation vector. */
-  matrix_copy_col(x, grid, 0);
 
   /* loop over every grid point. */
   for (unsigned int i = 0; i < N; i++) {
@@ -153,25 +130,7 @@ int data_augment_from_grid (data_t *dat, const unsigned int p,
     dat->data[N0 + i].p = p;
 
     /* move to the next grid point. */
-    for (unsigned int d = 0; d < D; d++) {
-      /* get the start and step along the current dimension. */
-      const double x1 = matrix_get(grid, d, 0);
-      const double dx = matrix_get(grid, d, 1);
-
-      /* increment the current dimension. */
-      idx[d]++;
-
-      /* update the grid vector. */
-      vector_set(x, d, x1 + idx[d] * dx);
-
-      /* check if the current dimension has overflowed. */
-      if (idx[d] >= sz[d]) {
-        vector_set(x, d, x1);
-        idx[d] = 0;
-      }
-      else
-        break;
-    }
+    grid_iterator_next(grid, idx, sz, x);
   }
 
   /* indicate successful completion. */
@@ -179,44 +138,7 @@ int data_augment_from_grid (data_t *dat, const unsigned int p,
 
 fail:
   /* free all allocated memory and return. */
-  vector_free(x);
-  free(idx);
-  free(sz);
+  grid_iterator_free(idx, sz, x);
   return status;
-}
-
-/* data_count_grid(): count the number of elements implied
- * by a matrix of gridding information.
- *
- * arguments:
- *  @grid: input gridding matrix.
- *  @sz: output size array, or NULL.
- *
- * returns:
- *  number of elements on the provided implicit grid.
- */
-unsigned long data_count_grid (const matrix_t *grid, unsigned int *sz) {
-  /* initialize the total size computation. */
-  unsigned int N = 1;
-
-  /* compute the size of the augmenting grid. */
-  for (unsigned int d = 0; d < grid->rows; d++) {
-    /* get the start, end, and step along the current dimension. */
-    const double x1 = matrix_get(grid, d, 0);
-    const double x2 = matrix_get(grid, d, 2);
-    const double dx = matrix_get(grid, d, 1);
-
-    /* compute the grid size along the current dimension. */
-    const unsigned int szd = (unsigned int) floor((x2 - x1) / dx) + 1;
-
-    /* include the current dimension contribution to the size. */
-    N *= szd;
-
-    /* if requested, store the current dimension size. */
-    if (sz) sz[d] = szd;
-  }
-
-  /* return the total size. */
-  return N;
 }
 

@@ -3,12 +3,13 @@
 #ifndef __VFL_SEARCH_H__
 #define __VFL_SEARCH_H__
 
+/* include required vfl headers. */
+#include <vfl/data.h>
+#include <vfl/model.h>
+#include <vfl/util/blas.h>
+
 /* include the opencl header. */
 #include <CL/opencl.h>
-
-/* include required vfl headers. */
-#include <vfl/model.h>
-#include <vfl/data.h>
 
 /* search_t: structure for holding the state of a variance search.
  */
@@ -25,10 +26,18 @@ typedef struct {
   /* current buffer states:
    *  @D: dimension count.
    *  @P: parameter count.
+   *  @K: output count.
    *  @N: grid value count.
    *  @n: observation count.
    */
-  unsigned int D, P, N, n;
+  cl_uint D, P, K, N, n;
+
+  /* memory utilization and execution control variables:
+   *  @sz_*: in-memory sizes (host and device).
+   *  @wgsize: work-group size.
+   */
+  size_t sz_par, sz_var, sz_xgrid, sz_xmax, sz_xdat, sz_C, sz_pdat;
+  size_t wgsize;
 
   /* opencl core variables:
    *  @plat: compute platform identifier.
@@ -89,6 +98,8 @@ search_t *search_alloc (model_t *mdl, data_t *dat,
                         const matrix_t *grid);
 
 void search_free (search_t *S);
+
+int search_set_outputs (search_t *S, const unsigned int num);
 
 int search_execute (search_t *S, vector_t *x);
 

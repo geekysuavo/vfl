@@ -1,6 +1,7 @@
 
-/* include the search header. */
+/* include the search and gridding headers. */
 #include <vfl/util/search.h>
+#include <vfl/util/grid.h>
 
 /* * * * documentation of opencl kernel code: * * * */
 
@@ -50,9 +51,9 @@
 "inline float vfl_covkernel (const __global float *par,"            "\n" \
 "                            const __global float *x1,"             "\n" \
 "                            const __global float *x2,"             "\n" \
-"                            const unsigned int p1,"                "\n" \
-"                            const unsigned int p2,"                "\n" \
-"                            const unsigned int D) {"               "\n" \
+"                            const uint p1,"                        "\n" \
+"                            const uint p2,"                        "\n" \
+"                            const uint D) {"                       "\n" \
 "  /* initialize the covariance computation. */"                    "\n" \
 "  float cov, sum = 0.0f, diag = 1.0f;"                             "\n" \
 ""                                                                  "\n" \
@@ -65,7 +66,7 @@
 "  /* end model-generated kernel code. */"                          "\n" \
 ""                                                                  "\n" \
 "  /* compute the diagonal noise term. */"                          "\n" \
-"  for (unsigned int d = 0; d < D; d++)"                            "\n" \
+"  for (uint d = 0; d < D; d++)"                                    "\n" \
 "    diag *= (x1[d] == x2[d]);"                                     "\n" \
 ""                                                                  "\n" \
 "  /* return the computed result. */"                               "\n" \
@@ -77,13 +78,11 @@
 "                            const __global uint  *pdat,"           "\n" \
 "                            const __global float *par,"            "\n" \
 "                            const __global float *C,"              "\n" \
-"                            const unsigned int D,"                 "\n" \
-"                            const unsigned int K,"                 "\n" \
-"                            const unsigned int N,"                 "\n" \
-"                            const unsigned int n,"                 "\n" \
+"                            const uint D, const uint K,"           "\n" \
+"                            const uint N, const uint n,"           "\n" \
 "                            __global float *var) {"                "\n" \
 "  /* get the grid index. */"                                       "\n" \
-"  const unsigned int gid = get_global_id(0);"                      "\n" \
+"  const size_t gid = get_global_id(0);"                            "\n" \
 ""                                                                  "\n" \
 "  /* avoid buffer overflow. */"                                    "\n" \
 "  if (gid >= N)"                                                   "\n" \
@@ -96,21 +95,21 @@
 "  float sum = 0.0f;"                                               "\n" \
 ""                                                                  "\n" \
 "  /* sum variances of each output together. */"                    "\n" \
-"  for (unsigned int ps = 0; ps < K; ps++) {"                       "\n" \
+"  for (uint ps = 0; ps < K; ps++) {"                               "\n" \
 "    /* include the auto-covariance contribution. */"               "\n" \
 "    sum += vfl_covkernel(par, xs, xs, ps, ps, D);"                 "\n" \
 ""                                                                  "\n" \
 "    /* loop over the first matrix dimension. */"                   "\n" \
-"    for (unsigned int i = 0, cidx = 0; i < n; i++) {"              "\n" \
+"    for (uint i = 0, cidx = 0; i < n; i++) {"                      "\n" \
 "      /* get the first data value. */"                             "\n" \
 "      const __global float *xi = xdat + (i * D);"                  "\n" \
-"      unsigned int pi = pdat[i];"                                  "\n" \
+"      uint pi = pdat[i];"                                          "\n" \
 ""                                                                  "\n" \
 "      /* loop over the second matrix dimension. */"                "\n" \
-"      for (unsigned int j = 0; j < n; j++, cidx++) {"              "\n" \
+"      for (uint j = 0; j < n; j++, cidx++) {"                      "\n" \
 "        /* get the second data value. */"                          "\n" \
 "        const __global float *xj = xdat + (j * D);"                "\n" \
-"        unsigned int pj = pdat[j];"                                "\n" \
+"        uint pj = pdat[j];"                                        "\n" \
 ""                                                                  "\n" \
 "        /* include the current matrix element contribution. */"    "\n" \
 "        sum -= vfl_covkernel(par, xs, xi, ps, pi, D)"              "\n" \
@@ -125,6 +124,34 @@
 "}\n"
 
 /* * * * static function definitions: * * * */
+
+/* set_arguments(): set the kernel arguments of a search structure.
+ *
+ * arguments:
+ *  @S: search structure pointer.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+static int set_arguments (search_t *S) {
+  /* initialize the status code. */
+  int ret = CL_SUCCESS;
+
+  /* set all arguments. */
+  ret |= clSetKernelArg(S->kern, 0, sizeof(cl_mem),  &S->dev_xgrid);
+  ret |= clSetKernelArg(S->kern, 1, sizeof(cl_mem),  &S->dev_xdat);
+  ret |= clSetKernelArg(S->kern, 2, sizeof(cl_mem),  &S->dev_pdat);
+  ret |= clSetKernelArg(S->kern, 3, sizeof(cl_mem),  &S->dev_par);
+  ret |= clSetKernelArg(S->kern, 4, sizeof(cl_mem),  &S->dev_C);
+  ret |= clSetKernelArg(S->kern, 5, sizeof(cl_uint), &S->D);
+  ret |= clSetKernelArg(S->kern, 6, sizeof(cl_uint), &S->K);
+  ret |= clSetKernelArg(S->kern, 7, sizeof(cl_uint), &S->N);
+  ret |= clSetKernelArg(S->kern, 8, sizeof(cl_uint), &S->n);
+  ret |= clSetKernelArg(S->kern, 9, sizeof(cl_mem),  &S->dev_var);
+
+  /* return the resulting status code. */
+  return (ret == CL_SUCCESS);
+}
 
 /* free_buffers(): free all allocated calculation-related buffers
  * within a search structure.
@@ -164,10 +191,11 @@ static void free_buffers (search_t *S) {
  */
 static int refresh_buffers (search_t *S) {
   /* get the new sizes. */
+  const unsigned int P = S->mdl->P + 2;
   const unsigned int D = S->mdl->D;
-  const unsigned int P = S->mdl->P;
   const unsigned int n = S->dat->N;
-  const unsigned int N = data_count_grid(S->grid, NULL);
+  unsigned int N;
+  grid_iterator_alloc(S->grid, &N, NULL, NULL, NULL);
 
   /* check for any differences. */
   if (S->D != D || S->P != P || S->N != N || S->n != n) {
@@ -175,17 +203,18 @@ static int refresh_buffers (search_t *S) {
     free_buffers(S);
 
     /* determine the sizes of the buffers. */
-    const size_t num_par   = sizeof(cl_float) * P;
-    const size_t num_var   = sizeof(cl_float) * N;
-    const size_t num_xgrid = sizeof(cl_float) * N;
-    const size_t num_xmax  = sizeof(cl_float) * D;
-    const size_t num_xdat  = sizeof(cl_float) * D * n;
-    const size_t num_C     = sizeof(cl_float) * n * n;
-    const size_t num_pdat  = sizeof(cl_uint)  * n;
+    S->sz_par   = sizeof(cl_float) * P;
+    S->sz_var   = sizeof(cl_float) * N;
+    S->sz_xgrid = sizeof(cl_float) * N;
+    S->sz_xmax  = sizeof(cl_float) * D;
+    S->sz_xdat  = sizeof(cl_float) * D * n;
+    S->sz_C     = sizeof(cl_float) * n * n;
+    S->sz_pdat  = sizeof(cl_uint)  * n;
 
     /* determine the amount of host floats to allocate. */
-    const size_t bytes = num_par + num_var + num_xgrid + num_xmax
-                       + num_xdat + num_pdat + num_C;
+    const size_t bytes = S->sz_par + S->sz_var + S->sz_xgrid
+                       + S->sz_xmax + S->sz_xdat + S->sz_pdat
+                       + S->sz_C;
 
     /* allocate the host-side memory block. */
     char *ptr = malloc(bytes);
@@ -194,54 +223,54 @@ static int refresh_buffers (search_t *S) {
 
     /* initialize par. */
     S->par = (cl_float*) ptr;
-    ptr += num_par;
+    ptr += S->sz_par;
 
     /* initialize var. */
     S->var = (cl_float*) ptr;
-    ptr += num_var;
+    ptr += S->sz_var;
 
     /* initialize xgrid. */
     S->xgrid = (cl_float*) ptr;
-    ptr += num_xgrid;
+    ptr += S->sz_xgrid;
 
     /* initialize xmax. */
     S->xmax = (cl_float*) ptr;
-    ptr += num_xmax;
+    ptr += S->sz_xmax;
 
     /* initialize xdat. */
     S->xdat = (cl_float*) ptr;
-    ptr += num_xdat;
+    ptr += S->sz_xdat;
 
     /* initialize C. */
     S->C = (cl_float*) ptr;
-    ptr += num_C;
+    ptr += S->sz_C;
 
     /* initialize pdat. */
     S->pdat = (cl_uint*) ptr;
 
     /* allocate the device-side buffer: par. */
     S->dev_par = clCreateBuffer(S->ctx, CL_MEM_READ_ONLY,
-                                num_par, NULL, NULL);
+                                S->sz_par, NULL, NULL);
 
     /* allocate the device-side buffer: var. */
     S->dev_var = clCreateBuffer(S->ctx, CL_MEM_WRITE_ONLY,
-                                num_var, NULL, NULL);
+                                S->sz_var, NULL, NULL);
 
     /* allocate the device-side buffer: xgrid. */
     S->dev_xgrid = clCreateBuffer(S->ctx, CL_MEM_READ_ONLY,
-                                  num_xgrid, NULL, NULL);
+                                  S->sz_xgrid, NULL, NULL);
 
     /* allocate the device-side buffer: xdat. */
     S->dev_xdat = clCreateBuffer(S->ctx, CL_MEM_READ_ONLY,
-                                 num_xdat, NULL, NULL);
+                                 S->sz_xdat, NULL, NULL);
 
     /* allocate the device-side buffer: pdat. */
     S->dev_pdat = clCreateBuffer(S->ctx, CL_MEM_READ_ONLY,
-                                 num_pdat, NULL, NULL);
+                                 S->sz_pdat, NULL, NULL);
 
     /* allocate the device-side buffer: C. */
     S->dev_C = clCreateBuffer(S->ctx, CL_MEM_READ_ONLY,
-                              num_C, NULL, NULL);
+                              S->sz_C, NULL, NULL);
 
     /* check for allocation failures. */
     if (!S->dev_par || !S->dev_var || !S->dev_xgrid ||
@@ -259,6 +288,61 @@ static int refresh_buffers (search_t *S) {
   return 1;
 }
 
+/* write_buffers(): write the contents of all host-side calculation
+ * buffers to the compute device associated with a search structure.
+ *
+ * arguments:
+ *  @S: search structure pointer.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+static int write_buffers (search_t *S) {
+  /* write xgrid to the device. */
+  int ret = clEnqueueWriteBuffer(S->queue, S->dev_xgrid, CL_FALSE, 0,
+                                 S->sz_xgrid, S->xgrid, 0, NULL, NULL);
+
+  /* write xdat to the device. */
+  ret |= clEnqueueWriteBuffer(S->queue, S->dev_xdat, CL_FALSE, 0,
+                              S->sz_xdat, S->xdat, 0, NULL, NULL);
+
+  /* write pdat to the device. */
+  ret |= clEnqueueWriteBuffer(S->queue, S->dev_pdat, CL_FALSE, 0,
+                              S->sz_pdat, S->pdat, 0, NULL, NULL);
+
+  /* write par to the device. */
+  ret |= clEnqueueWriteBuffer(S->queue, S->dev_par, CL_FALSE, 0,
+                              S->sz_par, S->par, 0, NULL, NULL);
+
+  /* write C to the device. */
+  ret |= clEnqueueWriteBuffer(S->queue, S->dev_C, CL_FALSE, 0,
+                              S->sz_C, S->C, 0, NULL, NULL);
+
+  /* block until all writes have completed. */
+  clFinish(S->queue);
+
+  /* return the resulting status code. */
+  return (ret == CL_SUCCESS);
+}
+
+/* read_buffers(): read the contents of the device-side result
+ * array to host-side memory for further processing.
+ *
+ * arguments:
+ *  @S: search structure pointer.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+static int read_buffers (search_t *S) {
+  /* read the results from the device. */
+  int ret = clEnqueueReadBuffer(S->queue, S->dev_var, CL_TRUE, 0,
+                                S->sz_var, S->var, 0, NULL, NULL);
+
+  /* return the resulting status code. */
+  return (ret == CL_SUCCESS);
+}
+
 /* * * * function definitions: * * * */
 
 /* search_alloc(): allocate a new structure for variance searches.
@@ -274,7 +358,7 @@ static int refresh_buffers (search_t *S) {
 search_t *search_alloc (model_t *mdl, data_t *dat,
                         const matrix_t *grid) {
   /* check the input structure pointers. */
-  if (!mdl || !dat | !grid)
+  if (!mdl || !dat | !grid_validate(grid))
     return NULL;
 
   /* allocate a new structure pointer. */
@@ -288,7 +372,7 @@ search_t *search_alloc (model_t *mdl, data_t *dat,
   S->dat = dat;
 
   /* initialize the buffer sizes. */
-  S->D = S->P = S->N = S->n = 0;
+  S->D = S->P = S->K = S->N = S->n = 0;
 
   /* initialize the opencl variables. */
   S->plat = NULL;
@@ -363,6 +447,12 @@ search_t *search_alloc (model_t *mdl, data_t *dat,
   if (!S->kern || ret != CL_SUCCESS)
     goto fail;
 
+  /* get the maximum work group size for the kernel. */
+  ret = clGetKernelWorkGroupInfo(S->kern, S->dev, CL_KERNEL_WORK_GROUP_SIZE,
+                                 sizeof(size_t), &S->wgsize, NULL);
+  if (ret != CL_SUCCESS)
+    goto fail;
+
   /* return the new structure pointer. */
   return S;
 
@@ -398,6 +488,26 @@ void search_free (search_t *S) {
   free(S);
 }
 
+/* search_set_outputs(): set the number of function outputs
+ * interrogated by a search structure.
+ *
+ * arguments:
+ *  @S: search structure pointer.
+ *  @num: number of outputs.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int search_set_outputs (search_t *S, const unsigned int num) {
+  /* check the input arguments. */
+  if (!S || !num)
+    return 0;
+
+  /* store the new output count. */
+  S->K = num;
+  return 1;
+}
+
 /* search_execute(): perform a search procedure to locate the
  * maximum of the posterior predictive variance of a gaussian
  * process.
@@ -410,6 +520,14 @@ void search_free (search_t *S) {
  *  integer indicating success (1) or failure (0).
  */
 int search_execute (search_t *S, vector_t *x) {
+  /* declare required variables:
+   *  @idx: grid iteration index.
+   *  @sz: grid dimension sizes.
+   *  @gx: grid iteration point.
+   */
+  unsigned int *idx, *sz;
+  vector_t *gx;
+
   /* check the input structure pointers. */
   if (!S || !x)
     return 0;
@@ -418,18 +536,161 @@ int search_execute (search_t *S, vector_t *x) {
   if (!refresh_buffers(S))
     return 0;
 
-  /* FIXME: implement search_execute():
-   *
-   *  1. fill S.par from S.mdl
-   *  2. fill S.xgrid from S.grid
-   *  3. fill S.xdat, S.pdat from S.dat
-   *  4. compute S.C using S.mdl, S.dat
-   *  5. enqueue host->dev buffer xfers
-   *  6. set up kernel arguments.
-   *  7. enqueue the kernel call.
-   *  8. enqueue dev->host buffer xfer
-   *  9. loop to find the maximum, store in x
-   */
+  /* allocate the grid iteration variables. */
+  if (!grid_iterator_alloc(S->grid, NULL, &idx, &sz, &gx))
+    return 0;
+
+  /* iterate over the entire grid. */
+  for (unsigned int i = 0; i < S->N; i++) {
+    /* copy the grid point into the local array. */
+    for (unsigned int d = 0; d < S->D; d++)
+      S->xgrid[i * S->D + d] = vector_get(gx, d);
+
+    /* move to the next grid index. */
+    grid_iterator_next(S->grid, idx, sz, gx);
+  }
+/*FIXME*/
+FILE *fh = fopen("grid.dat", "w");
+for (unsigned int i = 0; i < S->N; i++)
+  fprintf(fh, "%e\n", S->xgrid[i]);
+fclose(fh);
+/*FIXME*/
+
+  /* free the grid iteration variables. */
+  grid_iterator_free(idx, sz, gx);
+
+  /* store the current noise precision and weight ratio. */
+  S->par[0] = S->mdl->tau;
+  S->par[1] = S->mdl->nu;
+
+  /* store the current factor parameters. */
+  for (unsigned int j = 0, p0 = 2; j < S->mdl->M; j++) {
+    /* get the current factor parameter vector. */
+    const vector_t *par = S->mdl->factors[j]->par;
+
+    /* copy the vector elements into the local array. */
+    for (unsigned int p = 0; p < par->len; p++)
+      S->par[p0 + p] = vector_get(par, p); 
+
+    /* increment the array offset. */
+    p0 += par->len;
+  }
+/*FIXME*/
+fh = fopen("par.dat", "w");
+for (unsigned int i = 0; i < S->P; i++)
+  fprintf(fh, "%e\n", S->par[i]);
+fclose(fh);
+/*FIXME*/
+
+  /* compute the covariance matrix elements. */
+  for (unsigned int i1 = 0; i1 < S->n; i1++) {
+    /* get the row-wise observation. */
+    datum_t *d1 = data_get(S->dat, i1);
+
+    /* while we're here, store the data array values. */
+    S->pdat[i1] = d1->p;
+    for (unsigned int d = 0; d < S->D; d++)
+      S->xdat[i1 * S->D + d] = vector_get(d1->x, d);
+
+    /* loop over the elements of each row. */
+    for (unsigned int i2 = 0; i2 <= i1; i2++) {
+      /* get the column-wise observation. */
+      datum_t *d2 = data_get(S->dat, i2);
+
+      /* compute the covariance matrix element. */
+      const double c12 = model_cov(S->mdl, d1->x, d2->x, d1->p, d2->p);
+      S->C[i1 * S->n + i2] = (cl_float) c12;
+    }
+  }
+/*FIXME*/
+fh = fopen("C.dat", "w");
+for (unsigned int i = 0; i < S->n; i++)
+  for (unsigned int j = 0; j < S->n; j++)
+    fprintf(fh, "%e%s", j <= i ? S->C[i * S->n + j] : S->C[j * S->n + i],
+            j == S->n - 1 ? "\n" : " ");
+fclose(fh);
+fh = fopen("x.dat", "w");
+for (unsigned int i = 0; i < S->n; i++)
+  fprintf(fh, "%e\n", S->xdat[i]);
+fclose(fh);
+fh = fopen("kern.c", "w");
+fprintf(fh, "%s\n", S->src);
+fclose(fh);
+/*FIXME*/
+
+  /* compute the cholesky decomposition of the covariance matrix. */
+  int ret = clapack_spotrf(CblasRowMajor, CblasLower, S->n, S->C, S->n);
+  if (ret)
+    return 0;
+
+  /* compute the inverse of the covariance matrix. */
+  ret = clapack_spotri(CblasRowMajor, CblasLower, S->n, S->C, S->n);
+  if (ret)
+    return 0;
+
+  /* symmetrize the inverted matrix, for kernel simplicity. */
+  for (unsigned int i1 = 0; i1 < S->n; i1++)
+    for (unsigned int i2 = 0; i2 < i1; i2++)
+      S->C[i2 * S->n + i1] = S->C[i1 * S->n + i2];
+/*FIXME*/
+fh = fopen("Cinv.dat", "w");
+for (unsigned int i = 0; i < S->n; i++)
+  for (unsigned int j = 0; j < S->n; j++)
+    fprintf(fh, "%e%s", j <= i ? S->C[i * S->n + j] : S->C[j * S->n + i],
+            j == S->n - 1 ? "\n" : " ");
+fclose(fh);
+/*FIXME*/
+
+  /* write all data buffers to the compute device. */
+  if (!write_buffers(S))
+    return 0;
+
+  /* set the kernel arguments. */
+  if (!set_arguments(S))
+    return 0;
+
+  /* determine the total number of work items. */
+  size_t ntask = 1;
+  while (ntask < S->N)
+    ntask *= S->wgsize;
+
+  /* enqueue the kernel. */
+  ret = clEnqueueNDRangeKernel(S->queue, S->kern, 1, NULL,
+                               &ntask, &S->wgsize,
+                               0, NULL, NULL);
+
+  /* check for queueing failures. */
+  if (ret != CL_SUCCESS)
+    return 0;
+
+  /* block until the kernel has completed. */
+  clFinish(S->queue);
+
+  /* read the results from the device. */
+  if (!read_buffers(S))
+    return 0;
+
+/*FIXME*/
+fh = fopen("var.dat", "w");
+for (unsigned int i = 0; i < S->N; i++) {
+fprintf(fh,"%16.9e %16.9e\n", S->xgrid[i], S->var[i]);
+}
+fclose(fh);
+/*FIXME*/
+  /* loop over the array of computed variances. */
+  cl_float *xi = S->xgrid;
+  for (unsigned int i = 0; i < S->N; i++, xi += S->D) {
+    /* check if the current variance is larger. */
+    if (S->var[i] > S->vmax) {
+      /* copy the location of the larger variance. */
+      memcpy(S->xmax, xi, S->sz_xmax);
+      S->vmax = S->var[i];
+    }
+  }
+
+  /* store the identified location in the output vector. */
+  for (unsigned int d = 0; d < S->D; d++)
+    vector_set(x, d, S->xmax[d]);
 
   /* return success. */
   return 1;
