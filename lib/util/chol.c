@@ -16,6 +16,11 @@ int chol_decomp (matrix_t *A) {
   /* locally store the matrix size. */
   const unsigned int n = A->cols;
 
+#ifdef __VFL_USE_ATLAS
+  /* use atlas lapack. */
+  if (clapack_dpotrf(CblasRowMajor, CblasLower, n, A->data, A->stride))
+    return 0;
+#else
   /* perform decomposition column-wise. */
   for (unsigned int j = 0; j < n; j++) {
     /* v := A(j : n, j) */
@@ -40,6 +45,7 @@ int chol_decomp (matrix_t *A) {
     /* v <- v ./ sqrt(A(j,j)) */
     blas_dscal(1.0 / sqrt(Ajj), &v);
   }
+#endif
 
   /* symmetrize the cholesky factor matrix. */
   for (unsigned int i = 0; i < n; i++)
