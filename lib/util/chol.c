@@ -71,8 +71,11 @@ int chol_invert (const matrix_t *L, matrix_t *B) {
   const unsigned int n = L->cols;
 
 #ifdef __VFL_USE_ATLAS
+  /* if the matrices are different, perform a copy. */
+  if (B != L)
+    matrix_copy(B, L);
+
   /* use atlas lapack. */
-  matrix_copy(B, L);
   if (clapack_dpotri(CblasRowMajor, CblasLower, n, B->data, B->stride))
     return 0;
 

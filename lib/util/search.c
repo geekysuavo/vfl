@@ -34,7 +34,7 @@
  *  @xdat: array of D*n floats holding the data input locations.
  *  @pdat: array of n uints holding the data output indices.
  *  @par: array of kernel parameters, size unspecified.
- *  @C: array of n*n floats holding the inverse covariance matrix.
+ *  @C: array of n*(n+1)/2 floats holding the inverse covariance matrix.
  *  @D: number of input dimensions.
  *  @K: number of function outputs.
  *  @N: number of grid values in the computation.
@@ -99,23 +99,28 @@
 "    /* include the auto-covariance contribution. */"               "\n" \
 "    sum += vfl_covkernel(par, xs, xs, ps, ps, D);"                 "\n" \
 ""                                                                  "\n" \
-"    /* loop over the first matrix dimension. */"                   "\n" \
+"    /* loop over each matrix row. */"                              "\n" \
 "    for (uint i = 0, cidx = 0; i < n; i++) {"                      "\n" \
 "      /* get the first data value. */"                             "\n" \
 "      const __global float *xi = xdat + (i * D);"                  "\n" \
 "      uint pi = pdat[i];"                                          "\n" \
 ""                                                                  "\n" \
-"      /* loop over the second matrix dimension. */"                "\n" \
-"      for (uint j = 0; j < n; j++, cidx++) {"                      "\n" \
+"      /* loop over the off-diagonal row elements. */"              "\n" \
+"      for (uint j = 0; j < i; j++, cidx++) {"                      "\n" \
 "        /* get the second data value. */"                          "\n" \
 "        const __global float *xj = xdat + (j * D);"                "\n" \
 "        uint pj = pdat[j];"                                        "\n" \
 ""                                                                  "\n" \
 "        /* include the current matrix element contribution. */"    "\n" \
-"        sum -= vfl_covkernel(par, xs, xi, ps, pi, D)"              "\n" \
-"             * vfl_covkernel(par, xj, xs, pj, ps, D)"              "\n" \
-"             * C[cidx];"                                           "\n" \
+"        sum -= 2.0f * vfl_covkernel(par, xs, xi, ps, pi, D)"       "\n" \
+"                    * vfl_covkernel(par, xj, xs, pj, ps, D)"       "\n" \
+"                    * C[cidx];"                                    "\n" \
 "      }"                                                           "\n" \
+""                                                                  "\n" \
+"      /* include the diagonal matrix element contribution. */"     "\n" \
+"      sum -= vfl_covkernel(par, xs, xi, ps, pi, D)"                "\n" \
+"           * vfl_covkernel(par, xi, xs, pi, ps, D)"                "\n" \
+"           * C[cidx++];"                                           "\n" \
 "    }"                                                             "\n" \
 "  }"                                                               "\n" \
 ""                                                                  "\n" \
@@ -160,6 +165,10 @@ static int set_arguments (search_t *S) {
  *  @S: search structure pointer.
  */
 static void free_buffers (search_t *S) {
+  /* free the dense covariance matrix. */
+  matrix_free(S->cov);
+  S->cov = NULL;
+
   /* free the host-side calculation variables. */
   free(S->par);
 
@@ -208,13 +217,18 @@ static int refresh_buffers (search_t *S) {
     S->sz_xgrid = sizeof(cl_float) * N;
     S->sz_xmax  = sizeof(cl_float) * D;
     S->sz_xdat  = sizeof(cl_float) * D * n;
-    S->sz_C     = sizeof(cl_float) * n * n;
+    S->sz_C     = sizeof(cl_float) * (n * (n + 1)) / 2;
     S->sz_pdat  = sizeof(cl_uint)  * n;
 
     /* determine the amount of host floats to allocate. */
     const size_t bytes = S->sz_par + S->sz_var + S->sz_xgrid
                        + S->sz_xmax + S->sz_xdat + S->sz_pdat
                        + S->sz_C;
+
+    /* allocate the dense covariance matrix. */
+    S->cov = matrix_alloc(n, n);
+    if (!S->cov)
+      return 0;
 
     /* allocate the host-side memory block. */
     char *ptr = malloc(bytes);
@@ -386,6 +400,7 @@ search_t *search_alloc (model_t *mdl, data_t *dat,
   /* initialize the host-side pointers. */
   S->xgrid = S->xdat = S->xmax = S->par = S->C = S->var = NULL;
   S->pdat = NULL;
+  S->cov = NULL;
   S->vmax = 0.0;
 
   /* initialize the device-side pointers. */
@@ -583,30 +598,34 @@ fclose(fh);
 /*FIXME*/
 
   /* compute the covariance matrix elements. */
-  for (unsigned int i1 = 0; i1 < S->n; i1++) {
+  for (unsigned int i = 0; i < S->n; i++) {
     /* get the row-wise observation. */
-    datum_t *d1 = data_get(S->dat, i1);
+    datum_t *di = data_get(S->dat, i);
 
     /* while we're here, store the data array values. */
-    S->pdat[i1] = d1->p;
+    S->pdat[i] = di->p;
     for (unsigned int d = 0; d < S->D; d++)
-      S->xdat[i1 * S->D + d] = vector_get(d1->x, d);
+      S->xdat[i * S->D + d] = vector_get(di->x, d);
 
     /* loop over the elements of each row. */
-    for (unsigned int i2 = 0; i2 <= i1; i2++) {
+    for (unsigned int j = 0; j <= i; j++) {
       /* get the column-wise observation. */
-      datum_t *d2 = data_get(S->dat, i2);
+      datum_t *dj = data_get(S->dat, j);
 
       /* compute the covariance matrix element. */
-      const double c12 = model_cov(S->mdl, d1->x, d2->x, d1->p, d2->p);
-      S->C[i1 * S->n + i2] = (cl_float) c12;
+      const double cij = model_cov(S->mdl, di->x, dj->x, di->p, dj->p);
+
+      /* store the computed matrix element. */
+      matrix_set(S->cov, i, j, cij);
+      if (i != j)
+        matrix_set(S->cov, j, i, cij);
     }
   }
 /*FIXME*/
 fh = fopen("C.dat", "w");
 for (unsigned int i = 0; i < S->n; i++)
   for (unsigned int j = 0; j < S->n; j++)
-    fprintf(fh, "%e%s", j <= i ? S->C[i * S->n + j] : S->C[j * S->n + i],
+    fprintf(fh, "%le%s", matrix_get(S->cov, i, j),
             j == S->n - 1 ? "\n" : " ");
 fclose(fh);
 fh = fopen("x.dat", "w");
@@ -619,27 +638,21 @@ fclose(fh);
 /*FIXME*/
 
   /* compute the cholesky decomposition of the covariance matrix. */
-  int ret = clapack_spotrf(CblasRowMajor, CblasLower, S->n, S->C, S->n);
-  if (ret)
+  if (!chol_decomp(S->cov) || !chol_invert(S->cov, S->cov))
     return 0;
-
-  /* compute the inverse of the covariance matrix. */
-  ret = clapack_spotri(CblasRowMajor, CblasLower, S->n, S->C, S->n);
-  if (ret)
-    return 0;
-
-  /* symmetrize the inverted matrix, for kernel simplicity. */
-  for (unsigned int i1 = 0; i1 < S->n; i1++)
-    for (unsigned int i2 = 0; i2 < i1; i2++)
-      S->C[i2 * S->n + i1] = S->C[i1 * S->n + i2];
 /*FIXME*/
 fh = fopen("Cinv.dat", "w");
 for (unsigned int i = 0; i < S->n; i++)
   for (unsigned int j = 0; j < S->n; j++)
-    fprintf(fh, "%e%s", j <= i ? S->C[i * S->n + j] : S->C[j * S->n + i],
+    fprintf(fh, "%le%s", matrix_get(S->cov, i, j),
             j == S->n - 1 ? "\n" : " ");
 fclose(fh);
 /*FIXME*/
+
+  /* pack the inverted matrix into the host-side array. */
+  for (unsigned int i = 0, cidx = 0; i < S->n; i++)
+    for (unsigned int j = 0; j <= i; j++, cidx++)
+      C[cidx] = (cl_float) matrix_get(S->cov, i, j);
 
   /* write all data buffers to the compute device. */
   if (!write_buffers(S))

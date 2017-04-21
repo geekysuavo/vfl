@@ -64,10 +64,12 @@ typedef struct {
    *  @xdat: data input location matrix.
    *  @pdat: data output index vector.
    *  @C: inverse covariance matrix.
+   *  @cov: double-precision covariance matrix.
    *  @vmax: current maximum variance.
    */
   cl_float *par, *var, *xgrid, *xmax, *xdat, *C;
   cl_uint *pdat;
+  matrix_t *cov;
   float vmax;
 
   /* opencl device memory addresses:
