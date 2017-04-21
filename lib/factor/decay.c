@@ -142,9 +142,9 @@ FACTOR_DIV (decay) {
 FACTOR_KERNEL (decay) {
   /* define the kernel code format string. */
   const char *fmt = "\
-const float xd = x1[%u] + x2[%u];\n\
-const float alpha = par[%u];\n\
-const float beta  = par[%u];\n\
+const double xd = x1[%u] + x2[%u];\n\
+const double alpha = par[%u];\n\
+const double beta  = par[%u];\n\
 cov = pow(beta / (beta + xd), alpha);\n\
 ";
 

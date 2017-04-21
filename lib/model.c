@@ -531,7 +531,7 @@ char *model_kernel (const model_t *mdl) {
     return NULL;
 
   /* get the strings of each factor. */
-  for (unsigned int j = 0, pj = 2; j < mdl->M; j++) {
+  for (unsigned int j = 0, pj = 1; j < mdl->M; j++) {
     /* get the current factor string. */
     const factor_t *fj = mdl->factors[j];
     fstr[j] = factor_kernel(fj, pj);

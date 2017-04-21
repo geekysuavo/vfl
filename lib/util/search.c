@@ -42,45 +42,46 @@
  *  @var: array of N floats holding the output variance calculations.
  */
 
+/* SEARCH_MAX_GRID: maximum number of grid points searched at once.
+ */
+#define SEARCH_MAX_GRID 256
+
 /* SEARCH_FORMAT: constant format string used to generate opencl
  * program source code for searching the posterior variance of
  * gaussian processes derived from variational feature
  * regression models.
  */
 #define SEARCH_FORMAT "\n" \
-"inline float vfl_covkernel (const __global float *par,"            "\n" \
-"                            const __global float *x1,"             "\n" \
-"                            const __global float *x2,"             "\n" \
-"                            const uint p1,"                        "\n" \
-"                            const uint p2,"                        "\n" \
-"                            const uint D) {"                       "\n" \
+"#pragma OPENCL EXTENSION cl_khr_fp64 : enable"                     "\n" \
+""                                                                  "\n" \
+"inline double vfl_covkernel (const __global double *par,"          "\n" \
+"                             const __global double *x1,"           "\n" \
+"                             const __global double *x2,"           "\n" \
+"                             const uint p1,"                       "\n" \
+"                             const uint p2,"                       "\n" \
+"                             const uint D) {"                      "\n" \
 "  /* initialize the covariance computation. */"                    "\n" \
-"  float cov, sum = 0.0f, diag = 1.0f;"                             "\n" \
+"  double cov, sum = 0.0;"                                          "\n" \
 ""                                                                  "\n" \
 "  /* get the global kernel parameters. */"                         "\n" \
-"  const float tau = par[0];"                                       "\n" \
-"  const float nu = par[1];"                                        "\n" \
+"  const double scale = par[0];"                                    "\n" \
 ""                                                                  "\n" \
 "  /* begin model-generated kernel code. */"                        "\n" \
 "  %s"                                                              "\n" \
 "  /* end model-generated kernel code. */"                          "\n" \
 ""                                                                  "\n" \
-"  /* compute the diagonal noise term. */"                          "\n" \
-"  for (uint d = 0; d < D; d++)"                                    "\n" \
-"    diag *= (x1[d] == x2[d]);"                                     "\n" \
-""                                                                  "\n" \
 "  /* return the computed result. */"                               "\n" \
-"  return (sum / nu + diag) / tau;"                                 "\n" \
+"  return scale * sum;"                                             "\n" \
 "}"                                                                 "\n" \
 ""                                                                  "\n" \
-"__kernel void vfl_variance (const __global float *xgrid,"          "\n" \
-"                            const __global float *xdat,"           "\n" \
-"                            const __global uint  *pdat,"           "\n" \
-"                            const __global float *par,"            "\n" \
-"                            const __global float *C,"              "\n" \
+"__kernel void vfl_variance (const __global double *xgrid,"         "\n" \
+"                            const __global double *xdat,"          "\n" \
+"                            const __global uint   *pdat,"          "\n" \
+"                            const __global double *par,"           "\n" \
+"                            const __global double *C,"             "\n" \
 "                            const uint D, const uint K,"           "\n" \
 "                            const uint N, const uint n,"           "\n" \
-"                            __global float *var) {"                "\n" \
+"                            __global double *var) {"               "\n" \
 "  /* get the grid index. */"                                       "\n" \
 "  const size_t gid = get_global_id(0);"                            "\n" \
 ""                                                                  "\n" \
@@ -89,10 +90,10 @@
 "    return;"                                                       "\n" \
 ""                                                                  "\n" \
 "  /* get the current grid location. */"                            "\n" \
-"  const __global float *xs = xgrid + (gid * D);"                   "\n" \
+"  const __global double *xs = xgrid + (gid * D);"                  "\n" \
 ""                                                                  "\n" \
 "  /* initialize the variance computation. */"                      "\n" \
-"  float sum = 0.0f;"                                               "\n" \
+"  double sum = 0.0;"                                               "\n" \
 ""                                                                  "\n" \
 "  /* sum variances of each output together. */"                    "\n" \
 "  for (uint ps = 0; ps < K; ps++) {"                               "\n" \
@@ -102,25 +103,24 @@
 "    /* loop over each matrix row. */"                              "\n" \
 "    for (uint i = 0, cidx = 0; i < n; i++) {"                      "\n" \
 "      /* get the first data value. */"                             "\n" \
-"      const __global float *xi = xdat + (i * D);"                  "\n" \
+"      const __global double *xi = xdat + (i * D);"                 "\n" \
 "      uint pi = pdat[i];"                                          "\n" \
 ""                                                                  "\n" \
 "      /* loop over the off-diagonal row elements. */"              "\n" \
 "      for (uint j = 0; j < i; j++, cidx++) {"                      "\n" \
 "        /* get the second data value. */"                          "\n" \
-"        const __global float *xj = xdat + (j * D);"                "\n" \
+"        const __global double *xj = xdat + (j * D);"               "\n" \
 "        uint pj = pdat[j];"                                        "\n" \
 ""                                                                  "\n" \
 "        /* include the current matrix element contribution. */"    "\n" \
-"        sum -= 2.0f * vfl_covkernel(par, xs, xi, ps, pi, D)"       "\n" \
-"                    * vfl_covkernel(par, xj, xs, pj, ps, D)"       "\n" \
-"                    * C[cidx];"                                    "\n" \
+"        sum -= 2.0 * vfl_covkernel(par, xs, xi, ps, pi, D)"        "\n" \
+"                   * vfl_covkernel(par, xj, xs, pj, ps, D)"        "\n" \
+"                   * C[cidx];"                                     "\n" \
 "      }"                                                           "\n" \
 ""                                                                  "\n" \
 "      /* include the diagonal matrix element contribution. */"     "\n" \
-"      sum -= vfl_covkernel(par, xs, xi, ps, pi, D)"                "\n" \
-"           * vfl_covkernel(par, xi, xs, pi, ps, D)"                "\n" \
-"           * C[cidx++];"                                           "\n" \
+"      const double sii = vfl_covkernel(par, xs, xi, ps, pi, D);"   "\n" \
+"      sum -= sii * sii * C[cidx++];"                               "\n" \
 "    }"                                                             "\n" \
 "  }"                                                               "\n" \
 ""                                                                  "\n" \
@@ -200,11 +200,18 @@ static void free_buffers (search_t *S) {
  */
 static int refresh_buffers (search_t *S) {
   /* get the new sizes. */
-  const unsigned int P = S->mdl->P + 2;
+  const unsigned int P = S->mdl->P + 1;
   const unsigned int D = S->mdl->D;
   const unsigned int n = S->dat->N;
-  unsigned int N;
-  grid_iterator_alloc(S->grid, &N, NULL, NULL, NULL);
+
+  /* determine the total grid size. */
+  unsigned int G;
+  grid_iterator_alloc(S->grid, &G, NULL, NULL, NULL);
+
+  /* check if the grid size exceeds the maximum grid size. */
+  unsigned int N = G;
+  if (N > SEARCH_MAX_GRID)
+    N = SEARCH_MAX_GRID;
 
   /* check for any differences. */
   if (S->D != D || S->P != P || S->N != N || S->n != n) {
@@ -212,13 +219,13 @@ static int refresh_buffers (search_t *S) {
     free_buffers(S);
 
     /* determine the sizes of the buffers. */
-    S->sz_par   = sizeof(cl_float) * P;
-    S->sz_var   = sizeof(cl_float) * N;
-    S->sz_xgrid = sizeof(cl_float) * N;
-    S->sz_xmax  = sizeof(cl_float) * D;
-    S->sz_xdat  = sizeof(cl_float) * D * n;
-    S->sz_C     = sizeof(cl_float) * (n * (n + 1)) / 2;
-    S->sz_pdat  = sizeof(cl_uint)  * n;
+    S->sz_par   = sizeof(cl_double) * P;
+    S->sz_var   = sizeof(cl_double) * N;
+    S->sz_xgrid = sizeof(cl_double) * N;
+    S->sz_xmax  = sizeof(cl_double) * D;
+    S->sz_xdat  = sizeof(cl_double) * D * n;
+    S->sz_C     = sizeof(cl_double) * (n * (n + 1)) / 2;
+    S->sz_pdat  = sizeof(cl_uint)   * n;
 
     /* determine the amount of host floats to allocate. */
     const size_t bytes = S->sz_par + S->sz_var + S->sz_xgrid
@@ -236,27 +243,27 @@ static int refresh_buffers (search_t *S) {
       return 0;
 
     /* initialize par. */
-    S->par = (cl_float*) ptr;
+    S->par = (cl_double*) ptr;
     ptr += S->sz_par;
 
     /* initialize var. */
-    S->var = (cl_float*) ptr;
+    S->var = (cl_double*) ptr;
     ptr += S->sz_var;
 
     /* initialize xgrid. */
-    S->xgrid = (cl_float*) ptr;
+    S->xgrid = (cl_double*) ptr;
     ptr += S->sz_xgrid;
 
     /* initialize xmax. */
-    S->xmax = (cl_float*) ptr;
+    S->xmax = (cl_double*) ptr;
     ptr += S->sz_xmax;
 
     /* initialize xdat. */
-    S->xdat = (cl_float*) ptr;
+    S->xdat = (cl_double*) ptr;
     ptr += S->sz_xdat;
 
     /* initialize C. */
-    S->C = (cl_float*) ptr;
+    S->C = (cl_double*) ptr;
     ptr += S->sz_C;
 
     /* initialize pdat. */
@@ -294,9 +301,74 @@ static int refresh_buffers (search_t *S) {
     /* store the new sizes. */
     S->D = D;
     S->P = P;
+    S->G = G;
     S->N = N;
     S->n = n;
   }
+
+  /* return success. */
+  return 1;
+}
+
+/* fill_buffers(): compute the contents of all host-side calculation
+ * buffers (except for the grid values).
+ *
+ * arguments:
+ *  @S: search structure pointer.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+static int fill_buffers (search_t *S) {
+  /* store the current noise precision and weight ratio. */
+  S->par[0] = 1.0 / (S->mdl->nu * S->mdl->tau);
+
+  /* store the current factor parameters. */
+  for (unsigned int j = 0, p0 = 1; j < S->mdl->M; j++) {
+    /* get the current factor parameter vector. */
+    const vector_t *par = S->mdl->factors[j]->par;
+
+    /* copy the vector elements into the local array. */
+    for (unsigned int p = 0; p < par->len; p++)
+      S->par[p0 + p] = vector_get(par, p);
+
+    /* increment the array offset. */
+    p0 += par->len;
+  }
+
+  /* compute the covariance matrix elements. */
+  for (unsigned int i = 0; i < S->n; i++) {
+    /* get the row-wise observation. */
+    datum_t *di = data_get(S->dat, i);
+
+    /* while we're here, store the data array values. */
+    S->pdat[i] = di->p;
+    for (unsigned int d = 0; d < S->D; d++)
+      S->xdat[i * S->D + d] = vector_get(di->x, d);
+
+    /* loop over the elements of each row. */
+    for (unsigned int j = 0; j <= i; j++) {
+      /* get the column-wise observation. */
+      datum_t *dj = data_get(S->dat, j);
+
+      /* compute the covariance matrix element. */
+      const double cij = model_cov(S->mdl, di->x, dj->x, di->p, dj->p);
+
+      /* store the computed matrix element. */
+      matrix_set(S->cov, i, j, cij);
+      if (i != j)
+        matrix_set(S->cov, j, i, cij);
+    }
+  }
+
+  /* compute the cholesky decomposition of the covariance matrix. */
+  if (!chol_decomp(S->cov) || !chol_invert(S->cov, S->cov))
+    return 0;
+
+  /* pack the inverted matrix into the host-side array. */
+  for (unsigned int i = 0, cidx = 0; i < S->n; i++)
+    for (unsigned int j = 0; j <= i; j++, cidx++)
+      S->C[cidx] = matrix_get(S->cov, i, j);
 
   /* return success. */
   return 1;
@@ -312,13 +384,9 @@ static int refresh_buffers (search_t *S) {
  *  integer indicating success (1) or failure (0).
  */
 static int write_buffers (search_t *S) {
-  /* write xgrid to the device. */
-  int ret = clEnqueueWriteBuffer(S->queue, S->dev_xgrid, CL_FALSE, 0,
-                                 S->sz_xgrid, S->xgrid, 0, NULL, NULL);
-
   /* write xdat to the device. */
-  ret |= clEnqueueWriteBuffer(S->queue, S->dev_xdat, CL_FALSE, 0,
-                              S->sz_xdat, S->xdat, 0, NULL, NULL);
+  int ret = clEnqueueWriteBuffer(S->queue, S->dev_xdat, CL_FALSE, 0,
+                                 S->sz_xdat, S->xdat, 0, NULL, NULL);
 
   /* write pdat to the device. */
   ret |= clEnqueueWriteBuffer(S->queue, S->dev_pdat, CL_FALSE, 0,
@@ -398,14 +466,14 @@ search_t *search_alloc (model_t *mdl, data_t *dat,
   S->src = NULL;
 
   /* initialize the host-side pointers. */
-  S->xgrid = S->xdat = S->xmax = S->par = S->C = S->var = NULL;
+  S->par = S->var = S->xgrid = S->xmax = S->xdat = S->C = NULL;
   S->pdat = NULL;
   S->cov = NULL;
   S->vmax = 0.0;
 
   /* initialize the device-side pointers. */
-  S->dev_xgrid = S->dev_xdat = S->dev_pdat = NULL;
-  S->dev_par = S->dev_C = S->dev_var = NULL;
+  S->dev_par = S->dev_var = S->dev_xgrid = NULL;
+  S->dev_xdat = S->dev_pdat = S->dev_C = NULL;
 
   /* generate the model kernel code. */
   char *ksrc = model_kernel(S->mdl);
@@ -540,6 +608,7 @@ int search_execute (search_t *S, vector_t *x) {
    *  @sz: grid dimension sizes.
    *  @gx: grid iteration point.
    */
+  unsigned int N, Nrem;
   unsigned int *idx, *sz;
   vector_t *gx;
 
@@ -551,108 +620,9 @@ int search_execute (search_t *S, vector_t *x) {
   if (!refresh_buffers(S))
     return 0;
 
-  /* allocate the grid iteration variables. */
-  if (!grid_iterator_alloc(S->grid, NULL, &idx, &sz, &gx))
+  /* fill the non-grid data buffers on the host side. */
+  if (!fill_buffers(S))
     return 0;
-
-  /* iterate over the entire grid. */
-  for (unsigned int i = 0; i < S->N; i++) {
-    /* copy the grid point into the local array. */
-    for (unsigned int d = 0; d < S->D; d++)
-      S->xgrid[i * S->D + d] = vector_get(gx, d);
-
-    /* move to the next grid index. */
-    grid_iterator_next(S->grid, idx, sz, gx);
-  }
-/*FIXME*/
-FILE *fh = fopen("grid.dat", "w");
-for (unsigned int i = 0; i < S->N; i++)
-  fprintf(fh, "%e\n", S->xgrid[i]);
-fclose(fh);
-/*FIXME*/
-
-  /* free the grid iteration variables. */
-  grid_iterator_free(idx, sz, gx);
-
-  /* store the current noise precision and weight ratio. */
-  S->par[0] = S->mdl->tau;
-  S->par[1] = S->mdl->nu;
-
-  /* store the current factor parameters. */
-  for (unsigned int j = 0, p0 = 2; j < S->mdl->M; j++) {
-    /* get the current factor parameter vector. */
-    const vector_t *par = S->mdl->factors[j]->par;
-
-    /* copy the vector elements into the local array. */
-    for (unsigned int p = 0; p < par->len; p++)
-      S->par[p0 + p] = vector_get(par, p); 
-
-    /* increment the array offset. */
-    p0 += par->len;
-  }
-/*FIXME*/
-fh = fopen("par.dat", "w");
-for (unsigned int i = 0; i < S->P; i++)
-  fprintf(fh, "%e\n", S->par[i]);
-fclose(fh);
-/*FIXME*/
-
-  /* compute the covariance matrix elements. */
-  for (unsigned int i = 0; i < S->n; i++) {
-    /* get the row-wise observation. */
-    datum_t *di = data_get(S->dat, i);
-
-    /* while we're here, store the data array values. */
-    S->pdat[i] = di->p;
-    for (unsigned int d = 0; d < S->D; d++)
-      S->xdat[i * S->D + d] = vector_get(di->x, d);
-
-    /* loop over the elements of each row. */
-    for (unsigned int j = 0; j <= i; j++) {
-      /* get the column-wise observation. */
-      datum_t *dj = data_get(S->dat, j);
-
-      /* compute the covariance matrix element. */
-      const double cij = model_cov(S->mdl, di->x, dj->x, di->p, dj->p);
-
-      /* store the computed matrix element. */
-      matrix_set(S->cov, i, j, cij);
-      if (i != j)
-        matrix_set(S->cov, j, i, cij);
-    }
-  }
-/*FIXME*/
-fh = fopen("C.dat", "w");
-for (unsigned int i = 0; i < S->n; i++)
-  for (unsigned int j = 0; j < S->n; j++)
-    fprintf(fh, "%le%s", matrix_get(S->cov, i, j),
-            j == S->n - 1 ? "\n" : " ");
-fclose(fh);
-fh = fopen("x.dat", "w");
-for (unsigned int i = 0; i < S->n; i++)
-  fprintf(fh, "%e\n", S->xdat[i]);
-fclose(fh);
-fh = fopen("kern.c", "w");
-fprintf(fh, "%s\n", S->src);
-fclose(fh);
-/*FIXME*/
-
-  /* compute the cholesky decomposition of the covariance matrix. */
-  if (!chol_decomp(S->cov) || !chol_invert(S->cov, S->cov))
-    return 0;
-/*FIXME*/
-fh = fopen("Cinv.dat", "w");
-for (unsigned int i = 0; i < S->n; i++)
-  for (unsigned int j = 0; j < S->n; j++)
-    fprintf(fh, "%le%s", matrix_get(S->cov, i, j),
-            j == S->n - 1 ? "\n" : " ");
-fclose(fh);
-/*FIXME*/
-
-  /* pack the inverted matrix into the host-side array. */
-  for (unsigned int i = 0, cidx = 0; i < S->n; i++)
-    for (unsigned int j = 0; j <= i; j++, cidx++)
-      C[cidx] = (cl_float) matrix_get(S->cov, i, j);
 
   /* write all data buffers to the compute device. */
   if (!write_buffers(S))
@@ -662,44 +632,75 @@ fclose(fh);
   if (!set_arguments(S))
     return 0;
 
-  /* determine the total number of work items. */
-  size_t ntask = 1;
-  while (ntask < S->N)
-    ntask *= S->wgsize;
-
-  /* enqueue the kernel. */
-  ret = clEnqueueNDRangeKernel(S->queue, S->kern, 1, NULL,
-                               &ntask, &S->wgsize,
-                               0, NULL, NULL);
-
-  /* check for queueing failures. */
-  if (ret != CL_SUCCESS)
+  /* allocate the grid iteration variables. */
+  if (!grid_iterator_alloc(S->grid, NULL, &idx, &sz, &gx))
     return 0;
 
-  /* block until the kernel has completed. */
-  clFinish(S->queue);
+  /* initialize the maximum variance. */
+  S->vmax = 0.0;
 
-  /* read the results from the device. */
-  if (!read_buffers(S))
-    return 0;
+  /* loop until no tasks remain. */
+  Nrem = S->G;
+  while (Nrem) {
+    /* determine the task size. */
+    N = (Nrem > S->N ? S->N : Nrem);
 
-/*FIXME*/
-fh = fopen("var.dat", "w");
-for (unsigned int i = 0; i < S->N; i++) {
-fprintf(fh,"%16.9e %16.9e\n", S->xgrid[i], S->var[i]);
-}
-fclose(fh);
-/*FIXME*/
-  /* loop over the array of computed variances. */
-  cl_float *xi = S->xgrid;
-  for (unsigned int i = 0; i < S->N; i++, xi += S->D) {
-    /* check if the current variance is larger. */
-    if (S->var[i] > S->vmax) {
-      /* copy the location of the larger variance. */
-      memcpy(S->xmax, xi, S->sz_xmax);
-      S->vmax = S->var[i];
+    /* fill the required amount of grid array elements. */
+    for (unsigned int i = 0; i < N; i++) {
+      /* copy the grid point into the array. */
+      for (unsigned int d = 0; d < S->D; d++)
+        S->xgrid[i * S->D + d] = vector_get(gx, d);
+
+      /* move to the next grid point. */
+      grid_iterator_next(S->grid, idx, sz, gx);
     }
+
+    /* write xgrid to the device. */
+    int ret = clEnqueueWriteBuffer(S->queue, S->dev_xgrid, CL_TRUE, 0,
+                                   S->sz_xgrid, S->xgrid, 0, NULL, NULL);
+
+    /* check for write failures. */
+    if (ret != CL_SUCCESS)
+      return 0;
+
+    /* determine the total number of work items. */
+    size_t Ntask = 1;
+    while (Ntask < N)
+      Ntask *= S->wgsize;
+
+    /* enqueue the kernel. */
+    ret = clEnqueueNDRangeKernel(S->queue, S->kern, 1, NULL,
+                                 &Ntask, &S->wgsize,
+                                 0, NULL, NULL);
+
+    /* check for queueing failures. */
+    if (ret != CL_SUCCESS)
+      return 0;
+
+    /* block until the kernel has completed. */
+    clFinish(S->queue);
+
+    /* read the results from the device. */
+    if (!read_buffers(S))
+      return 0;
+
+    /* loop over the array of computed variances. */
+    cl_double *xi = S->xgrid;
+    for (unsigned int i = 0; i < N; i++, xi += S->D) {
+      /* check if the current variance is larger. */
+      if (S->var[i] > S->vmax) {
+        /* copy the location of the larger variance. */
+        memcpy(S->xmax, xi, S->sz_xmax);
+        S->vmax = S->var[i];
+      }
+    }
+
+    /* update the remaining task count. */
+    Nrem -= N;
   }
+
+  /* free the grid iteration variables. */
+  grid_iterator_free(idx, sz, gx);
 
   /* store the identified location in the output vector. */
   for (unsigned int d = 0; d < S->D; d++)

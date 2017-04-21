@@ -328,7 +328,7 @@ FACTOR_KERNEL (product) {
   product_t *fx = (product_t*) f;
 
   /* define kernel code format strings. */
-  const char *fmtA = "float prod = 1.0f;\n";
+  const char *fmtA = "double prod = 1.0;\n";
   const char *fmtB = "{\n%s}\nprod *= cov;\n";
   const char *fmtC = "cov = prod;\n";
 

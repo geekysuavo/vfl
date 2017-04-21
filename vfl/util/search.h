@@ -27,10 +27,11 @@ typedef struct {
    *  @D: dimension count.
    *  @P: parameter count.
    *  @K: output count.
+   *  @G: grid total size.
    *  @N: grid value count.
    *  @n: observation count.
    */
-  cl_uint D, P, K, N, n;
+  cl_uint D, P, K, G, N, n;
 
   /* memory utilization and execution control variables:
    *  @sz_*: in-memory sizes (host and device).
@@ -67,7 +68,7 @@ typedef struct {
    *  @cov: double-precision covariance matrix.
    *  @vmax: current maximum variance.
    */
-  cl_float *par, *var, *xgrid, *xmax, *xdat, *C;
+  cl_double *par, *var, *xgrid, *xmax, *xdat, *C;
   cl_uint *pdat;
   matrix_t *cov;
   float vmax;

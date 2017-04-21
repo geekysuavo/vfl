@@ -153,11 +153,11 @@ FACTOR_DIV (cosine) {
 FACTOR_KERNEL (cosine) {
   /* define the kernel code format string. */
   const char *fmt = "\
-const float xd = x1[%u] - x2[%u];\n\
-const float mu = par[%u];\n\
-const float tau = par[%u];\n\
-const float zd = (p1 == p2 ? 0.0f : p1 ? -%lff : %lff);\n\
-cov = exp(-0.5f * xd * xd / tau) * cos(mu * xd + zd);\n\
+const double xd = x1[%u] - x2[%u];\n\
+const double mu = par[%u];\n\
+const double tau = par[%u];\n\
+const double zd = (p1 == p2 ? 0.0 : p1 ? -%lf : %lf);\n\
+cov = exp(-0.5 * xd * xd / tau) * cos(mu * xd + zd);\n\
 ";
 
   /* allocate the kernel code string. */
