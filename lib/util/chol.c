@@ -67,6 +67,20 @@ int chol_decomp (matrix_t *A) {
  *  integer indicating success (1) or failure (0).
  */
 int chol_invert (const matrix_t *L, matrix_t *B) {
+  /* locally store the matrix size. */
+  const unsigned int n = L->cols;
+
+#ifdef __VFL_USE_ATLAS
+  /* use atlas lapack. */
+  matrix_copy(B, L);
+  if (clapack_dpotri(CblasRowMajor, CblasLower, n, B->data, B->stride))
+    return 0;
+
+  /* symmetrize the inverted matrix. */
+  for (unsigned int i = 0; i < n; i++)
+    for (unsigned int j = i + 1; j < n; j++)
+      matrix_set(B, i, j, matrix_get(B, j, i));
+#else
   /* initialize the matrix inverse. */
   matrix_set_ident(B);
 
@@ -79,6 +93,7 @@ int chol_invert (const matrix_t *L, matrix_t *B) {
     blas_dtrsv(BLAS_LOWER, L, &b);
     blas_dtrsv(BLAS_UPPER, L, &b);
   }
+#endif
 
   /* return success. */
   return 1;
