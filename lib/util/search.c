@@ -106,20 +106,21 @@
 "      const __global double *xi = xdat + (i * D);"                 "\n" \
 "      uint pi = pdat[i];"                                          "\n" \
 ""                                                                  "\n" \
+"      /* compute the 'left-hand' term. */"                         "\n" \
+"      const double sii = vfl_covkernel(par, xs, xi, ps, pi, D);"   "\n" \
+""                                                                  "\n" \
 "      /* loop over the off-diagonal row elements. */"              "\n" \
 "      for (uint j = 0; j < i; j++, cidx++) {"                      "\n" \
 "        /* get the second data value. */"                          "\n" \
 "        const __global double *xj = xdat + (j * D);"               "\n" \
 "        uint pj = pdat[j];"                                        "\n" \
 ""                                                                  "\n" \
-"        /* include the current matrix element contribution. */"    "\n" \
-"        sum -= 2.0 * vfl_covkernel(par, xs, xi, ps, pi, D)"        "\n" \
-"                   * vfl_covkernel(par, xj, xs, pj, ps, D)"        "\n" \
-"                   * C[cidx];"                                     "\n" \
+"        /* include the off-diagonal matrix elements. */"           "\n" \
+"        sum -= 2.0 * vfl_covkernel(par, xj, xs, pj, ps, D)"        "\n" \
+"                   * sii * C[cidx];"                               "\n" \
 "      }"                                                           "\n" \
 ""                                                                  "\n" \
-"      /* include the diagonal matrix element contribution. */"     "\n" \
-"      const double sii = vfl_covkernel(par, xs, xi, ps, pi, D);"   "\n" \
+"      /* include the diagonal matrix element. */"                  "\n" \
 "      sum -= sii * sii * C[cidx++];"                               "\n" \
 "    }"                                                             "\n" \
 "  }"                                                               "\n" \

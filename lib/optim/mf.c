@@ -13,8 +13,20 @@ OPTIM_ITERATE (mf) {
   model_infer(opt->mdl);
   bound = bound_init = model_bound(opt->mdl);
 
+  /* determine the maximum number of factors to update. */
+  unsigned int M = 0, K = 0;
+  const unsigned int Kmax = opt->mdl->dat->N;
+  for (unsigned int j = 0; j < opt->mdl->M; j++) {
+    const unsigned int Kj = opt->mdl->factors[j]->K;
+    if (K + Kj < Kmax) {
+      K += Kj;
+      M++;
+    }
+    else
+      break;
+  }
+
   /* update each factor in the model. */
-  const unsigned int M = opt->mdl->M;
   for (unsigned int j = 0; j < M; j++) {
     /* update the factor and, if necessary, re-infer the weights. */
     if (model_meanfield(opt->mdl, j))
