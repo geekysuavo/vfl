@@ -36,8 +36,10 @@ typedef struct {
 
   /* core dataset array:
    *  @data: array of observations.
+   *  @swp: storage for swapping.
    */
   datum_t *data;
+  datum_t swp;
 }
 data_t;
 
@@ -60,6 +62,8 @@ datum_t *data_get (const data_t *dat, const unsigned int i);
 
 int data_set (data_t *dat, const unsigned int i, const datum_t *d);
 
+unsigned int data_find (const data_t *dat, const datum_t *d);
+
 int data_augment (data_t *dat, const datum_t *d);
 
 int data_augment_from_grid (data_t *dat, const unsigned int p,
@@ -70,6 +74,14 @@ int data_augment_from_grid (data_t *dat, const unsigned int p,
 int data_fread (data_t *dat, const char *fname);
 
 int data_fwrite (const data_t *dat, const char *fname);
+
+/* function declarations, sorting (data-sort.c): */
+
+int data_cmp (const datum_t *d1, const datum_t *d2);
+
+int data_sort_single (data_t *dat, const unsigned int i);
+
+int data_sort (data_t *dat);
 
 #endif /* !__VFL_DATA_H__ */
 

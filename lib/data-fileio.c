@@ -73,9 +73,11 @@ int data_fread (data_t *dat, const char *fname) {
     }
   }
 
-  /* close the input file and return success. */
+  /* close the input file. */
   fclose(fh);
-  return 1;
+
+  /* return success. */
+  return data_sort(dat);
 
 fail:
   /* close the input file and return failure. */

@@ -19,6 +19,7 @@ data_t *data_alloc (void) {
 
   /* initialize the data array. */
   dat->data = NULL;
+  dat->swp.x = NULL;
 
   /* return the new dataset. */
   return dat;
@@ -91,6 +92,9 @@ void data_free (data_t *dat) {
   if (!dat)
     return;
 
+  /* free the swap vector. */
+  vector_free(dat->swp.x);
+
   /* free the array of observations and the structure pointer. */
   free(dat->data);
   free(dat);
@@ -110,6 +114,12 @@ int data_resize (data_t *dat, const unsigned int N, const unsigned int D) {
   /* determine the size of the observation array. */
   const unsigned int vbytes = vector_bytes(D);
   const unsigned int bytes = N * (sizeof(datum_t) + vbytes);
+
+  /* reallocate the swap vector. */
+  vector_free(dat->swp.x);
+  dat->swp.x = vector_alloc(D);
+  if (!dat->swp.x)
+    return 0;
 
   /* allocate a new observation array. */
   datum_t *data = malloc(bytes);

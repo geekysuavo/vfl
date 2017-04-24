@@ -10,12 +10,13 @@
  *  @i: observation index to extract.
  *
  * returns:
- *  pointer to the requested observation.
+ *  pointer to the requested observation, or NULL if the
+ *  observation index is out of bounds.
  */
 datum_t *data_get (const data_t *dat, const unsigned int i) {
   /* check the input arguments. */
   if (!dat || i >= dat->N)
-    return 0;
+    return NULL;
 
   /* return the observation. */
   return dat->data + i;
@@ -46,7 +47,49 @@ int data_set (data_t *dat, const unsigned int i, const datum_t *d) {
   dat->data[i].p = d->p;
 
   /* return success. */
-  return 1;
+  return data_sort_single(dat, i);
+}
+
+/* data_find(): search for an observation in a dataset.
+ *
+ * arguments:
+ *  @dat: dataset structure pointer to access.
+ *  @i: observation index to extract.
+ *  @d: pointer to the observation.
+ *
+ * returns:
+ *  integer indicating whether (1) or not (0) the assignment succeeded.
+ */
+unsigned int data_find (const data_t *dat, const datum_t *d) {
+  /* check the input pointers. */
+  if (!dat || !d)
+    return 0;
+
+  /* return if the dataset is empty. */
+  if (dat->N == 0)
+    return 0;
+
+  /* initialize the search bounds. */
+  unsigned int imin = 0;
+  unsigned int imax = dat->N - 1;
+
+  /* search for the datum. */
+  while (imin <= imax) {
+    /* get the midpoint and compare. */
+    const unsigned i = (imin + imax) / 2;
+    const int cmp = data_cmp(dat->data + i, d);
+
+    /* check the comparison result. */
+    if (cmp == 0)
+      return i + 1;
+    else if (cmp < 0)
+      imin = i + 1;
+    else
+      imax = i - 1;
+  }
+
+  /* return failure. */
+  return 0;
 }
 
 /* data_augment(): add a new observation into a dataset.
@@ -77,7 +120,7 @@ int data_augment (data_t *dat, const datum_t *d) {
   dat->data[dat->N - 1].p = d->p;
 
   /* return success. */
-  return 1;
+  return data_sort_single(dat, dat->N - 1);
 }
 
 /* data_augment_from_grid(): add a regular grid of zero-valued
@@ -134,7 +177,7 @@ int data_augment_from_grid (data_t *dat, const unsigned int p,
   }
 
   /* indicate successful completion. */
-  status = 1;
+  status = data_sort(dat);
 
 fail:
   /* free all allocated memory and return. */

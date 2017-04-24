@@ -52,7 +52,7 @@ C+= $(addprefix model/,$(C_MODEL))
 C+= $(addprefix optim/,$(C_OPTIM))
 
 # basenames of core C source files.
-C+= vfl data-alloc data-entries data-fileio factor model optim
+C+= vfl data-alloc data-entries data-fileio data-sort factor model optim
 
 # filenames of C sources.
 SRC=$(addsuffix .c,$(C))
