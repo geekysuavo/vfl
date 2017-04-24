@@ -44,7 +44,7 @@ int data_cmp (const datum_t *d1, const datum_t *d2) {
   if (d1->p < d2->p)
     return -1;
   else if (d1->p > d2->p)
-    return 1;
+    return +1;
 
   /* examine locations next. */
   const unsigned int D = d1->x->len;
@@ -57,54 +57,11 @@ int data_cmp (const datum_t *d1, const datum_t *d2) {
     if (x1 < x2)
       return -1;
     else if (x1 > x2)
-      return 1;
+      return +1;
   }
 
   /* no differences detected, return equality. */
   return 0;
-}
-
-/* data_sort_repair(): repair the sub-tree rooted at a given index.
- *
- * arguments:
- *  @dat: dataset structure pointer.
- *  @i: index of the sub-tree to heapify.
- *  @n: total size of the heap.
- */
-static void data_sort_repair (data_t *dat,
-                              const unsigned int i,
-                              const unsigned int n) {
-  /* determine the left and right node indices. */
-  unsigned int left = (2 * i) + 1;
-  unsigned int right = (2 * i) + 2;
-  unsigned int max = i;
-
-  /* check if the left node has a larger value. */
-  if (left < n && data_cmp(dat->data + left, dat->data + max) > 0)
-    max = left;
-
-  /* check if the right node has a value that is larger still. */
-  if (right < n && data_cmp(dat->data + right, dat->data + max) > 0)
-    max = right;
-
-  /* check if any swaps are needed. */
-  if (max != i) {
-    /* swap and repair the sub-tree. */
-    data_swap(dat, i, max);
-    data_sort_repair(dat, max, n);
-  }
-}
-
-/* data_sort_heapify(): array elements of a dataset into heap order.
- *
- * arguments:
- *  @dat: dataset structure pointer.
- *  @n: number of elements to heapify.
- */
-static void data_sort_heapify (data_t *dat, const unsigned int n) {
-  /* heapify each leaf node, working backwards up to the root. */
-  for (long i = n / 2 - 1; i >= 0; i--)
-    data_sort_repair(dat, i, n);
 }
 
 /* data_sort(): sort the entries of a dataset.
@@ -124,18 +81,16 @@ int data_sort (data_t *dat) {
   if (!dat)
     return 0;
 
-  /* return success if the dataset is empty. */
-  if (dat->N == 0)
-    return 1;
+  /* run an outer loop to sort every element. */
+  for (unsigned int i = 0; i < dat->N; i++) {
+    /* initialize the starting index. */
+    unsigned int j = i;
 
-  /* re-arrange the datum elements to satisfy the heap property. */
-  data_sort_heapify(dat, dat->N);
-
-  /* pop all elements off the heap to obtain a sorted array. */
-  unsigned int n = dat->N - 1;
-  while (n > 0) {
-    data_swap(dat, n, 0);
-    data_sort_repair(dat, 0, --n);
+    /* loop until the current element has been sorted. */
+    while (j > 0 && data_cmp(dat->data + (j - 1), dat->data + j) > 0) {
+      data_swap(dat, j - 1, j);
+      j--;
+    }
   }
 
   /* return success. */

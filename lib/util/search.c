@@ -363,8 +363,10 @@ static int fill_buffers (search_t *S) {
   }
 
   /* compute the cholesky decomposition of the covariance matrix. */
-  if (!chol_decomp(S->cov) || !chol_invert(S->cov, S->cov))
-    return 0;
+  printf("[decomp=%d] ",chol_decomp(S->cov));
+  printf("[invert=%d] ",chol_invert(S->cov,S->cov));
+//if (!chol_decomp(S->cov) || !chol_invert(S->cov, S->cov))
+//  return 0;
 
   /* pack the inverted matrix into the host-side array. */
   for (unsigned int i = 0, cidx = 0; i < S->n; i++)
@@ -637,8 +639,12 @@ int search_execute (search_t *S, vector_t *x) {
   if (!grid_iterator_alloc(S->grid, NULL, &idx, &sz, &gx))
     return 0;
 
-  /* initialize the maximum variance. */
-  S->vmax = 0.0;
+  /* initialize the maximum variance datum. */
+  vector_view_t xview;
+  datum_t dmax;
+  dmax.x = &xview;
+  dmax.y = 0.0;
+  dmax.p = 0;
 
   /* loop until no tasks remain. */
   Nrem = S->G;
@@ -688,11 +694,14 @@ int search_execute (search_t *S, vector_t *x) {
     /* loop over the array of computed variances. */
     cl_double *xi = S->xgrid;
     for (unsigned int i = 0; i < N; i++, xi += S->D) {
+      /* initialize the datum to search for existing observations. */
+      xview = vector_view_array(xi, S->D);
+
       /* check if the current variance is larger. */
-      if (S->var[i] > S->vmax) {
+      if (S->var[i] > dmax.y && !data_find(S->dat, &dmax)) {
         /* copy the location of the larger variance. */
         memcpy(S->xmax, xi, S->sz_xmax);
-        S->vmax = S->var[i];
+        dmax.y = S->var[i];
       }
     }
 
