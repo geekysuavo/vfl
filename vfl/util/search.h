@@ -37,7 +37,7 @@ typedef struct {
    *  @sz_*: in-memory sizes (host and device).
    *  @wgsize: work-group size.
    */
-  size_t sz_par, sz_var, sz_xgrid, sz_xmax, sz_xdat, sz_C, sz_pdat;
+  size_t sz_par, sz_var, sz_xgrid, sz_xmax, sz_xdat, sz_cblk, sz_C, sz_pdat;
   size_t wgsize;
 
   /* opencl core variables:
@@ -81,6 +81,7 @@ typedef struct {
    *   @dev_xgrid: grid input location matrix.
    *   @dev_xdat: data input location matrix.
    *   @dev_pdat: data output index vector.
+   *   @dev_cblk: kernel vector elements.
    *   @dev_C: inverse covariance matrix.
    *
    *  outputs:
@@ -91,6 +92,7 @@ typedef struct {
   cl_mem dev_xgrid;
   cl_mem dev_xdat;
   cl_mem dev_pdat;
+  cl_mem dev_cblk;
   cl_mem dev_C;
 }
 search_t;

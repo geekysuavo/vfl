@@ -39,6 +39,7 @@
  *  @K: number of function outputs.
  *  @N: number of grid values in the computation.
  *  @n: number of observations in the dataset.
+ *  @cblk: array of N*n floats holding the kernel vector elements.
  *  @var: array of N floats holding the output variance calculations.
  */
 
@@ -81,6 +82,7 @@
 "                            const __global double *C,"             "\n" \
 "                            const uint D, const uint K,"           "\n" \
 "                            const uint N, const uint n,"           "\n" \
+"                            __global double *cblk,"                "\n" \
 "                            __global double *var) {"               "\n" \
 "  /* get the grid index. */"                                       "\n" \
 "  const size_t gid = get_global_id(0);"                            "\n" \
@@ -89,8 +91,11 @@
 "  if (gid >= N)"                                                   "\n" \
 "    return;"                                                       "\n" \
 ""                                                                  "\n" \
-"  /* get the current grid location. */"                            "\n" \
+"  /* get the thread-owned grid location. */"                       "\n" \
 "  const __global double *xs = xgrid + (gid * D);"                  "\n" \
+""                                                                  "\n" \
+"  /* get the thread-owned kernel vector. */"                       "\n" \
+"  __global double *cv = cblk + (gid * n);"                         "\n" \
 ""                                                                  "\n" \
 "  /* initialize the variance computation. */"                      "\n" \
 "  double sum = 0.0;"                                               "\n" \
@@ -102,26 +107,19 @@
 ""                                                                  "\n" \
 "    /* loop over each matrix row. */"                              "\n" \
 "    for (uint i = 0, cidx = 0; i < n; i++) {"                      "\n" \
-"      /* get the first data value. */"                             "\n" \
+"      /* get the data value. */"                                   "\n" \
 "      const __global double *xi = xdat + (i * D);"                 "\n" \
 "      uint pi = pdat[i];"                                          "\n" \
 ""                                                                  "\n" \
-"      /* compute the 'left-hand' term. */"                         "\n" \
-"      const double sii = vfl_covkernel(par, xs, xi, ps, pi, D);"   "\n" \
+"      /* compute the kernel vector element. */"                    "\n" \
+"      cv[i] = vfl_covkernel(par, xs, xi, ps, pi, D);"              "\n" \
 ""                                                                  "\n" \
 "      /* loop over the off-diagonal row elements. */"              "\n" \
-"      for (uint j = 0; j < i; j++, cidx++) {"                      "\n" \
-"        /* get the second data value. */"                          "\n" \
-"        const __global double *xj = xdat + (j * D);"               "\n" \
-"        uint pj = pdat[j];"                                        "\n" \
-""                                                                  "\n" \
-"        /* include the off-diagonal matrix elements. */"           "\n" \
-"        sum -= 2.0 * vfl_covkernel(par, xj, xs, pj, ps, D)"        "\n" \
-"                   * sii * C[cidx];"                               "\n" \
-"      }"                                                           "\n" \
+"      for (uint j = 0; j < i; j++, cidx++)"                        "\n" \
+"        sum -= 2.0 * cv[i] * cv[j] * C[cidx];"                     "\n" \
 ""                                                                  "\n" \
 "      /* include the diagonal matrix element. */"                  "\n" \
-"      sum -= sii * sii * C[cidx++];"                               "\n" \
+"      sum -= cv[i] * cv[i] * C[cidx++];"                           "\n" \
 "    }"                                                             "\n" \
 "  }"                                                               "\n" \
 ""                                                                  "\n" \
@@ -144,16 +142,17 @@ static int set_arguments (search_t *S) {
   int ret = CL_SUCCESS;
 
   /* set all arguments. */
-  ret |= clSetKernelArg(S->kern, 0, sizeof(cl_mem),  &S->dev_xgrid);
-  ret |= clSetKernelArg(S->kern, 1, sizeof(cl_mem),  &S->dev_xdat);
-  ret |= clSetKernelArg(S->kern, 2, sizeof(cl_mem),  &S->dev_pdat);
-  ret |= clSetKernelArg(S->kern, 3, sizeof(cl_mem),  &S->dev_par);
-  ret |= clSetKernelArg(S->kern, 4, sizeof(cl_mem),  &S->dev_C);
-  ret |= clSetKernelArg(S->kern, 5, sizeof(cl_uint), &S->D);
-  ret |= clSetKernelArg(S->kern, 6, sizeof(cl_uint), &S->K);
-  ret |= clSetKernelArg(S->kern, 7, sizeof(cl_uint), &S->N);
-  ret |= clSetKernelArg(S->kern, 8, sizeof(cl_uint), &S->n);
-  ret |= clSetKernelArg(S->kern, 9, sizeof(cl_mem),  &S->dev_var);
+  ret |= clSetKernelArg(S->kern,  0, sizeof(cl_mem),  &S->dev_xgrid);
+  ret |= clSetKernelArg(S->kern,  1, sizeof(cl_mem),  &S->dev_xdat);
+  ret |= clSetKernelArg(S->kern,  2, sizeof(cl_mem),  &S->dev_pdat);
+  ret |= clSetKernelArg(S->kern,  3, sizeof(cl_mem),  &S->dev_par);
+  ret |= clSetKernelArg(S->kern,  4, sizeof(cl_mem),  &S->dev_C);
+  ret |= clSetKernelArg(S->kern,  5, sizeof(cl_uint), &S->D);
+  ret |= clSetKernelArg(S->kern,  6, sizeof(cl_uint), &S->K);
+  ret |= clSetKernelArg(S->kern,  7, sizeof(cl_uint), &S->N);
+  ret |= clSetKernelArg(S->kern,  8, sizeof(cl_uint), &S->n);
+  ret |= clSetKernelArg(S->kern,  9, sizeof(cl_mem),  &S->dev_cblk);
+  ret |= clSetKernelArg(S->kern, 10, sizeof(cl_mem),  &S->dev_var);
 
   /* return the resulting status code. */
   return (ret == CL_SUCCESS);
@@ -179,6 +178,7 @@ static void free_buffers (search_t *S) {
   clReleaseMemObject(S->dev_xgrid);
   clReleaseMemObject(S->dev_xdat);
   clReleaseMemObject(S->dev_pdat);
+  clReleaseMemObject(S->dev_cblk);
   clReleaseMemObject(S->dev_C);
 
   /* reset the host-side pointers. */
@@ -188,6 +188,7 @@ static void free_buffers (search_t *S) {
   /* reset the device-side pointers. */
   S->dev_par = S->dev_var = S->dev_xgrid = NULL;
   S->dev_xdat = S->dev_pdat = S->dev_C = NULL;
+  S->dev_cblk = NULL;
 }
 
 /* refresh_buffers(): ensure that all allocated calculation-related
@@ -225,6 +226,7 @@ static int refresh_buffers (search_t *S) {
     S->sz_xgrid = sizeof(cl_double) * N;
     S->sz_xmax  = sizeof(cl_double) * D;
     S->sz_xdat  = sizeof(cl_double) * D * n;
+    S->sz_cblk  = sizeof(cl_double) * N * n;
     S->sz_C     = sizeof(cl_double) * (n * (n + 1)) / 2;
     S->sz_pdat  = sizeof(cl_uint)   * n;
 
@@ -290,13 +292,16 @@ static int refresh_buffers (search_t *S) {
     S->dev_pdat = clCreateBuffer(S->ctx, CL_MEM_READ_ONLY,
                                  S->sz_pdat, NULL, NULL);
 
+    S->dev_cblk = clCreateBuffer(S->ctx, CL_MEM_WRITE_ONLY,
+                                 S->sz_cblk, NULL, NULL);
+
     /* allocate the device-side buffer: C. */
     S->dev_C = clCreateBuffer(S->ctx, CL_MEM_READ_ONLY,
                               S->sz_C, NULL, NULL);
 
     /* check for allocation failures. */
     if (!S->dev_par || !S->dev_var || !S->dev_xgrid ||
-        !S->dev_xdat || !S->dev_pdat || !S->dev_C)
+        !S->dev_xdat || !S->dev_pdat || !S->dev_cblk || !S->dev_C)
       return 0;
 
     /* store the new sizes. */
@@ -363,10 +368,8 @@ static int fill_buffers (search_t *S) {
   }
 
   /* compute the cholesky decomposition of the covariance matrix. */
-  printf("[decomp=%d] ",chol_decomp(S->cov));
-  printf("[invert=%d] ",chol_invert(S->cov,S->cov));
-//if (!chol_decomp(S->cov) || !chol_invert(S->cov, S->cov))
-//  return 0;
+  if (!chol_decomp(S->cov) || !chol_invert(S->cov, S->cov))
+    return 0;
 
   /* pack the inverted matrix into the host-side array. */
   for (unsigned int i = 0, cidx = 0; i < S->n; i++)
@@ -477,6 +480,7 @@ search_t *search_alloc (model_t *mdl, data_t *dat,
   /* initialize the device-side pointers. */
   S->dev_par = S->dev_var = S->dev_xgrid = NULL;
   S->dev_xdat = S->dev_pdat = S->dev_C = NULL;
+  S->dev_cblk = NULL;
 
   /* generate the model kernel code. */
   char *ksrc = model_kernel(S->mdl);
