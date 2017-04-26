@@ -138,17 +138,11 @@ MODEL_INFER (vfr) {
   chol_solve(mdl->L, mdl->h, mdl->wbar);
   chol_invert(mdl->L, mdl->Sigma);
 
-  /* compute the model inner product. */
+  /* compute the model and data inner products. */
   vector_view_t z = vector_subvector(mdl->tmp, 0, mdl->K);
   blas_dtrmv(BLAS_TRANS, mdl->L, mdl->wbar, &z);
   const double wSw = blas_ddot(&z, &z);
-
-  /* compute the data inner product. */
-  double yy = 0.0;
-  for (unsigned int i = 0; i < N; i++) {
-    di = data_get(dat, i);
-    yy += di->y * di->y;
-  }
+  const double yy = data_inner(dat);
 
   /* update the noise shape and rate. */
   mdl->alpha = mdl->alpha0 + 0.5 * (double) N;

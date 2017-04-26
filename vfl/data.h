@@ -58,6 +58,8 @@ int data_resize (data_t *dat, const unsigned int N, const unsigned int D);
 
 /* function declarations (data-entries.c): */
 
+double data_inner (const data_t *dat);
+
 datum_t *data_get (const data_t *dat, const unsigned int i);
 
 int data_set (data_t *dat, const unsigned int i, const datum_t *d);

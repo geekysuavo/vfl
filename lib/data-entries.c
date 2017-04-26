@@ -3,6 +3,31 @@
 #include <vfl/util/grid.h>
 #include <vfl/data.h>
 
+/* data_inner(): compute the inner product of the observations
+ * stored within a dataset.
+ *
+ * warning: this function does not check the dataset structure
+ * pointer for validity; use with caution!
+ *
+ * arguments:
+ *  @dat: dataset structure pointer to access.
+ *
+ * returns:
+ *  sum of all squared observation values.
+ */
+double data_inner (const data_t *dat) {
+  /* initialize the computation. */
+  double yy = 0.0;
+
+  /* compute the inner product. */
+  datum_t *di = dat->data;
+  for (unsigned int i = 0; i < dat->N; i++, di++)
+    yy += di->y * di->y;
+
+  /* return the result. */
+  return yy;
+}
+
 /* data_get(): extract an observation from a dataset.
  *
  * arguments:

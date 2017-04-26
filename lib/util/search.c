@@ -367,9 +367,29 @@ static int fill_buffers (search_t *S) {
     }
   }
 
+  /* compute the current model->data fit error estimate. */
+  vector_view_t z = vector_subvector(S->mdl->tmp, 0, S->mdl->K);
+  blas_dtrmv(BLAS_TRANS, S->mdl->L, S->mdl->wbar, &z);
+  const double wSw = blas_ddot(&z, &z);
+  const double yy = data_inner(S->dat);
+  const double alpha = S->mdl->alpha0 + (double) S->mdl->dat->N;
+  const double beta = S->mdl->beta0 + (yy - wSw);
+  const double tauinv = beta / alpha;
+
+  /* add the noise estimate as jitter to the variances. */
+  z = matrix_diag(S->cov);
+  vector_add_const(&z, tauinv);
+
   /* compute the cholesky decomposition of the covariance matrix. */
-  if (!chol_decomp(S->cov) || !chol_invert(S->cov, S->cov))
+  if (!chol_decomp(S->cov) || !chol_invert(S->cov, S->cov)) {
+    /* output a warning message. */
+    fprintf(stderr, "cov (%ux%u) is singular!\n",
+            S->cov->rows, S->cov->cols);
+    fflush(stderr);
+
+    /* return failure. */
     return 0;
+  }
 
   /* pack the inverted matrix into the host-side array. */
   for (unsigned int i = 0, cidx = 0; i < S->n; i++)
