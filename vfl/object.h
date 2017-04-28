@@ -6,6 +6,11 @@
 /* include c library headers. */
 #include <stdlib.h>
 
+/* OBJECT_TYPE(): macro function for casting object structure pointers
+ * to their associated base type structures.
+ */
+#define OBJECT_TYPE(s) ((s)->base)
+
 /* object_t: defined type for the base object structure. */
 typedef struct object object_t;
 

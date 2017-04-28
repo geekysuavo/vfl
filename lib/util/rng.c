@@ -45,6 +45,9 @@ rng_t *rng_alloc (void) {
   if (!gen)
     return NULL;
 
+  /* initialize the object type. */
+  gen->base = (object_type_t*) vfl_object_rng;
+
   /* initialize the random seed. */
   gen->seed = 12357;
 
@@ -122,4 +125,34 @@ double rng_normal (rng_t *gen) {
   w = sqrt(-2.0 * log(w) / w);
   return x1 * w;
 }
+
+/* --- */
+
+/* FIXME: comment and actually use. */
+static int vfl_method_rng_uniform (const object_t *argin,
+                                   object_t **argout) {
+  return 0;
+}
+
+static int vfl_method_rng_normal (const object_t *argin,
+                                  object_t **argout) {
+  return 0;
+}
+
+static object_method_t rng_methods[] = {
+  { "uniform", vfl_method_rng_uniform },
+  { "normal", vfl_method_rng_normal },
+  { NULL, NULL }
+};
+
+/* rng_type: random number generator type structure.
+ */
+static object_type_t rng_type = {
+  "rng",                                         /* name      */
+  sizeof(rng_t),                                 /* size      */
+  rng_methods                                    /* methods   */
+};
+
+/* vfl_object_rng: address of the rng_type structure. */
+const object_type_t *vfl_object_rng = &rng_type;
 

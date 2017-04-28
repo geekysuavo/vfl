@@ -574,6 +574,9 @@ search_t *search_alloc (model_t *mdl, data_t *dat,
   if (!S)
     return NULL;
 
+  /* initialize the object type. */
+  S->base = (object_type_t*) vfl_object_search;
+
   /* store the model and dataset. */
   S->grid = grid;
   S->mdl = mdl;
@@ -876,4 +879,17 @@ int search_execute (search_t *S, vector_t *x) {
   /* return success. */
   return 1;
 }
+
+/* --- */
+
+/* search_type: active learning search type structure.
+ */
+static object_type_t search_type = {
+  "search",                                      /* name      */
+  sizeof(search_t),                              /* size      */
+  NULL                                           /* methods   */
+};
+
+/* vfl_object_search: address of the search_type structure. */
+const object_type_t *vfl_object_search = &search_type;
 

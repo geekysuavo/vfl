@@ -340,7 +340,7 @@ void name ## _free (factor_t *f)
 /* FACTOR_TYPE(): macro function for casting factor structure pointers
  * to their associated type structures.
  */
-#define FACTOR_TYPE(s) ((factor_type_t*) (s))
+#define FACTOR_TYPE(s) ((s)->type)
 
 /* factor_type_t: structure for holding type-specific factor information.
  */

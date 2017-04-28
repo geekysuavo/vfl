@@ -13,6 +13,9 @@ data_t *data_alloc (void) {
   if (!dat)
     return NULL;
 
+  /* initialize the object type. */
+  dat->base = (object_type_t*) vfl_object_data;
+
   /* initialize the size of the dataset. */
   dat->N = 0;
   dat->D = 0;
@@ -155,4 +158,17 @@ int data_resize (data_t *dat, const unsigned int N, const unsigned int D) {
   /* return success. */
   return 1;
 }
+
+/* --- */
+
+/* data_type: dataset type structure.
+ */
+static object_type_t data_type = {
+  "data",                                        /* name      */
+  sizeof(data_t),                                /* size      */
+  NULL                                           /* methods   */
+};
+
+/* vfl_object_data: address of the data_type structure. */
+const object_type_t *vfl_object_data = &data_type;
 
