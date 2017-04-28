@@ -167,13 +167,13 @@ int name ## _meanfield (const model_t *mdl, \
 /* MODEL_TYPE(): macro function for casting model structure pointers
  * to their associated type structures.
  */
-#define MODEL_TYPE(s) ((s)->type)
+#define MODEL_TYPE(s) ((model_type_t*) (s))
 
 /* model_type_t: structure for holding type-specific model information.
  */
 typedef struct {
   /* @base: basic object type information. */
-  object_type_t *base;
+  object_type_t base;
 
   /* model type-specific functions:
    *  @init: initialization.
@@ -198,7 +198,7 @@ model_type_t;
  */
 struct model {
   /* @type: model type information. */
-  model_type_t *type;
+  model_type_t type;
 
   /* model sizes:
    *  @D: number of dimensions.

@@ -14,7 +14,7 @@
  */
 typedef struct {
   /* @base: basic object type information. */
-  object_type_t *base;
+  object_type_t base;
 
   /* current generator state:
    *  @u, @v, @w: core generator variables.

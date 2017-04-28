@@ -150,18 +150,15 @@ OPTIM_EXECUTE (fg) {
   return (opt->bound > bound_prev);
 }
 
-/* fg_objtype: full-gradient optimizer base type structure.
- */
-static object_type_t fg_objtype = {
-  "fg",                                          /* name    */
-  sizeof(optim_t),                               /* size    */
-  NULL                                           /* methods */
-};
-
 /* fg_type: optimizer type structure for full-gradient training.
  */
 static optim_type_t fg_type = {
-  &fg_objtype,                                   /* base    */
+  { /* base: */
+    "fg",                                        /* name    */
+    sizeof(optim_t),                             /* size    */
+    NULL                                         /* methods */
+  },
+
   NULL,                                          /* init    */
   fg_iterate,                                    /* iterate */
   fg_execute,                                    /* execute */

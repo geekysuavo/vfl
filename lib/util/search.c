@@ -575,7 +575,7 @@ search_t *search_alloc (model_t *mdl, data_t *dat,
     return NULL;
 
   /* initialize the object type. */
-  S->base = (object_type_t*) vfl_object_search;
+  S->base = *vfl_object_search;
 
   /* store the model and dataset. */
   S->grid = grid;

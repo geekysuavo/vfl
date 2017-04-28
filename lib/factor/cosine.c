@@ -212,18 +212,15 @@ char *cosine_names[] = {
   "tau"
 };
 
-/* cosine_objtype: cosine factor base type structure.
- */
-static object_type_t cosine_objtype = {
-  "cosine",                                      /* name      */
-  sizeof(factor_t),                              /* size      */
-  NULL                                           /* methods   */
-};
-
 /* cosine_type: cosine factor type structure.
  */
 static factor_type_t cosine_type = {
-  &cosine_objtype,                               /* base      */
+  { /* base: */
+    "cosine",                                    /* name      */
+    sizeof(factor_t),                            /* size      */
+    NULL                                         /* methods   */
+  },
+
   1,                                             /* initial D */
   2,                                             /* initial P */
   2,                                             /* initial K */

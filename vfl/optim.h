@@ -70,14 +70,14 @@ void name ## _free (optim_t *opt)
 /* OPTIM_TYPE(): macro function for casting optimizer structure pointers
  * to their associated type structures.
  */
-#define OPTIM_TYPE(s) ((s)->type)
+#define OPTIM_TYPE(s) ((optim_type_t*) (s))
 
 /* optim_type_t: structure for holding type-specific
  * optimizer information.
  */
 typedef struct {
   /* @base: basic object type information. */
-  object_type_t *base;
+  object_type_t base;
 
   /* optimizer type-specific functions:
    *  @init: hook for initialization.
@@ -97,7 +97,7 @@ optim_type_t;
  */
 struct optim {
   /* @type: optimizer type information. */
-  optim_type_t *type;
+  optim_type_t type;
 
   /* @mdl: associated variational feature model. */
   model_t *mdl;

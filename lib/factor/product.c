@@ -601,18 +601,15 @@ int product_update (factor_t *f) {
   return 1;
 }
 
-/* product_objtype: product factor base type structure.
- */
-static object_type_t product_objtype = {
-  "product",                                     /* name      */
-  sizeof(product_t),                             /* size      */
-  NULL                                           /* methods   */
-};
-
 /* product_type: product factor type structure.
  */
 static factor_type_t product_type = {
-  &product_objtype,                              /* base      */
+  { /* base: */
+    "product",                                   /* name      */
+    sizeof(product_t),                           /* size      */
+    NULL                                         /* methods   */
+  },
+
   1,                                             /* initial D */
   0,                                             /* initial P */
   1,                                             /* initial K */

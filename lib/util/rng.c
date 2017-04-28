@@ -46,7 +46,7 @@ rng_t *rng_alloc (void) {
     return NULL;
 
   /* initialize the object type. */
-  gen->base = (object_type_t*) vfl_object_rng;
+  gen->base = *vfl_object_rng;
 
   /* initialize the random seed. */
   gen->seed = 12357;

@@ -21,7 +21,7 @@ optim_t *optim_alloc (const optim_type_t *type) {
     return NULL;
 
   /* initialize the optimizer type. */
-  opt->type = (optim_type_t*) type;
+  opt->type = *type;
 
   /* initialize the model field. */
   opt->mdl = NULL;

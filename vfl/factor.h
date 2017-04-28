@@ -340,13 +340,13 @@ void name ## _free (factor_t *f)
 /* FACTOR_TYPE(): macro function for casting factor structure pointers
  * to their associated type structures.
  */
-#define FACTOR_TYPE(s) ((s)->type)
+#define FACTOR_TYPE(s) ((factor_type_t*) (s))
 
 /* factor_type_t: structure for holding type-specific factor information.
  */
 typedef struct {
   /* @base: basic object type information. */
-  object_type_t *base;
+  object_type_t base;
 
   /* factor type-specific sizes (instance values may differ, see below):
    *  @D: number of dimensions.
@@ -410,7 +410,7 @@ factor_type_t;
  */
 struct factor {
   /* @type: factor type information. */
-  factor_type_t *type;
+  factor_type_t type;
 
   /* factor sizes:
    *  @D: number of dimensions.

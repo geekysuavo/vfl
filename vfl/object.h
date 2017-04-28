@@ -9,7 +9,7 @@
 /* OBJECT_TYPE(): macro function for casting object structure pointers
  * to their associated base type structures.
  */
-#define OBJECT_TYPE(s) ((s)->base)
+#define OBJECT_TYPE(s) ((object_type_t*) (s))
 
 /* object_t: defined type for the base object structure. */
 typedef struct object object_t;
@@ -57,7 +57,7 @@ object_type_t;
  */
 struct object {
   /* @base: object type information. */
-  object_type_t *base;
+  object_type_t base;
 
   /* object members are placed here. */
 };

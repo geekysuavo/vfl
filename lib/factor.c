@@ -21,7 +21,7 @@ factor_t *factor_alloc (const factor_type_t *type) {
     return NULL;
 
   /* initialize the factor type. */
-  f->type = (factor_type_t*) type;
+  f->type = *type;
 
   /* initialize the factor parameter names table. */
   f->parnames = type->parnames;
@@ -67,7 +67,7 @@ factor_t *factor_copy (const factor_t *f) {
     return NULL;
 
   /* allocate a new factor structure of the same size. */
-  factor_t *fdup = factor_alloc(f->type);
+  factor_t *fdup = factor_alloc(&f->type);
   if (!fdup)
     return NULL;
 

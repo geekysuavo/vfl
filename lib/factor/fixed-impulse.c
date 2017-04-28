@@ -164,18 +164,15 @@ char *fixed_impulse_names[] = {
   "tau"
 };
 
-/* fixed_impulse_objtype: fixed impulse factor base type structure.
- */
-static object_type_t fixed_impulse_objtype = {
-  "fixed_impulse",                               /* name      */
-  sizeof(fixed_impulse_t),                       /* size      */
-  NULL                                           /* methods   */
-};
-
 /* fixed_impulse_type: fixed impulse factor type structure.
  */
 static factor_type_t fixed_impulse_type = {
-  &fixed_impulse_objtype,                        /* base      */
+  { /* base: */
+    "fixed_impulse",                             /* name      */
+    sizeof(fixed_impulse_t),                     /* size      */
+    NULL                                         /* methods   */
+  },
+
   1,                                             /* initial D */
   1,                                             /* initial P */
   1,                                             /* initial K */

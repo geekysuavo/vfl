@@ -61,7 +61,7 @@ model_t *model_alloc (const model_type_t *type) {
     return NULL;
 
   /* initialize the model type. */
-  mdl->type = (model_type_t*) type;
+  mdl->type = *type;
 
   /* initialize the sizes of the model. */
   mdl->D = 0;

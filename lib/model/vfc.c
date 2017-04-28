@@ -359,18 +359,15 @@ MODEL_GRADIENT (vfc) {
   return 1;
 }
 
-/* vfc_objtype: classification base type structure.
- */
-static object_type_t vfc_objtype = {
-  "vfc",                                         /* name    */
-  sizeof(model_t),                               /* size    */
-  NULL                                           /* methods */
-};
-
 /* vfc_type: model type structure for variational feature classification.
  */
 static model_type_t vfc_type = {
-  &vfc_objtype,                                  /* base      */
+  { /* base: */
+    "vfc",                                       /* name    */
+    sizeof(model_t),                             /* size    */
+    NULL                                         /* methods */
+  },
+
   NULL,                                          /* init      */
   vfc_bound,                                     /* bound     */
   vfc_predict,                                   /* predict   */

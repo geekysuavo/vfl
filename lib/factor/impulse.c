@@ -119,18 +119,15 @@ char *impulse_names[] = {
   "tau"
 };
 
-/* impulse_objtype: impulse factor base type structure.
- */
-static object_type_t impulse_objtype = {
-  "impulse",                                     /* name      */
-  sizeof(factor_t),                              /* size      */
-  NULL                                           /* methods   */
-};
-
 /* impulse_type: impulse factor type structure.
  */
 static factor_type_t impulse_type = {
-  &impulse_objtype,                              /* base      */
+  { /* base: */
+    "impulse",                                   /* name      */
+    sizeof(factor_t),                            /* size      */
+    NULL                                         /* methods   */
+  },
+
   1,                                             /* initial D */
   2,                                             /* initial P */
   1,                                             /* initial K */

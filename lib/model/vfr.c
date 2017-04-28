@@ -404,18 +404,15 @@ MODEL_MEANFIELD (vfr) {
   return 1;
 }
 
-/* vfr_objtype: regression base type structure.
- */
-static object_type_t vfr_objtype = {
-  "vfr",                                         /* name    */
-  sizeof(model_t),                               /* size    */
-  NULL                                           /* methods */
-};
-
 /* vfr_type: model type structure for variational feature regression.
  */
 static model_type_t vfr_type = {
-  &vfr_objtype,                                  /* base      */
+  { /* base: */
+    "vfr",                                       /* name    */
+    sizeof(model_t),                             /* size    */
+    NULL                                         /* methods */
+  },
+
   NULL,                                          /* init      */
   vfr_bound,                                     /* bound     */
   vfr_predict,                                   /* predict   */

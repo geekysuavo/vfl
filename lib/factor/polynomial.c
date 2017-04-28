@@ -81,18 +81,15 @@ int polynomial_set_order (factor_t *f, const unsigned int order) {
   return factor_resize(f, f->D, f->P, order + 1);
 }
 
-/* polynomial_objtype: polynomial factor base type structure.
- */
-static object_type_t polynomial_objtype = {
-  "polynomial",                                  /* name      */
-  sizeof(factor_t),                              /* size      */
-  NULL                                           /* methods   */
-};
-
 /* polynomial_type: polynomial factor type structure.
  */
 static factor_type_t polynomial_type = {
-  &polynomial_objtype,                           /* base      */
+  { /* base: */
+    "polynomial",                                /* name      */
+    sizeof(factor_t),                            /* size      */
+    NULL                                         /* methods   */
+  },
+
   1,                                             /* initial D */
   0,                                             /* initial P */
   1,                                             /* initial K */
