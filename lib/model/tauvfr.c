@@ -397,12 +397,19 @@ int tauvfr_set_tau (model_t *mdl, const double tau) {
   return 1;
 }
 
+/* tauvfr_objtype: fixed-tau regression base type structure.
+ */
+static object_type_t tauvfr_objtype = {
+  "tauvfr",                                      /* name    */
+  sizeof(model_t),                               /* size    */
+  NULL                                           /* methods */
+};
+
 /* tauvfr_type: model type structure for fixed-tau
  * variational feature regression.
  */
 static model_type_t tauvfr_type = {
-  "tauvfr",                                      /* name      */
-  sizeof(model_t),                               /* size      */
+  &tauvfr_objtype,                               /* base      */
   NULL,                                          /* init      */
   tauvfr_bound,                                  /* bound     */
   tauvfr_predict,                                /* predict   */

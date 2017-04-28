@@ -7,10 +7,13 @@
 #include <stdlib.h>
 #include <math.h>
 
-/* include application headers. */
-#include <vfl/data.h>
-#include <vfl/factor.h>
+/* include vfl utility headers. */
 #include <vfl/util/chol.h>
+
+/* include vfl core headers. */
+#include <vfl/object.h>
+#include <vfl/factor.h>
+#include <vfl/data.h>
 
 /* model_t: defined type for the model structure. */
 typedef struct model model_t;
@@ -164,17 +167,13 @@ int name ## _meanfield (const model_t *mdl, \
 /* MODEL_TYPE(): macro function for casting model structure pointers
  * to their associated type structures.
  */
-#define MODEL_TYPE(s) ((model_type_t*) (s))
+#define MODEL_TYPE(s) ((s)->type)
 
 /* model_type_t: structure for holding type-specific model information.
  */
 typedef struct {
-  /* basic model type-specific parameters:
-   *  @name: string name of the allocated model.
-   *  @size: number of bytes allocated to the structure pointer.
-   */
-  const char *name;
-  long size;
+  /* @base: basic object type information. */
+  object_type_t *base;
 
   /* model type-specific functions:
    *  @init: initialization.
@@ -198,8 +197,8 @@ model_type_t;
 /* struct model: structure for holding a variational feature model.
  */
 struct model {
-  /* @type: model type fields. */
-  model_type_t type;
+  /* @type: model type information. */
+  model_type_t *type;
 
   /* model sizes:
    *  @D: number of dimensions.

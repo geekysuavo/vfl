@@ -56,12 +56,12 @@ model_t *model_alloc (const model_type_t *type) {
     return NULL;
 
   /* allocate the structure pointer. */
-  model_t *mdl = malloc(type->size);
+  model_t *mdl = malloc(OBJECT_TYPE(type)->size);
   if (!mdl)
     return NULL;
 
   /* initialize the model type. */
-  mdl->type = *type;
+  mdl->type = (model_type_t*) type;
 
   /* initialize the sizes of the model. */
   mdl->D = 0;

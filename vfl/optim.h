@@ -3,9 +3,12 @@
 #ifndef __VFL_OPTIM_H__
 #define __VFL_OPTIM_H__
 
-/* include the model and eigenvalue headers. */
-#include <vfl/model.h>
+/* include vfl utility headers. */
 #include <vfl/util/eigen.h>
+
+/* include vfl core headers. */
+#include <vfl/object.h>
+#include <vfl/model.h>
 
 /* optim_t: defined type for the optimizer structure. */
 typedef struct optim optim_t;
@@ -67,18 +70,14 @@ void name ## _free (optim_t *opt)
 /* OPTIM_TYPE(): macro function for casting optimizer structure pointers
  * to their associated type structures.
  */
-#define OPTIM_TYPE(s) ((optim_type_t*) (s))
+#define OPTIM_TYPE(s) ((s)->type)
 
 /* optim_type_t: structure for holding type-specific
  * optimizer information.
  */
 typedef struct {
-  /* basic optimizer type-specific parameters:
-   *  @name: string name of the allocated optimizer.
-   *  @size: number of bytes allocated to the structure pointer.
-   */
-  const char *name;
-  long size;
+  /* @base: basic object type information. */
+  object_type_t *base;
 
   /* optimizer type-specific functions:
    *  @init: hook for initialization.
@@ -97,8 +96,8 @@ optim_type_t;
  * learn the variational parameters of a model.
  */
 struct optim {
-  /* @type: optimizer type fields. */
-  optim_type_t type;
+  /* @type: optimizer type information. */
+  optim_type_t *type;
 
   /* @mdl: associated variational feature model. */
   model_t *mdl;

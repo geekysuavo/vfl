@@ -223,7 +223,7 @@ static object_type_t cosine_objtype = {
 /* cosine_type: cosine factor type structure.
  */
 static factor_type_t cosine_type = {
-  &cosine_objtype,                               /* obj_type  */
+  &cosine_objtype,                               /* base      */
   1,                                             /* initial D */
   2,                                             /* initial P */
   2,                                             /* initial K */

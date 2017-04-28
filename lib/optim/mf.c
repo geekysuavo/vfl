@@ -62,11 +62,18 @@ OPTIM_EXECUTE (mf) {
   return (opt->bound > bound_prev);
 }
 
+/* mf_objtype: mean-field optimizer base type structure.
+ */
+static object_type_t mf_objtype = {
+  "mf",                                          /* name    */
+  sizeof(optim_t),                               /* size    */
+  NULL                                           /* methods */
+};
+
 /* mf_type: optimizer type structure for mean-field training.
  */
 static optim_type_t mf_type = {
-  "mf",                                          /* name    */
-  sizeof(optim_t),                               /* size    */
+  &mf_objtype,                                   /* base    */
   NULL,                                          /* init    */
   mf_iterate,                                    /* iterate */
   mf_execute,                                    /* execute */

@@ -16,12 +16,12 @@ optim_t *optim_alloc (const optim_type_t *type) {
     return NULL;
 
   /* allocate the structure pointer. */
-  optim_t *opt = malloc(type->size);
+  optim_t *opt = malloc(OBJECT_TYPE(type)->size);
   if (!opt)
     return NULL;
 
   /* initialize the optimizer type. */
-  opt->type = *type;
+  opt->type = (optim_type_t*) type;
 
   /* initialize the model field. */
   opt->mdl = NULL;
