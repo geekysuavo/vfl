@@ -8,9 +8,12 @@
 #include <stdarg.h>
 #include <math.h>
 
-/* include application headers. */
+/* include vfl utility headers. */
 #include <vfl/util/specfun.h>
 #include <vfl/util/blas.h>
+
+/* include vfl core headers. */
+#include <vfl/object.h>
 #include <vfl/data.h>
 
 /* factor_t: defined type for the factor structure. */
@@ -342,12 +345,8 @@ void name ## _free (factor_t *f)
 /* factor_type_t: structure for holding type-specific factor information.
  */
 typedef struct {
-  /* basic factor type-specific parameters:
-   *  @name: string name of the allocated factor.
-   *  @size: number of bytes allocated to the structure pointer.
-   */
-  const char *name;
-  long size;
+  /* @base: basic object type information. */
+  object_type_t *base;
 
   /* factor type-specific sizes (instance values may differ, see below):
    *  @D: number of dimensions.
@@ -410,8 +409,8 @@ factor_type_t;
  * parameters, given by @P.
  */
 struct factor {
-  /* @type: factor type fields. */
-  factor_type_t type;
+  /* @type: factor type information. */
+  factor_type_t *type;
 
   /* factor sizes:
    *  @D: number of dimensions.

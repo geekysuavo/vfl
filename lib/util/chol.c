@@ -88,7 +88,7 @@ int chol_invert (const matrix_t *L, matrix_t *B) {
   matrix_set_ident(B);
 
   /* invert each column of the identity matrix. */
-  for (unsigned int j = 0; j < B->cols; j++) {
+  for (unsigned int j = 0; j < n; j++) {
     /* extract the current column. */
     vector_view_t b = matrix_col(B, j);
 

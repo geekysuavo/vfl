@@ -7,9 +7,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/* include application headers. */
+/* include vfl utility headers. */
 #include <vfl/util/matrix.h>
 #include <vfl/util/vector.h>
+
+/* include vfl core headers. */
+#include <vfl/object.h>
 
 /* datum_t: structure for holding a single observation.
  */
@@ -28,6 +31,9 @@ datum_t;
 /* data_t: structure for holding observations.
  */
 typedef struct {
+  /* @base: basic object type information. */
+  object_type_t *base;
+
   /* dataset size parameters:
    *  @N: number of observations.
    *  @D: number of dimensions.
@@ -84,6 +90,10 @@ int data_cmp (const datum_t *d1, const datum_t *d2);
 int data_sort_single (data_t *dat, const unsigned int i);
 
 int data_sort (data_t *dat);
+
+/* available object types: */
+
+extern const object_type_t *vfl_object_data;
 
 #endif /* !__VFL_DATA_H__ */
 

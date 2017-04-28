@@ -3,7 +3,7 @@
 #ifndef __VFL_SPECFUN_H__
 #define __VFL_SPECFUN_H__
 
-/* include the standard c math header. */
+/* include c library headers. */
 #include <math.h>
 
 /* function declarations (specfun.c): */

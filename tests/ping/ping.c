@@ -1,7 +1,6 @@
 
-/* include the required headers. */
-#include <vfl/optim.h>
-#include <vfl/util/rng.h>
+/* include the vfl header. */
+#include <vfl/vfl.h>
 
 /* main(): application entry point.
  *

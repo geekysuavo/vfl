@@ -1,6 +1,6 @@
 
-/* include the required headers. */
-#include <vfl/optim.h>
+/* include the vfl header. */
+#include <vfl/vfl.h>
 
 /* cosines: table of initial cosine factor parameters.
  */

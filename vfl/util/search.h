@@ -8,8 +8,14 @@
 #include <vfl/model.h>
 #include <vfl/util/blas.h>
 
-/* include the opencl header. */
-#include <CL/opencl.h>
+/* if required, include the opencl header. */
+#ifdef __VFL_USE_OPENCL
+# ifdef __APPLE__
+#  include <OpenCL/opencl.h>
+# else
+#  include <CL/opencl.h>
+# endif
+#endif
 
 /* search_t: structure for holding the state of a variance search.
  */
@@ -31,7 +37,11 @@ typedef struct {
    *  @N: grid value count.
    *  @n: observation count.
    */
+#ifdef __VFL_USE_OPENCL
   cl_uint D, P, K, G, N, n;
+#else
+  unsigned int D, P, K, G, N, n;
+#endif
 
   /* memory utilization and execution control variables:
    *  @sz_*: in-memory sizes (host and device).
@@ -49,6 +59,7 @@ typedef struct {
    *  @kern: compute kernel.
    *  @src: program code string.
    */
+#ifdef __VFL_USE_OPENCL
   cl_platform_id   plat;
   cl_device_id     dev;
   cl_context       ctx;
@@ -56,6 +67,7 @@ typedef struct {
   cl_program       prog;
   cl_kernel        kern;
   char *src;
+#endif
 
   /* host-side calculation variables:
    *  @par: kernel parameter vector.
@@ -68,8 +80,12 @@ typedef struct {
    *  @cov: double-precision covariance matrix.
    *  @vmax: current maximum variance.
    */
+#ifdef __VFL_USE_OPENCL
   cl_double *par, *var, *xgrid, *xmax, *xdat, *C;
   cl_uint *pdat;
+#else
+  vector_t *cs;
+#endif
   matrix_t *cov;
   float vmax;
 
@@ -87,6 +103,7 @@ typedef struct {
    *  outputs:
    *   @dev_var: computed variance result.
    */
+#ifdef __VFL_USE_OPENCL
   cl_mem dev_par;
   cl_mem dev_var;
   cl_mem dev_xgrid;
@@ -94,6 +111,7 @@ typedef struct {
   cl_mem dev_pdat;
   cl_mem dev_cblk;
   cl_mem dev_C;
+#endif
 }
 search_t;
 

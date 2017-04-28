@@ -21,10 +21,11 @@ LIBS=-lm
 LIB=libvfl.so
 
 # basenames of C utility source files.
-C_UTIL=rng specfun vector matrix grid blas chol eigen
+C_UTIL=rng specfun vector matrix grid blas chol eigen search
 
 # basenames of C factor source files.
-C_FACTOR=cosine decay impulse fixed-impulse polynomial product
+#FIXME C_FACTOR=cosine decay impulse fixed-impulse polynomial product
+C_FACTOR=cosine
 
 # basenames of C model source files.
 C_MODEL=vfc vfr tauvfr
@@ -42,7 +43,6 @@ endif
 ifeq ($(USE_OPENCL),y)
 CFLAGS+= -D__VFL_USE_OPENCL
 LIBS+= -lOpenCL
-C_UTIL+= search
 endif
 
 # basenames of C source files in sub-directories.
@@ -52,7 +52,8 @@ C+= $(addprefix model/,$(C_MODEL))
 C+= $(addprefix optim/,$(C_OPTIM))
 
 # basenames of core C source files.
-C+= vfl data-alloc data-entries data-fileio data-sort factor model optim
+#FIXME C+= vfl data-alloc data-entries data-fileio data-sort factor model optim
+C+= data-alloc data-entries data-fileio data-sort factor model optim
 
 # filenames of C sources.
 SRC=$(addsuffix .c,$(C))

@@ -138,6 +138,7 @@
  *  integer indicating success (1) or failure (0).
  */
 static int set_arguments (search_t *S) {
+#ifdef __VFL_USE_OPENCL
   /* initialize the status code. */
   int ret = CL_SUCCESS;
 
@@ -156,6 +157,10 @@ static int set_arguments (search_t *S) {
 
   /* return the resulting status code. */
   return (ret == CL_SUCCESS);
+#else
+  /* return success. */
+  return 1;
+#endif
 }
 
 /* free_buffers(): free all allocated calculation-related buffers
@@ -169,6 +174,7 @@ static void free_buffers (search_t *S) {
   matrix_free(S->cov);
   S->cov = NULL;
 
+#ifdef __VFL_USE_OPENCL
   /* free the host-side calculation variables. */
   free(S->par);
 
@@ -189,6 +195,11 @@ static void free_buffers (search_t *S) {
   S->dev_par = S->dev_var = S->dev_xgrid = NULL;
   S->dev_xdat = S->dev_pdat = S->dev_C = NULL;
   S->dev_cblk = NULL;
+#else
+  /* free the kernel vector. */
+  vector_free(S->cs);
+  S->cs = NULL;
+#endif
 }
 
 /* refresh_buffers(): ensure that all allocated calculation-related
@@ -202,8 +213,10 @@ static void free_buffers (search_t *S) {
  */
 static int refresh_buffers (search_t *S) {
   /* get the new sizes. */
+#ifdef __VFL_USE_OPENCL
   const unsigned int P = S->mdl->P + 1;
   const unsigned int D = S->mdl->D;
+#endif
   const unsigned int n = S->dat->N;
 
   /* determine the total grid size. */
@@ -215,6 +228,7 @@ static int refresh_buffers (search_t *S) {
   if (N > SEARCH_MAX_GRID)
     N = SEARCH_MAX_GRID;
 
+#ifdef __VFL_USE_OPENCL
   /* check for any differences. */
   if (S->D != D || S->P != P || S->N != N || S->n != n) {
     /* free the buffers. */
@@ -311,6 +325,23 @@ static int refresh_buffers (search_t *S) {
     S->N = N;
     S->n = n;
   }
+#else
+  /* check for any differences. */
+  if (S->n != n) {
+    /* free the buffers. */
+    free_buffers(S);
+
+    /* allocate the dense covariance matrix and kernel vector. */
+    S->cov = matrix_alloc(n, n);
+    S->cs = vector_alloc(n);
+    if (!S->cov || !S->cs)
+      return 0;
+
+    /* store the new sizes. */
+    S->G = G;
+    S->n = n;
+  }
+#endif
 
   /* return success. */
   return 1;
@@ -326,6 +357,7 @@ static int refresh_buffers (search_t *S) {
  *  integer indicating success (1) or failure (0).
  */
 static int fill_buffers (search_t *S) {
+#ifdef __VFL_USE_OPENCL
   /* store the current noise precision and weight ratio. */
   S->par[0] = 1.0 / (S->mdl->nu * S->mdl->tau);
 
@@ -341,16 +373,19 @@ static int fill_buffers (search_t *S) {
     /* increment the array offset. */
     p0 += par->len;
   }
+#endif
 
   /* compute the covariance matrix elements. */
   for (unsigned int i = 0; i < S->n; i++) {
     /* get the row-wise observation. */
     datum_t *di = data_get(S->dat, i);
 
+#ifdef __VFL_USE_OPENCL
     /* while we're here, store the data array values. */
     S->pdat[i] = di->p;
     for (unsigned int d = 0; d < S->D; d++)
       S->xdat[i * S->D + d] = vector_get(di->x, d);
+#endif
 
     /* loop over the elements of each row. */
     for (unsigned int j = 0; j <= i; j++) {
@@ -391,17 +426,20 @@ static int fill_buffers (search_t *S) {
     return 0;
   }
 
+#ifdef __VFL_USE_OPENCL
   /* pack the inverted matrix into the host-side array. */
   for (unsigned int i = 0, cidx = 0; i < S->n; i++)
     for (unsigned int j = 0; j <= i; j++, cidx++)
       S->C[cidx] = matrix_get(S->cov, i, j);
+#endif
 
   /* return success. */
   return 1;
 }
 
 /* write_buffers(): write the contents of all host-side calculation
- * buffers to the compute device associated with a search structure.
+ * buffers (except the grid buffer) to the compute device associated
+ * with a search structure.
  *
  * arguments:
  *  @S: search structure pointer.
@@ -410,6 +448,7 @@ static int fill_buffers (search_t *S) {
  *  integer indicating success (1) or failure (0).
  */
 static int write_buffers (search_t *S) {
+#ifdef __VFL_USE_OPENCL
   /* write xdat to the device. */
   int ret = clEnqueueWriteBuffer(S->queue, S->dev_xdat, CL_FALSE, 0,
                                  S->sz_xdat, S->xdat, 0, NULL, NULL);
@@ -431,6 +470,33 @@ static int write_buffers (search_t *S) {
 
   /* return the resulting status code. */
   return (ret == CL_SUCCESS);
+#else
+  /* return success. */
+  return 1;
+#endif
+}
+
+/* write_grid(): write the contents of the host-side grid buffer
+ * to the compute device associated with a search structure.
+ *
+ * arguments:
+ *  @S: search structure pointer.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+static int write_grid (search_t *S) {
+#ifdef __VFL_USE_OPENCL
+  /* write xgrid to the device. */
+  int ret = clEnqueueWriteBuffer(S->queue, S->dev_xgrid, CL_TRUE, 0,
+                                 S->sz_xgrid, S->xgrid, 0, NULL, NULL);
+
+  /* return the resulting status code. */
+  return (ret == CL_SUCCESS);
+#else
+  /* return success. */
+  return 1;
+#endif
 }
 
 /* read_buffers(): read the contents of the device-side result
@@ -443,12 +509,46 @@ static int write_buffers (search_t *S) {
  *  integer indicating success (1) or failure (0).
  */
 static int read_buffers (search_t *S) {
+#ifdef __VFL_USE_OPENCL
   /* read the results from the device. */
   int ret = clEnqueueReadBuffer(S->queue, S->dev_var, CL_TRUE, 0,
                                 S->sz_var, S->var, 0, NULL, NULL);
 
   /* return the resulting status code. */
   return (ret == CL_SUCCESS);
+#else
+  /* return success. */
+  return 1;
+#endif
+}
+
+/* launch_kernel(): enqueue a set of kernel execution requests
+ * to the compute device associated to a search structure.
+ *
+ * arguments:
+ *  @S: search structure pointer.
+ *  @Ntask: pointer to the task size.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+static int launch_kernel (search_t *S, size_t *Ntask) {
+#ifdef __VFL_USE_OPENCL
+  /* enqueue the kernel. */
+  int ret = clEnqueueNDRangeKernel(S->queue, S->kern, 1, NULL,
+                                   Ntask, &S->wgsize,
+                                   0, NULL, NULL);
+
+  /* check for queueing failures. */
+  if (ret != CL_SUCCESS)
+    return 0;
+
+  /* block until the kernel has completed. */
+  clFinish(S->queue);
+#endif
+
+  /* return success. */
+  return 1;
 }
 
 /* * * * function definitions: * * * */
@@ -482,6 +582,7 @@ search_t *search_alloc (model_t *mdl, data_t *dat,
   /* initialize the buffer sizes. */
   S->D = S->P = S->K = S->N = S->n = 0;
 
+#ifdef __VFL_USE_OPENCL
   /* initialize the opencl variables. */
   S->plat = NULL;
   S->dev = NULL;
@@ -491,17 +592,21 @@ search_t *search_alloc (model_t *mdl, data_t *dat,
   S->kern = NULL;
   S->src = NULL;
 
-  /* initialize the host-side pointers. */
-  S->par = S->var = S->xgrid = S->xmax = S->xdat = S->C = NULL;
-  S->pdat = NULL;
-  S->cov = NULL;
-  S->vmax = 0.0;
-
   /* initialize the device-side pointers. */
   S->dev_par = S->dev_var = S->dev_xgrid = NULL;
   S->dev_xdat = S->dev_pdat = S->dev_C = NULL;
   S->dev_cblk = NULL;
 
+  /* initialize the host-side pointers. */
+  S->par = S->var = S->xgrid = S->xmax = S->xdat = S->C = NULL;
+  S->pdat = NULL;
+#else
+  S->cs = NULL;
+#endif
+  S->cov = NULL;
+  S->vmax = 0.0;
+
+#ifdef __VFL_USE_OPENCL
   /* generate the model kernel code. */
   char *ksrc = model_kernel(S->mdl);
   if (!ksrc)
@@ -562,14 +667,17 @@ search_t *search_alloc (model_t *mdl, data_t *dat,
                                  sizeof(size_t), &S->wgsize, NULL);
   if (ret != CL_SUCCESS)
     goto fail;
+#endif
 
   /* return the new structure pointer. */
   return S;
 
+#ifdef __VFL_USE_OPENCL
 fail:
   /* free the search structure pointer and return null. */
   search_free(S);
   return NULL;
+#endif
 }
 
 /* search_free(): free a variance search structure.
@@ -582,6 +690,7 @@ void search_free (search_t *S) {
   if (!S)
     return;
 
+#ifdef __VFL_USE_OPENCL
   /* release the opencl variables. */
   clReleaseProgram(S->prog);
   clReleaseKernel(S->kern);
@@ -590,6 +699,7 @@ void search_free (search_t *S) {
 
   /* free the kernel source code string. */
   free(S->src);
+#endif
 
   /* free the calculation buffers. */
   free_buffers(S);
@@ -678,20 +788,47 @@ int search_execute (search_t *S, vector_t *x) {
 
     /* fill the required amount of grid array elements. */
     for (unsigned int i = 0; i < N; i++) {
+#ifdef __VFL_USE_OPENCL
       /* copy the grid point into the array. */
       for (unsigned int d = 0; d < S->D; d++)
         S->xgrid[i * S->D + d] = vector_get(gx, d);
+#else
+      /* initialize variables for checking for new maxima. */
+      double sum = 0.0;
+      dmax.x = gx;
+
+      /* loop over the outputs. */
+      for (unsigned int ps = 0; ps < S->K; ps++) {
+        /* include the first term. */
+        sum += model_cov(S->mdl, gx, gx, ps, ps);
+
+        /* compute the kernel vector elements. */
+        datum_t *di = S->dat->data;
+        for (unsigned int i = 0; i < S->n; i++)
+          vector_set(S->cs, i, model_cov(S->mdl, di->x, gx, di->p, ps));
+
+        /* include the second term. */
+        for (unsigned int i = 0; i < S->n; i++)
+          for (unsigned int j = 0; j < S->n; j++)
+            sum -= vector_get(S->cs, i)
+                 * vector_get(S->cs, j)
+                 * matrix_get(S->cov, i, j);
+      }
+
+      /* check if the current variance is larger. */
+      if (sum > dmax.y && !data_find(S->dat, &dmax)) {
+        /* copy the location of the greater variance. */
+        vector_copy(x, gx);
+        dmax.y = sum;
+      }
+#endif
 
       /* move to the next grid point. */
       grid_iterator_next(S->grid, idx, sz, gx);
     }
 
-    /* write xgrid to the device. */
-    int ret = clEnqueueWriteBuffer(S->queue, S->dev_xgrid, CL_TRUE, 0,
-                                   S->sz_xgrid, S->xgrid, 0, NULL, NULL);
-
-    /* check for write failures. */
-    if (ret != CL_SUCCESS)
+    /* write the grid to the device. */
+    if (!write_grid(S))
       return 0;
 
     /* determine the total number of work items. */
@@ -699,22 +836,15 @@ int search_execute (search_t *S, vector_t *x) {
     while (Ntask < N)
       Ntask *= S->wgsize;
 
-    /* enqueue the kernel. */
-    ret = clEnqueueNDRangeKernel(S->queue, S->kern, 1, NULL,
-                                 &Ntask, &S->wgsize,
-                                 0, NULL, NULL);
-
-    /* check for queueing failures. */
-    if (ret != CL_SUCCESS)
+    /* execute the kernel over the current grid points. */
+    if (!launch_kernel(S, &Ntask))
       return 0;
-
-    /* block until the kernel has completed. */
-    clFinish(S->queue);
 
     /* read the results from the device. */
     if (!read_buffers(S))
       return 0;
 
+#ifdef __VFL_USE_OPENCL
     /* loop over the array of computed variances. */
     cl_double *xi = S->xgrid;
     for (unsigned int i = 0; i < N; i++, xi += S->D) {
@@ -728,6 +858,7 @@ int search_execute (search_t *S, vector_t *x) {
         dmax.y = S->var[i];
       }
     }
+#endif
 
     /* update the remaining task count. */
     Nrem -= N;
@@ -736,9 +867,11 @@ int search_execute (search_t *S, vector_t *x) {
   /* free the grid iteration variables. */
   grid_iterator_free(idx, sz, gx);
 
+#ifdef __VFL_USE_OPENCL
   /* store the identified location in the output vector. */
   for (unsigned int d = 0; d < S->D; d++)
     vector_set(x, d, S->xmax[d]);
+#endif
 
   /* return success. */
   return 1;
