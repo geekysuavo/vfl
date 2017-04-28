@@ -32,7 +32,7 @@ datum_t;
  */
 typedef struct {
   /* @base: basic object type information. */
-  object_type_t *base;
+  object_type_t base;
 
   /* dataset size parameters:
    *  @N: number of observations.

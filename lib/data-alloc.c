@@ -14,7 +14,7 @@ data_t *data_alloc (void) {
     return NULL;
 
   /* initialize the object type. */
-  dat->base = (object_type_t*) vfl_object_data;
+  dat->base = *vfl_object_data;
 
   /* initialize the size of the dataset. */
   dat->N = 0;

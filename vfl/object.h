@@ -68,7 +68,9 @@ int vfl_init (void);
 
 int vfl_register_type (const object_type_t *type);
 
-object_t *vfl_alloc (const char *name);
+object_type_t *vfl_lookup_type (const char *name);
+
+object_t *vfl_alloc (const object_type_t *type);
 
 #endif /* !__VFL_OBJECT_H__ */
 

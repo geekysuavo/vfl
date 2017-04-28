@@ -30,6 +30,7 @@ LIB=libvfl.so
 C_UTIL=rng specfun vector matrix grid blas chol eigen search
 
 # basenames of C, flex, and bison source files.
+C_LANG=object
 L_LANG=scanner
 Y_LANG=parser
 
@@ -58,12 +59,12 @@ endif
 C=  $(addprefix util/,$(C_UTIL))
 C+= $(addprefix lang/,$(Y_LANG))
 C+= $(addprefix lang/,$(L_LANG))
+C+= $(addprefix lang/,$(C_LANG))
 C+= $(addprefix factor/,$(C_FACTOR))
 C+= $(addprefix model/,$(C_MODEL))
 C+= $(addprefix optim/,$(C_OPTIM))
 
 # basenames of core C source files.
-#FIXME C+= vfl data-alloc data-entries data-fileio data-sort factor model optim
 C+= data-alloc data-entries data-fileio data-sort factor model optim
 
 # filenames of C sources.
