@@ -26,6 +26,8 @@ int yylex (void);
 
 /* define all recognized tokens. */
 %token T_INT T_FLOAT T_STRING T_IDENT
+%token T_PAREN_OPEN T_PAREN_CLOSE T_BRACK_OPEN T_BRACK_CLOSE
+%token T_EQUALS T_PLUS T_MINUS T_MUL T_DIV T_COMMA T_COLON T_SEMI
 %token T_UNKNOWN
 
 %%

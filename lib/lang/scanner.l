@@ -39,7 +39,7 @@
   return T_FLOAT;
 }
 
-[a-zA-Z]+ {
+[a-zA-Z][a-zA-Z0-9_]* {
   /* allocate memory for the identifier value. */
   size_t n = strlen(yytext);
   yylval.v_str = malloc(n + 1);
@@ -55,6 +55,21 @@
 }
 
 [ \t\n\r] {}
+
+"(" { return T_PAREN_OPEN; }
+")" { return T_PAREN_CLOSE; }
+"[" { return T_BRACK_OPEN; }
+"]" { return T_BRACK_CLOSE; }
+
+"=" { return T_EQUALS; }
+"+" { return T_PLUS; }
+"-" { return T_MINUS; }
+"*" { return T_MUL; }
+"/" { return T_DIV; }
+
+"," { return T_COMMA; }
+":" { return T_COLON; }
+";" { return T_SEMI; }
 
 . { return T_UNKNOWN; }
 
