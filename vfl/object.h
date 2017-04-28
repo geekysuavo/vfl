@@ -56,13 +56,13 @@ object_type_t;
 /* struct object: structure for holding a vfl object.
  */
 struct object {
-  /* @type: object type fields. */
-  object_type_t type;
+  /* @base: object type information. */
+  object_type_t *base;
 
   /* object members are placed here. */
 };
 
-/* function declarations (lang/obj.c): */
+/* function declarations (lang/object.c): */
 
 int vfl_init (void);
 

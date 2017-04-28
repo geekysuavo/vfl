@@ -34,8 +34,7 @@ L_LANG=scanner
 Y_LANG=parser
 
 # basenames of C factor source files.
-#FIXME C_FACTOR=cosine decay impulse fixed-impulse polynomial product
-C_FACTOR=cosine
+C_FACTOR=cosine decay impulse fixed-impulse polynomial product
 
 # basenames of C model source files.
 C_MODEL=vfc vfr tauvfr

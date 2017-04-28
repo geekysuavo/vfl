@@ -543,8 +543,9 @@ int product_add_factor (factor_t *f, const unsigned int d, factor_t *fd) {
     if (fidx == F - 1) {
       for (unsigned int p = 0; p < Pf; p++) {
         /* determine the new string length. */
-        unsigned int len = strlen(FACTOR_TYPE(fd)->name);
+        const char *facname = OBJECT_TYPE(FACTOR_TYPE(fd))->name;
         const char *parname = factor_parname(fd, p);
+        unsigned int len = strlen(facname);
         len += (parname ? strlen(parname) : 0);
         len += 32;
 
@@ -552,7 +553,7 @@ int product_add_factor (factor_t *f, const unsigned int d, factor_t *fd) {
         f->parnames[p0 + p] = malloc(len);
         if (f->parnames[p0 + p])
           snprintf(f->parnames[p0 + p], len - 1, "%s%u.%s",
-                   FACTOR_TYPE(fd)->name, fidx, parname);
+                   facname, fidx, parname);
       }
     }
 
@@ -600,11 +601,18 @@ int product_update (factor_t *f) {
   return 1;
 }
 
+/* product_objtype: product factor base type structure.
+ */
+static object_type_t product_objtype = {
+  "product",                                     /* name      */
+  sizeof(product_t),                             /* size      */
+  NULL                                           /* methods   */
+};
+
 /* product_type: product factor type structure.
  */
 static factor_type_t product_type = {
-  "product",                                     /* name      */
-  sizeof(product_t),                             /* size      */
+  &product_objtype,                              /* base      */
   1,                                             /* initial D */
   0,                                             /* initial P */
   1,                                             /* initial K */

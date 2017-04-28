@@ -210,11 +210,18 @@ char *decay_names[] = {
   "beta"
 };
 
+/* decay_objtype: decay factor base type structure.
+ */
+static object_type_t decay_objtype = {
+  "decay",                                       /* name      */
+  sizeof(factor_t),                              /* size      */
+  NULL                                           /* methods   */
+};
+
 /* decay_type: decay factor type structure.
  */
 static factor_type_t decay_type = {
-  "decay",                                       /* name      */
-  sizeof(factor_t),                              /* size      */
+  &decay_objtype,                                /* base      */
   1,                                             /* initial D */
   2,                                             /* initial P */
   1,                                             /* initial K */
