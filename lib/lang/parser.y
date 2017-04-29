@@ -43,9 +43,23 @@ scope: T_BRACE_OPEN stmt_list T_BRACE_CLOSE;
 
 stmt_list: stmt_list stmt | stmt;
 
-stmt: for | expr T_SEMI;
+stmt
+ : for
+ | name T_SEMI
+ | name T_EQUALS expr T_SEMI
+ ;
 
-expr: value | name T_EQUALS value;
+expr
+ : factor
+ | expr T_PLUS factor
+ | expr T_MINUS factor
+ ;
+
+factor
+ : value
+ | factor T_MUL value
+ | factor T_DIV value
+ ;
 
 value
  : name
@@ -53,6 +67,7 @@ value
  | T_INT
  | T_FLOAT
  | T_STRING
+ | T_PAREN_OPEN expr T_PAREN_CLOSE
  ;
 
 name: T_IDENT | T_IDENT qual_list;
