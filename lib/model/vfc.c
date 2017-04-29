@@ -365,9 +365,16 @@ static model_type_t vfc_type = {
   { /* base: */
     "vfc",                                       /* name      */
     sizeof(model_t),                             /* size      */
+
     (object_init_fn) model_init,                 /* init      */
     NULL,                                        /* copy      */
     (object_free_fn) model_free,                 /* free      */
+
+    NULL,                                        /* add       */
+    NULL,                                        /* sub       */
+    NULL,                                        /* mul       */
+    NULL,                                        /* div       */
+
     NULL                                         /* methods   */
   },
 

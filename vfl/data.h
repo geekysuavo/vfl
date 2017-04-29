@@ -12,6 +12,11 @@
 #include <vfl/util/matrix.h>
 #include <vfl/util/vector.h>
 
+/* OBJECT_IS_DATA(): check if an object is a dataset.
+ */
+#define OBJECT_IS_DATA(obj) \
+  (OBJECT_TYPE(obj) == vfl_object_data)
+
 /* datum_t: structure for holding a single observation.
  */
 typedef struct {
@@ -56,8 +61,6 @@ data_t *data_alloc_from_file (const char *fname);
 
 data_t *data_alloc_from_grid (const unsigned int P,
                               const matrix_t *grid);
-
-void data_free (data_t *dat);
 
 int data_resize (data_t *dat, const unsigned int N, const unsigned int D);
 

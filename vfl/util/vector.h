@@ -34,7 +34,7 @@ vector_t;
  */
 typedef vector_t vector_view_t;
 
-/* function declarations (vector.c): */
+/* function declarations (util/vector.c): */
 
 unsigned int vector_bytes (const unsigned int len);
 

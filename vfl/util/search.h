@@ -15,6 +15,11 @@
 # endif
 #endif
 
+/* OBJECT_IS_SEARCH(): check if an object is a search structure.
+ */
+#define OBJECT_IS_SEARCH(obj) \
+  (OBJECT_TYPE(obj) == vfl_object_search)
+
 /* search_t: structure for holding the state of a variance search.
  */
 typedef struct {
@@ -116,7 +121,7 @@ typedef struct {
 }
 search_t;
 
-/* function declarations (search.c): */
+/* function declarations (util/search.c): */
 
 search_t *search_alloc (model_t *mdl, data_t *dat,
                         const matrix_t *grid);

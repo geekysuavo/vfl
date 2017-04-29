@@ -170,9 +170,16 @@ static factor_type_t fixed_impulse_type = {
   { /* base: */
     "fixed_impulse",                             /* name      */
     sizeof(fixed_impulse_t),                     /* size      */
+
     (object_init_fn) factor_init,                /* init      */
     (object_copy_fn) factor_copy,                /* copy      */
     (object_free_fn) factor_free,                /* free      */
+
+    NULL,                                        /* add       */
+    NULL,                                        /* sub       */
+    NULL,                                        /* mul       */
+    NULL,                                        /* div       */
+
     NULL                                         /* methods   */
   },
 

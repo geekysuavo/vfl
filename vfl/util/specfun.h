@@ -6,7 +6,7 @@
 /* include c library headers. */
 #include <math.h>
 
-/* function declarations (specfun.c): */
+/* function declarations (util/specfun.c): */
 
 double digamma (const double z);
 

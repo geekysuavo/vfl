@@ -887,9 +887,16 @@ int search_execute (search_t *S, vector_t *x) {
 static object_type_t search_type = {
   "search",                                      /* name      */
   sizeof(search_t),                              /* size      */
+
   NULL,                                          /* init      */
   NULL,                                          /* copy      */
   NULL,                                          /* free      */
+
+  NULL,                                          /* add       */
+  NULL,                                          /* sub       */
+  NULL,                                          /* mul       */
+  NULL,                                          /* div       */
+
   NULL                                           /* methods   */
 };
 

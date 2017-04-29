@@ -10,6 +10,11 @@
 /* include vfl headers. */
 #include <vfl/lang/object.h>
 
+/* OBJECT_IS_RNG(): check if an object is a pseudorandom number generator.
+ */
+#define OBJECT_IS_RNG(obj) \
+  (OBJECT_TYPE(obj) == vfl_object_rng)
+
 /* rng_t: structure for holding a pseudorandom number generator.
  */
 typedef struct {
@@ -28,13 +33,10 @@ typedef struct {
 }
 rng_t;
 
-/* function declarations (rng.c): */
+/* function declarations (util/rng.c): */
 
 #define rng_alloc() \
   (rng_t*) obj_alloc(vfl_object_rng)
-
-#define rng_free(gen) \
-  obj_free((object_t*) gen)
 
 double rng_uniform (rng_t *gen);
 

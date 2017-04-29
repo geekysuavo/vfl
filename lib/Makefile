@@ -27,7 +27,7 @@ YFLAGS=-d
 LIB=libvfl.so
 
 # basenames of C utility source files.
-C_UTIL=rng specfun vector matrix grid blas chol eigen search
+C_UTIL=rng specfun int float vector matrix grid blas chol eigen search
 
 # basenames of C, flex, and bison source files.
 C_LANG=object

@@ -8,7 +8,7 @@
 #include <vfl/util/vector.h>
 #include <vfl/util/blas.h>
 
-/* function declarations (chol.c): */
+/* function declarations (util/chol.c): */
 
 int chol_decomp (matrix_t *A);
 

@@ -38,7 +38,7 @@ typedef enum {
 }
 blas_triangle_t;
 
-/* function declarations (blas.c): */
+/* function declarations (util/blas.c): */
 
 double blas_dasum (const vector_t *x);
 

@@ -41,7 +41,7 @@ data_t *data_alloc_from_file (const char *fname) {
   /* augment the dataset from a file. */
   if (!data_fread(dat, fname)) {
     /* free the dataset and return. */
-    data_free(dat);
+    obj_free((object_t*) dat);
     return NULL;
   }
 
@@ -71,7 +71,7 @@ data_t *data_alloc_from_grid (const unsigned int P,
     /* augment the dataset with a grid. */
     if (!data_augment_from_grid(dat, p, grid)) {
       /* free the dataset and return. */
-      data_free(dat);
+      obj_free((object_t*) dat);
       return NULL;
     }
   }
@@ -156,9 +156,16 @@ int data_resize (data_t *dat, const unsigned int N, const unsigned int D) {
 static object_type_t data_type = {
   "data",                                        /* name      */
   sizeof(data_t),                                /* size      */
+
   (object_init_fn) data_init,                    /* init      */
   NULL,                                          /* copy      */
   (object_free_fn) data_free,                    /* free      */
+
+  NULL,                                          /* add       */
+  NULL,                                          /* sub       */
+  NULL,                                          /* mul       */
+  NULL,                                          /* div       */
+
   NULL                                           /* methods   */
 };
 

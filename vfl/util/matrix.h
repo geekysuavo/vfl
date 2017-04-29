@@ -9,7 +9,7 @@
 #include <string.h>
 #include <math.h>
 
-/* include the vector header. */
+/* include vfl headers. */
 #include <vfl/util/vector.h>
 
 /* matrix_disp(): macro function for displaying the contents of matrices.
@@ -38,7 +38,7 @@ matrix_t;
  */
 typedef matrix_t matrix_view_t;
 
-/* function declarations (matrix.c): */
+/* function declarations (util/matrix.c): */
 
 unsigned int matrix_bytes (const unsigned int rows,
                            const unsigned int cols);

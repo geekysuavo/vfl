@@ -125,9 +125,16 @@ static factor_type_t impulse_type = {
   { /* base: */
     "impulse",                                   /* name      */
     sizeof(factor_t),                            /* size      */
+
     (object_init_fn) factor_init,                /* init      */
     (object_copy_fn) factor_copy,                /* copy      */
     (object_free_fn) factor_free,                /* free      */
+
+    NULL,                                        /* add       */
+    NULL,                                        /* sub       */
+    NULL,                                        /* mul       */
+    NULL,                                        /* div       */
+
     NULL                                         /* methods   */
   },
 

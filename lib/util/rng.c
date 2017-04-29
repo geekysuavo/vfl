@@ -125,9 +125,16 @@ static object_method_t rng_methods[] = {
 static object_type_t rng_type = {
   "rng",                                         /* name      */
   sizeof(rng_t),                                 /* size      */
+
   (object_init_fn) rng_init,                     /* init      */
   NULL,                                          /* copy      */
   NULL,                                          /* free      */
+
+  NULL,                                          /* add       */
+  NULL,                                          /* sub       */
+  NULL,                                          /* mul       */
+  NULL,                                          /* div       */
+
   rng_methods                                    /* methods   */
 };
 

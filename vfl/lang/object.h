@@ -54,6 +54,27 @@ typedef int (*object_copy_fn) (const object_t *obj,
  */
 typedef void (*object_free_fn) (object_t *obj);
 
+/* object_unary_fn(): perform a unary operation on an object.
+ *
+ * arguments:
+ *  @in: input object structure pointer.
+ *
+ * returns:
+ *  output object structure pointer.
+ */
+typedef object_t* (*object_unary_fn) (const object_t *in);
+
+/* object_binary_fn(): perform a binary operation on two objects.
+ *
+ * arguments:
+ *  @in1, @in2: input object structure pointers.
+ *
+ * returns:
+ *  output object structure pointer.
+ */
+typedef object_t* (*object_binary_fn) (const object_t *in1,
+                                       const object_t *in2);
+
 /* object_method_t: structure containing information about
  * a callable method.
  */
@@ -85,6 +106,17 @@ typedef struct {
   object_init_fn init;
   object_copy_fn copy;
   object_free_fn free;
+
+  /* arithmetic object functions:
+   *  @add: addition hook.
+   *  @sub: subtraction hook.
+   *  @mul: multiplication hook.
+   *  @div: division hook.
+   */
+  object_binary_fn add;
+  object_binary_fn sub;
+  object_binary_fn mul;
+  object_binary_fn div;
 
   /* @methods: object methods table. */
   object_method_t *methods;

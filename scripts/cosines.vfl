@@ -1,0 +1,47 @@
+
+# create a pseudorandom number generator.
+rand = rng();
+
+# create a dataset.
+dat = data(file: 'cosines.dat');
+
+# define factor prior parameters.
+mu = 0.0;
+tau = 1.0e-5;
+
+# create a model.
+mdl = tauvfr(
+  data: dat,
+  tau: 1.0,
+  nu: 1.0e-6,
+  factors: [
+    cosine(mu: mu, tau: tau),
+    cosine(mu: mu, tau: tau),
+    cosine(mu: mu, tau: tau),
+    cosine(mu: mu, tau: tau)
+  ]
+);
+
+# randomize the factor means.
+for j in range(n: mdl.M) {
+  mdl.factors[j].mu = rand.normal(mu: mu, tau: tau);
+}
+
+# create a full-gradient optimizer.
+opt = fg(
+  model: mdl,
+  l0: 0.001
+);
+
+# optimize.
+opt.execute();
+
+G = [0.0, 1.0e-3, 0.5];
+mean = data(grid: G);
+var = data(grid: G);
+
+mdl.predict(mean: mean, var: var);
+
+mean.write(file: 'mean.dat');
+var.write(file: 'var.dat');
+

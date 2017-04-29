@@ -8,7 +8,7 @@
 #include <vfl/util/vector.h>
 #include <vfl/util/blas.h>
 
-/* function declarations (eigen.c): */
+/* function declarations (util/eigen.c): */
 
 double eigen_upper (const matrix_t *A);
 

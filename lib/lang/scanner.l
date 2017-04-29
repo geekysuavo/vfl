@@ -27,7 +27,7 @@
   return T_STRING;
 }
 
-[0-9]+ {
+[-+]?[0-9]+ {
   /* parse the integer value and return the token. */
   yylval.v_int = atol(yytext);
   return T_INT;
@@ -38,6 +38,9 @@
   yylval.v_flt = atof(yytext);
   return T_FLOAT;
 }
+
+for { return T_FOR; }
+in  { return T_IN; }
 
 [a-zA-Z][a-zA-Z0-9_]* {
   /* allocate memory for the identifier value. */
@@ -54,12 +57,15 @@
   return T_IDENT;
 }
 
+#.* {}
 [ \t\n\r] {}
 
 "(" { return T_PAREN_OPEN; }
 ")" { return T_PAREN_CLOSE; }
 "[" { return T_BRACK_OPEN; }
 "]" { return T_BRACK_CLOSE; }
+"{" { return T_BRACE_OPEN; }
+"}" { return T_BRACE_CLOSE; }
 
 "=" { return T_EQUALS; }
 "+" { return T_PLUS; }
@@ -67,6 +73,7 @@
 "*" { return T_MUL; }
 "/" { return T_DIV; }
 
+"." { return T_POINT; }
 "," { return T_COMMA; }
 ":" { return T_COLON; }
 ";" { return T_SEMI; }

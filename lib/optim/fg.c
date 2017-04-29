@@ -156,9 +156,16 @@ static optim_type_t fg_type = {
   { /* base: */
     "fg",                                        /* name    */
     sizeof(optim_t),                             /* size    */
+
     (object_init_fn) optim_init,                 /* init    */
     NULL,                                        /* copy    */
     (object_free_fn) optim_free,                 /* free    */
+
+    NULL,                                        /* add     */
+    NULL,                                        /* sub     */
+    NULL,                                        /* mul     */
+    NULL,                                        /* div     */
+
     NULL                                         /* methods */
   },
 

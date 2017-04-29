@@ -6,7 +6,7 @@
 /* include the matrix header. */
 #include <vfl/util/matrix.h>
 
-/* function declarations (grid.c): */
+/* function declarations (util/grid.c): */
 
 int grid_validate (const matrix_t *grid);
 
