@@ -218,6 +218,9 @@ static factor_type_t cosine_type = {
   { /* base: */
     "cosine",                                    /* name      */
     sizeof(factor_t),                            /* size      */
+    (object_init_fn) factor_init,                /* init      */
+    (object_copy_fn) factor_copy,                /* copy      */
+    (object_free_fn) factor_free,                /* free      */
     NULL                                         /* methods   */
   },
 

@@ -1,7 +1,7 @@
 
 %{
-/* include the vfl object header. */
-#include <vfl/object.h>
+/* include vfl headers. */
+#include <vfl/lang/object.h>
 
 /* include the generated parser header. */
 #include "lib/lang/parser.h"

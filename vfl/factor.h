@@ -8,13 +8,15 @@
 #include <stdarg.h>
 #include <math.h>
 
-/* include vfl utility headers. */
+/* include vfl headers. */
 #include <vfl/util/specfun.h>
 #include <vfl/util/blas.h>
-
-/* include vfl core headers. */
-#include <vfl/object.h>
 #include <vfl/data.h>
+
+/* FACTOR_TYPE(): macro function for casting factor structure pointers
+ * to their associated type structures.
+ */
+#define FACTOR_TYPE(s) ((factor_type_t*) (s)->type)
 
 /* factor_t: defined type for the factor structure. */
 typedef struct factor factor_t;
@@ -337,11 +339,6 @@ int name ## _copy (const factor_t *f, factor_t *fdup)
 #define FACTOR_FREE(name) \
 void name ## _free (factor_t *f)
 
-/* FACTOR_TYPE(): macro function for casting factor structure pointers
- * to their associated type structures.
- */
-#define FACTOR_TYPE(s) ((factor_type_t*) (s))
-
 /* factor_type_t: structure for holding type-specific factor information.
  */
 typedef struct {
@@ -410,7 +407,7 @@ factor_type_t;
  */
 struct factor {
   /* @type: factor type information. */
-  factor_type_t type;
+  factor_type_t *type;
 
   /* factor sizes:
    *  @D: number of dimensions.
@@ -441,9 +438,13 @@ struct factor {
 
 /* function declarations (factor.c): */
 
-factor_t *factor_alloc (const factor_type_t *type);
+#define factor_alloc(T) \
+  (factor_t*) obj_alloc((object_type_t*) T)
 
-factor_t *factor_copy (const factor_t *f);
+int factor_init (factor_t *f);
+
+int factor_copy (const factor_t *f,
+                 factor_t *fdup);
 
 void factor_free (factor_t *f);
 

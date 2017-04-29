@@ -3,12 +3,14 @@
 #ifndef __VFL_OPTIM_H__
 #define __VFL_OPTIM_H__
 
-/* include vfl utility headers. */
+/* include vfl headers. */
 #include <vfl/util/eigen.h>
-
-/* include vfl core headers. */
-#include <vfl/object.h>
 #include <vfl/model.h>
+
+/* OPTIM_TYPE(): macro function for casting optimizer structure pointers
+ * to their associated type structures.
+ */
+#define OPTIM_TYPE(s) ((optim_type_t*) (s)->type)
 
 /* optim_t: defined type for the optimizer structure. */
 typedef struct optim optim_t;
@@ -67,11 +69,6 @@ int name ## _execute (optim_t *opt)
 #define OPTIM_FREE(name) \
 void name ## _free (optim_t *opt)
 
-/* OPTIM_TYPE(): macro function for casting optimizer structure pointers
- * to their associated type structures.
- */
-#define OPTIM_TYPE(s) ((optim_type_t*) (s))
-
 /* optim_type_t: structure for holding type-specific
  * optimizer information.
  */
@@ -97,7 +94,7 @@ optim_type_t;
  */
 struct optim {
   /* @type: optimizer type information. */
-  optim_type_t type;
+  optim_type_t *type;
 
   /* @mdl: associated variational feature model. */
   model_t *mdl;
@@ -129,7 +126,10 @@ struct optim {
 
 /* function declarations (optim.c): */
 
-optim_t *optim_alloc (const optim_type_t *type);
+#define optim_alloc(T) \
+  (optim_t*) obj_alloc((object_type_t*) T)
+
+int optim_init (optim_t *opt);
 
 void optim_free (optim_t *opt);
 

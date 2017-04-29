@@ -3,12 +3,8 @@
 #ifndef __VFL_SEARCH_H__
 #define __VFL_SEARCH_H__
 
-/* include vfl core headers. */
-#include <vfl/object.h>
+/* include vfl headers. */
 #include <vfl/model.h>
-
-/* include vfl utility headers. */
-#include <vfl/util/blas.h>
 
 /* if required, include the opencl header. */
 #ifdef __VFL_USE_OPENCL
@@ -22,8 +18,8 @@
 /* search_t: structure for holding the state of a variance search.
  */
 typedef struct {
-  /* @base: basic object type information. */
-  object_type_t base;
+  /* @type: basic object type information. */
+  object_type_t *type;
 
   /* associated core structures:
    *  @grid: matrix of gridding information.

@@ -6,8 +6,8 @@
 /* include c library headers. */
 #include <stdio.h>
 
-/* include vfl core headers. */
-#include <vfl/object.h>
+/* include vfl headers. */
+#include <vfl/lang/object.h>
 
 /* include the generated parser header. */
 #include "lib/lang/parser.h"

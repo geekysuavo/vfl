@@ -7,12 +7,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/* include vfl utility headers. */
+/* include vfl headers. */
+#include <vfl/lang/object.h>
 #include <vfl/util/matrix.h>
 #include <vfl/util/vector.h>
-
-/* include vfl core headers. */
-#include <vfl/object.h>
 
 /* datum_t: structure for holding a single observation.
  */
@@ -31,8 +29,8 @@ datum_t;
 /* data_t: structure for holding observations.
  */
 typedef struct {
-  /* @base: basic object type information. */
-  object_type_t base;
+  /* @type: basic object type information. */
+  object_type_t *type;
 
   /* dataset size parameters:
    *  @N: number of observations.
@@ -51,7 +49,8 @@ data_t;
 
 /* function declarations, allocation (data-alloc.c): */
 
-data_t *data_alloc (void);
+#define data_alloc() \
+  (data_t*) obj_alloc(vfl_object_data);
 
 data_t *data_alloc_from_file (const char *fname);
 

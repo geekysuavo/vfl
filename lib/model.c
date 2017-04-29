@@ -42,26 +42,17 @@ static inline unsigned int model_tmp (const model_t *mdl) {
   return ntmp;
 }
 
-/* model_alloc(): allocate a new empty variational feature model.
+/* model_init(): initialize a variational feature model.
  *
  * arguments:
- *  @type: pointer to a model type structure.
+ *  @mdl: model structure pointer.
  *
  * returns:
- *  newly allocated and initialized model structure pointer.
+ *  integer indicating success (1) or failure (0).
  */
-model_t *model_alloc (const model_type_t *type) {
-  /* check that the type structure is valid. */
-  if (!type)
-    return NULL;
-
-  /* allocate the structure pointer. */
-  model_t *mdl = malloc(OBJECT_TYPE(type)->size);
-  if (!mdl)
-    return NULL;
-
-  /* initialize the model type. */
-  mdl->type = *type;
+int model_init (model_t *mdl) {
+  /* get the model type information. */
+  const model_type_t *type = MODEL_TYPE(mdl);
 
   /* initialize the sizes of the model. */
   mdl->D = 0;
@@ -102,27 +93,20 @@ model_t *model_alloc (const model_type_t *type) {
   mdl->tmp = NULL;
 
   /* execute the initialization function, if defined. */
-  model_init_fn init_fn = MODEL_TYPE(mdl)->init;
-  if (init_fn && !init_fn(mdl)) {
-    /* initialization failed. */
-    model_free(mdl);
-    return NULL;
-  }
+  model_init_fn init_fn = type->init;
+  if (init_fn && !init_fn(mdl))
+    return 0;
 
-  /* return the new model. */
-  return mdl;
+  /* return success. */
+  return 1;
 }
 
-/* model_free(): free an allocated model.
+/* model_free(): free the contents of a variational feature model.
  *
  * arguments:
  *  @mdl: model structure pointer to free.
  */
 void model_free (model_t *mdl) {
-  /* return if the structure pointer is null. */
-  if (!mdl)
-    return;
-
   /* free the weight means and covariances. */
   vector_free(mdl->wbar);
   matrix_free(mdl->Sigma);
@@ -137,8 +121,8 @@ void model_free (model_t *mdl) {
 
   /* free the individual prior and posterior factors. */
   for (unsigned int i = 0; i < mdl->M; i++) {
-    factor_free(mdl->factors[i]);
-    factor_free(mdl->priors[i]);
+    obj_free((object_t*) mdl->factors[i]);
+    obj_free((object_t*) mdl->priors[i]);
   }
 
   /* free the factor arrays. */
@@ -147,9 +131,6 @@ void model_free (model_t *mdl) {
 
   /* free the temporary vector. */
   vector_free(mdl->tmp);
-
-  /* free the structure pointer. */
-  free(mdl);
 }
 
 /* model_set_alpha0(): set the noise precision shape-prior of a model.
@@ -336,7 +317,7 @@ int model_add_factor (model_t *mdl, factor_t *f) {
 
   /* store the posterior factor and make a copy for the prior. */
   mdl->factors[M - 1] = f;
-  mdl->priors[M - 1] = factor_copy(f);
+  mdl->priors[M - 1] = (factor_t*) obj_copy((object_t*) f);
 
   /* check that factor duplication was successful. */
   if (!mdl->priors[M - 1])

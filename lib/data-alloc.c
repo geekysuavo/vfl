@@ -2,20 +2,15 @@
 /* include the dataset header. */
 #include <vfl/data.h>
 
-/* data_alloc(): allocate a new empty dataset.
+/* data_init(): initialize the contents of a dataset.
+ *
+ * arguments:
+ *  @dat: dataset structure pointer.
  *
  * returns:
- *  newly allocated and initialized dataset structure pointer.
+ *  integer indicating success (1) or failure (0).
  */
-data_t *data_alloc (void) {
-  /* allocate the structure pointer. */
-  data_t *dat = malloc(sizeof(data_t));
-  if (!dat)
-    return NULL;
-
-  /* initialize the object type. */
-  dat->base = *vfl_object_data;
-
+int data_init (data_t *dat) {
   /* initialize the size of the dataset. */
   dat->N = 0;
   dat->D = 0;
@@ -24,8 +19,8 @@ data_t *data_alloc (void) {
   dat->data = NULL;
   dat->swp.x = NULL;
 
-  /* return the new dataset. */
-  return dat;
+  /* return success. */
+  return 1;
 }
 
 /* data_alloc_from_file(): allocate a new dataset, filled with
@@ -85,22 +80,17 @@ data_t *data_alloc_from_grid (const unsigned int P,
   return dat;
 }
 
-/* data_free(): free an allocated dataset.
+/* data_free(): free the contents of a dataset.
  *
  * arguments:
  *  @dat: dataset structure pointer to free.
  */
 void data_free (data_t *dat) {
-  /* return if the structure pointer is null. */
-  if (!dat)
-    return;
-
   /* free the swap vector. */
   vector_free(dat->swp.x);
 
-  /* free the array of observations and the structure pointer. */
+  /* free the array of observations. */
   free(dat->data);
-  free(dat);
 }
 
 /* data_resize(): resize the observation array of a dataset.
@@ -166,6 +156,9 @@ int data_resize (data_t *dat, const unsigned int N, const unsigned int D) {
 static object_type_t data_type = {
   "data",                                        /* name      */
   sizeof(data_t),                                /* size      */
+  (object_init_fn) data_init,                    /* init      */
+  NULL,                                          /* copy      */
+  (object_free_fn) data_free,                    /* free      */
   NULL                                           /* methods   */
 };
 

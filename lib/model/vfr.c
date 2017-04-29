@@ -408,9 +408,12 @@ MODEL_MEANFIELD (vfr) {
  */
 static model_type_t vfr_type = {
   { /* base: */
-    "vfr",                                       /* name    */
-    sizeof(model_t),                             /* size    */
-    NULL                                         /* methods */
+    "vfr",                                       /* name      */
+    sizeof(model_t),                             /* size      */
+    (object_init_fn) model_init,                 /* init      */
+    NULL,                                        /* copy      */
+    (object_free_fn) model_free,                 /* free      */
+    NULL                                         /* methods   */
   },
 
   NULL,                                          /* init      */

@@ -25,34 +25,22 @@ static inline unsigned long long rng_get (rng_t *gen) {
 
 /* --- */
 
-/* rng_alloc(): allocate a new pseudorandom number generator.
+/* rng_init(): initialize a pseudorandom number generator, seeded
+ * either by the value of the environment variable 'RNG_SEED'
+ * or by the default value, 12357.
+ *
+ * arguments:
+ *  @gen: generator structure pointer.
  *
  * returns:
- *  newly allocated and initialized generator structure pointer,
- *  seeded either by the value of the environment variable 'RNG_SEED'
- *  or by the default value, 12357.
+ *  integer indicating success (1) or failure (0).
  */
-rng_t *rng_alloc (void) {
-  /* declare required variables:
-   *  @gen: pointer to the new random number generator structure.
-   *  @sstr: environment variable string for reading seed values.
-   */
-  rng_t *gen;
-  char *sstr;
-
-  /* allocate a new structure pointer, or fail. */
-  gen = malloc(sizeof(rng_t));
-  if (!gen)
-    return NULL;
-
-  /* initialize the object type. */
-  gen->base = *vfl_object_rng;
-
+int rng_init (rng_t *gen) {
   /* initialize the random seed. */
   gen->seed = 12357;
 
   /* if available, read a seed from the environment. */
-  sstr = getenv("RNG_SEED");
+  char *sstr = getenv("RNG_SEED");
   if (sstr)
     gen->seed = atoll(sstr);
 
@@ -65,21 +53,8 @@ rng_t *rng_alloc (void) {
   gen->w = gen->v;
   rng_get(gen);
 
-  /* return the new structure pointer. */
-  return gen;
-}
-
-/* rng_free(): free an allocated pseudorandom number generator.
- *
- * arguments:
- *  @gen: generator structure pointer to free.
- */
-void rng_free (rng_t *gen) {
-  /* return if the structure pointer is null. */
-  if (!gen) return;
-
-  /* free the structure pointer. */
-  free(gen);
+  /* return success. */
+  return 1;
 }
 
 /* rng_uniform(): sample a floating-point uniform deviate in [0,1].
@@ -150,6 +125,9 @@ static object_method_t rng_methods[] = {
 static object_type_t rng_type = {
   "rng",                                         /* name      */
   sizeof(rng_t),                                 /* size      */
+  (object_init_fn) rng_init,                     /* init      */
+  NULL,                                          /* copy      */
+  NULL,                                          /* free      */
   rng_methods                                    /* methods   */
 };
 

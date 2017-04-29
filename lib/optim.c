@@ -2,26 +2,17 @@
 /* include the optimizer header. */
 #include <vfl/optim.h>
 
-/* optim_alloc(): allocate a new optimizer.
+/* optim_init(): initialize an optimizer.
  *
  * arguments:
- *  @type: pointer to an optimizer type structure.
+ *  @opt: optimizer structure pointer.
  *
  * returns:
- *  newly allocated and initialized optimizer structure pointer.
+ *  integer indicating success (1) or failure (0).
  */
-optim_t *optim_alloc (const optim_type_t *type) {
-  /* check the type structure pointer. */
-  if (!type)
-    return NULL;
-
-  /* allocate the structure pointer. */
-  optim_t *opt = malloc(OBJECT_TYPE(type)->size);
-  if (!opt)
-    return NULL;
-
-  /* initialize the optimizer type. */
-  opt->type = *type;
+int optim_init (optim_t *opt) {
+  /* get the optimizer type information. */
+  const optim_type_t *type = OPTIM_TYPE(opt);
 
   /* initialize the model field. */
   opt->mdl = NULL;
@@ -39,11 +30,8 @@ optim_t *optim_alloc (const optim_type_t *type) {
   opt->Fs = matrix_alloc(pmax, pmax);
 
   /* check that allocation was successful. */
-  if (!opt->xa || !opt->xb || !opt->x || !opt->g || !opt->Fs) {
-    /* allocation failed. */
-    optim_free(opt);
-    return NULL;
-  }
+  if (!opt->xa || !opt->xb || !opt->x || !opt->g || !opt->Fs)
+    return 0;
 
   /* initialize the control parameters. */
   opt->max_steps = 10;
@@ -55,27 +43,20 @@ optim_t *optim_alloc (const optim_type_t *type) {
   opt->bound0 = opt->bound = -INFINITY;
 
   /* execute the initialization function, if defined. */
-  optim_init_fn init_fn = OPTIM_TYPE(opt)->init;
-  if (init_fn && !init_fn(opt)) {
-    /* initialization failed. */
-    optim_free(opt);
-    return NULL;
-  }
+  optim_init_fn init_fn = type->init;
+  if (init_fn && !init_fn(opt))
+    return 0;
 
-  /* return the new optimizer. */
-  return opt;
+  /* return success. */
+  return 1;
 }
 
-/* optim_free(): free an allocated optimizer.
+/* optim_free(): free the contents of an optimizer.
  *
  * arguments:
  *  @opt: optimizer structure pointer to free.
  */
 void optim_free (optim_t *opt) {
-  /* return if the structure pointer is null. */
-  if (!opt)
-    return;
-
   /* if the optimizer has a free function assigned, execute it. */
   optim_free_fn free_fn = OPTIM_TYPE(opt)->free;
   if (free_fn)
@@ -89,9 +70,6 @@ void optim_free (optim_t *opt) {
 
   /* free the temporaries. */
   matrix_free(opt->Fs);
-
-  /* free the structure pointer. */
-  free(opt);
 }
 
 /* optim_set_model(): associate a variational feature model with an

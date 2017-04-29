@@ -575,7 +575,7 @@ search_t *search_alloc (model_t *mdl, data_t *dat,
     return NULL;
 
   /* initialize the object type. */
-  S->base = *vfl_object_search;
+  S->type = (object_type_t*) vfl_object_search;
 
   /* store the model and dataset. */
   S->grid = grid;
@@ -887,6 +887,9 @@ int search_execute (search_t *S, vector_t *x) {
 static object_type_t search_type = {
   "search",                                      /* name      */
   sizeof(search_t),                              /* size      */
+  NULL,                                          /* init      */
+  NULL,                                          /* copy      */
+  NULL,                                          /* free      */
   NULL                                           /* methods   */
 };
 

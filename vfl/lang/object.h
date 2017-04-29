@@ -9,7 +9,7 @@
 /* OBJECT_TYPE(): macro function for casting object structure pointers
  * to their associated base type structures.
  */
-#define OBJECT_TYPE(s) ((object_type_t*) (s))
+#define OBJECT_TYPE(s) ((object_type_t*) (s)->type)
 
 /* object_t: defined type for the base object structure. */
 typedef struct object object_t;
@@ -24,6 +24,35 @@ typedef struct object object_t;
  *  integer indicating function success (1) or failure (0).
  */
 typedef int (*vfl_func) (const object_t *argin, object_t **argout);
+
+/* object_init_fn(): initialize the contents of an object.
+ *
+ * arguments:
+ *  @obj: object structure pointer to initialize.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+typedef int (*object_init_fn) (object_t *obj);
+
+/* object_copy_fn(): copy allocated contents between objects.
+ *
+ * arguments:
+ *  @obj: source object structure pointer.
+ *  @objdup: destination object structure pointer.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+typedef int (*object_copy_fn) (const object_t *obj,
+                               object_t *objdup);
+
+/* object_free_fn(): free any allocated contents of an object.
+ *
+ * arguments:
+ *  @obj: object structure pointer to free.
+ */
+typedef void (*object_free_fn) (object_t *obj);
 
 /* object_method_t: structure containing information about
  * a callable method.
@@ -48,6 +77,15 @@ typedef struct {
   const char *name;
   long size;
 
+  /* core object functions:
+   *  @init: initialization hook.
+   *  @copy: deep copying hook.
+   *  @free: deallocation hook.
+   */
+  object_init_fn init;
+  object_copy_fn copy;
+  object_free_fn free;
+
   /* @methods: object methods table. */
   object_method_t *methods;
 }
@@ -56,21 +94,19 @@ object_type_t;
 /* struct object: structure for holding a vfl object.
  */
 struct object {
-  /* @base: object type information. */
-  object_type_t base;
+  /* @type: object type information. */
+  object_type_t *type;
 
   /* object members are placed here. */
 };
 
 /* function declarations (lang/object.c): */
 
-int vfl_init (void);
+object_t *obj_alloc (const object_type_t *type);
 
-int vfl_register_type (const object_type_t *type);
+object_t *obj_copy (const object_t *obj);
 
-object_type_t *vfl_lookup_type (const char *name);
-
-object_t *vfl_alloc (const object_type_t *type);
+void obj_free (object_t *obj);
 
 #endif /* !__VFL_OBJECT_H__ */
 

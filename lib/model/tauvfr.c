@@ -402,9 +402,12 @@ int tauvfr_set_tau (model_t *mdl, const double tau) {
  */
 static model_type_t tauvfr_type = {
   { /* base: */
-    "tauvfr",                                    /* name    */
-    sizeof(model_t),                             /* size    */
-    NULL                                         /* methods */
+    "tauvfr",                                    /* name      */
+    sizeof(model_t),                             /* size      */
+    (object_init_fn) model_init,                 /* init      */
+    NULL,                                        /* copy      */
+    (object_free_fn) model_free,                 /* free      */
+    NULL                                         /* methods   */
   },
 
   NULL,                                          /* init      */

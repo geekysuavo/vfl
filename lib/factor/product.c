@@ -456,7 +456,7 @@ FACTOR_COPY (product) {
 
   /* copy each factor into the duplicate factor array. */
   for (unsigned int i = 0; i < F; i++) {
-    fdupx->factors[i] = factor_copy(fx->factors[i]);
+    fdupx->factors[i] = (factor_t*) obj_copy((object_t*) fx->factors[i]);
     if (!fdupx->factors[i])
       return 0;
   }
@@ -543,7 +543,7 @@ int product_add_factor (factor_t *f, const unsigned int d, factor_t *fd) {
     if (fidx == F - 1) {
       for (unsigned int p = 0; p < Pf; p++) {
         /* determine the new string length. */
-        const char *facname = OBJECT_TYPE(FACTOR_TYPE(fd))->name;
+        const char *facname = OBJECT_TYPE(fd)->name;
         const char *parname = factor_parname(fd, p);
         unsigned int len = strlen(facname);
         len += (parname ? strlen(parname) : 0);
@@ -607,6 +607,9 @@ static factor_type_t product_type = {
   { /* base: */
     "product",                                   /* name      */
     sizeof(product_t),                           /* size      */
+    (object_init_fn) factor_init,                /* init      */
+    (object_copy_fn) factor_copy,                /* copy      */
+    (object_free_fn) factor_free,                /* free      */
     NULL                                         /* methods   */
   },
 

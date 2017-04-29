@@ -2,26 +2,17 @@
 /* include the factor header. */
 #include <vfl/factor.h>
 
-/* factor_alloc(): allocate a new variational factor.
+/* factor_init(): initialize a variational factor.
  *
  * arguments:
- *  @type: pointer to a factor type structure.
+ *  @f: factor structure pointer.
  *
  * returns:
- *  newly allocated and initialized factor structure pointer.
+ *  integer indicating success (1) or failure (0).
  */
-factor_t *factor_alloc (const factor_type_t *type) {
-  /* check that the type structure is valid. */
-  if (!type)
-    return NULL;
-
-  /* allocate the structure pointer. */
-  factor_t *f = malloc(OBJECT_TYPE(type)->size);
-  if (!f)
-    return NULL;
-
-  /* initialize the factor type. */
-  f->type = *type;
+int factor_init (factor_t *f) {
+  /* get the factor type information. */
+  const factor_type_t *type = FACTOR_TYPE(f);
 
   /* initialize the factor parameter names table. */
   f->parnames = type->parnames;
@@ -34,48 +25,32 @@ factor_t *factor_alloc (const factor_type_t *type) {
   f->inf = NULL;
   f->par = NULL;
 
-  /* execute the initialization function, if defined. */
-  factor_init_fn init_fn = FACTOR_TYPE(f)->init;
-  if (init_fn && !init_fn(f)) {
-    /* initialization failed. */
-    factor_free(f);
-    return NULL;
-  }
+  /* execute the factor initialization function, if defined. */
+  factor_init_fn init_fn = type->init;
+  if (init_fn && !init_fn(f))
+    return 0;
 
   /* initialize the factor sizes from their defaults. */
-  if (!factor_resize(f, type->D, type->P, type->K)) {
-    /* failed to resize. */
-    factor_free(f);
-    return NULL;
-  }
+  if (!factor_resize(f, type->D, type->P, type->K))
+    return 0;
 
-  /* return the new factor. */
-  return f;
+  /* return success. */
+  return 1;
 }
 
-/* factor_copy(): create a deep copy of an allocated factor.
+/* factor_copy(): perform a deep copy of an allocated factor.
  *
  * arguments:
- *  @f: factor structure pointer to access.
+ *  @f: source factor structure pointer.
+ *  @fdup: destination factor structure pointer.
  *
  * returns:
- *  fresh clone of the input factor structure.
+ *  integer indicating success (1) or failure (0).
  */
-factor_t *factor_copy (const factor_t *f) {
-  /* return null if the structure pointer is null. */
-  if (!f)
-    return NULL;
-
-  /* allocate a new factor structure of the same size. */
-  factor_t *fdup = factor_alloc(&f->type);
-  if (!fdup)
-    return NULL;
-
+int factor_copy (const factor_t *f, factor_t *fdup) {
   /* resize the new factor to match the input factor. */
-  if (!factor_resize(fdup, f->D, f->P, f->K)) {
-    factor_free(fdup);
-    return NULL;
-  }
+  if (!factor_resize(fdup, f->D, f->P, f->K))
+    return 0;
 
   /* copy the factor flags and dimension. */
   fdup->fixed = f->fixed;
@@ -87,25 +62,19 @@ factor_t *factor_copy (const factor_t *f) {
 
   /* if the input factor has a copy function assigned, execute it. */
   factor_copy_fn copy_fn = FACTOR_TYPE(f)->copy;
-  if (copy_fn && !copy_fn(f, fdup)) {
-    factor_free(fdup);
-    return NULL;
-  }
+  if (copy_fn && !copy_fn(f, fdup))
+    return 0;
 
-  /* return the duplicate factor. */
-  return fdup;
+  /* return success. */
+  return 1;
 }
 
-/* factor_free(): free an allocated factor.
+/* factor_free(): free the contents of a variational factor.
  *
  * arguments:
  *  @f: factor structure pointer to free.
  */
 void factor_free (factor_t *f) {
-  /* return if the structure pointer is null. */
-  if (!f)
-    return;
-
   /* if the factor has a free function assigned, execute it. */
   factor_free_fn free_fn = FACTOR_TYPE(f)->free;
   if (free_fn)
@@ -114,9 +83,6 @@ void factor_free (factor_t *f) {
   /* free the information matrix and parameter vector. */
   matrix_free(f->inf);
   vector_free(f->par);
-
-  /* free the structure pointer. */
-  free(f);
 }
 
 /* factor_resize(): modify the dimension, parameter and weight counts

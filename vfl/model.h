@@ -7,13 +7,14 @@
 #include <stdlib.h>
 #include <math.h>
 
-/* include vfl utility headers. */
+/* include vfl headers. */
 #include <vfl/util/chol.h>
-
-/* include vfl core headers. */
-#include <vfl/object.h>
 #include <vfl/factor.h>
-#include <vfl/data.h>
+
+/* MODEL_TYPE(): macro function for casting model structure pointers
+ * to their associated type structures.
+ */
+#define MODEL_TYPE(s) ((model_type_t*) (s)->type)
 
 /* model_t: defined type for the model structure. */
 typedef struct model model_t;
@@ -164,11 +165,6 @@ int name ## _meanfield (const model_t *mdl, \
                         const unsigned int j, \
                         vector_t *b, matrix_t *B)
 
-/* MODEL_TYPE(): macro function for casting model structure pointers
- * to their associated type structures.
- */
-#define MODEL_TYPE(s) ((model_type_t*) (s))
-
 /* model_type_t: structure for holding type-specific model information.
  */
 typedef struct {
@@ -198,7 +194,7 @@ model_type_t;
  */
 struct model {
   /* @type: model type information. */
-  model_type_t type;
+  model_type_t *type;
 
   /* model sizes:
    *  @D: number of dimensions.
@@ -266,7 +262,10 @@ struct model {
 
 /* function declarations (model.c): */
 
-model_t *model_alloc (const model_type_t *type);
+#define model_alloc(T) \
+  (model_t*) obj_alloc((object_type_t*) T)
+
+int model_init (model_t *mdl);
 
 void model_free (model_t *mdl);
 

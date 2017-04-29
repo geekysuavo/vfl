@@ -7,14 +7,14 @@
 #include <stdlib.h>
 #include <math.h>
 
-/* include vfl core headers. */
-#include <vfl/object.h>
+/* include vfl headers. */
+#include <vfl/lang/object.h>
 
 /* rng_t: structure for holding a pseudorandom number generator.
  */
 typedef struct {
-  /* @base: basic object type information. */
-  object_type_t base;
+  /* @type: basic object type information. */
+  object_type_t *type;
 
   /* current generator state:
    *  @u, @v, @w: core generator variables.
@@ -30,9 +30,11 @@ rng_t;
 
 /* function declarations (rng.c): */
 
-rng_t *rng_alloc (void);
+#define rng_alloc() \
+  (rng_t*) obj_alloc(vfl_object_rng)
 
-void rng_free (rng_t *gen);
+#define rng_free(gen) \
+  obj_free((object_t*) gen)
 
 double rng_uniform (rng_t *gen);
 
