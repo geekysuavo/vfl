@@ -82,3 +82,33 @@ in  { return T_IN; }
 
 %%
 
+/* vfl_scanner_push_file(): push a new buffer state associated with
+ * a file handle onto the buffer stack managed by flex.
+ *
+ * arguments:
+ *  @fh: file handle for the new buffer.
+ */
+void vfl_scanner_push_file (FILE *fh) {
+  /* push a file-based buffer to the stack. */
+  yypush_buffer_state(yy_create_buffer(fh, YY_BUF_SIZE));
+}
+
+/* vfl_scanner_push_string(): push a new buffer state associated with
+ * a string onto the buffer stack managed by flex.
+ *
+ * arguments:
+ *  @str: string value for the new buffer.
+ */
+void vfl_scanner_push_string (const char *str) {
+  /* push a string-based buffer to the stack. */
+  yypush_buffer_state(yy_scan_string(str));
+}
+
+/* vfl_scanner_pop(): pop the topmost buffer state from the buffer
+ * stack managed by flex.
+ */
+void vfl_scanner_pop (void) {
+  /* pop the current buffer from the stack. */
+  yypop_buffer_state();
+}
+

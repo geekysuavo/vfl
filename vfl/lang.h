@@ -12,9 +12,11 @@
 
 /* function declarations, allocation (lang/): */
 
-/* FIXME: implement proper parser interaction layer. */
-extern int yyparse (void);
-#define vflang_parse() yyparse()
+int vfl_exec_file (FILE *fh);
+
+int vfl_exec_path (const char *fname);
+
+int vfl_exec_string (const char *str);
 
 #endif /* !__VFL_LANG_H__ */
 
