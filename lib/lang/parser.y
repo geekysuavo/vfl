@@ -8,6 +8,7 @@
 
 /* include vfl headers. */
 #include <vfl/lang/object.h>
+#include <vfl/lang/ast.h>
 
 /* include the generated parser header. */
 #include "lib/lang/parser.h"
@@ -24,9 +25,13 @@ int yylex (void);
 
 /* define the yylval type union. */
 %union {
+  /* literal values. */
   long v_int;
   double v_flt;
   char *v_str;
+
+  /* tree nodes. */
+  ast_t *v_ast;
 }
 
 /* define all recognized tokens. */
@@ -39,64 +44,99 @@ int yylex (void);
 %token T_FOR T_IN
 %token T_UNKNOWN
 
+%type <v_int> T_INT
+%type <v_flt> T_FLOAT
+%type <v_str> T_IDENT T_STRING
+%type <v_ast> lang scope stmt_list stmt for
+%type <v_ast> expr factor value name list int float string ident
+%type <v_ast> expr_list arg_list qual_list arguments arg qual
+
 %%
 
-lang:
- | stmt_list;
+lang
+ : { $$ = NULL; }
+ | stmt_list
+ ;
 
-scope: T_BRACE_OPEN stmt_list T_BRACE_CLOSE;
+scope: T_BRACE_OPEN stmt_list T_BRACE_CLOSE { $$ = $2; };
 
-stmt_list: stmt_list stmt | stmt;
+stmt_list
+ : stmt_list stmt { $$ = ast_list_append($1, $2); }
+ | stmt           { $$ = ast_list(AST_NODE_BLOCK, $1); }
+ ;
 
 stmt
  : for
  | name T_SEMI
- | name T_EQUALS expr T_SEMI
+ | name T_EQUALS expr T_SEMI { $$ = ast_binary(AST_NODE_ASSIGN, $1, $3); }
  ;
 
 expr
  : factor
- | expr T_PLUS factor
- | expr T_MINUS factor
+ | expr T_PLUS factor  { $$ = ast_binary(AST_NODE_ADD, $1, $3); }
+ | expr T_MINUS factor { $$ = ast_binary(AST_NODE_SUB, $1, $3); }
  ;
 
 factor
  : value
- | factor T_MUL value
- | factor T_DIV value
+ | factor T_MUL value { $$ = ast_binary(AST_NODE_MUL, $1, $3); }
+ | factor T_DIV value { $$ = ast_binary(AST_NODE_DIV, $1, $3); }
  ;
 
 value
  : name
  | list
- | T_INT
- | T_FLOAT
- | T_STRING
- | T_PAREN_OPEN expr T_PAREN_CLOSE
+ | int
+ | float
+ | string
+ | T_PAREN_OPEN expr T_PAREN_CLOSE { $$ = $2; }
  ;
 
-name: T_IDENT | T_IDENT qual_list;
+int: T_INT { $$ = ast_int($1); };
 
-qual_list: qual_list qual | qual;
+float: T_FLOAT { $$ = ast_float($1); };
+
+string: T_STRING { $$ = ast_string(AST_NODE_STRING, $1); };
+
+ident: T_IDENT { $$ = ast_string(AST_NODE_IDENT, $1); };
+
+name
+ : ident
+ | ident qual_list { $$ = ast_binary(AST_NODE_NAME, $1, $2); }
+ ;
+
+qual_list
+ : qual_list qual { $$ = ast_list_append($1, $2); }
+ | qual           { $$ = ast_list(AST_NODE_QUALS, $1); }
+ ;
 
 qual
- : T_POINT T_IDENT
- | T_PAREN_OPEN arg_list T_PAREN_CLOSE
- | list
+ : T_POINT ident { $$ = ast_unary(AST_NODE_MEMBER, $2); }
+ | arguments     { $$ = ast_unary(AST_NODE_METHOD, $1); }
+ | list          { $$ = ast_unary(AST_NODE_ELEMENT, $1); }
  ;
 
-arg_list:
- | arg_list T_COMMA arg
- | arg
+arguments: T_PAREN_OPEN arg_list T_PAREN_CLOSE { $$ = $2; };
+
+arg_list:               { $$ = NULL; }
+ | arg_list T_COMMA arg { $$ = ast_list_append($1, $3); }
+ | arg                  { $$ = ast_list(AST_NODE_ARGS, $1); }
  ;
 
-arg: T_IDENT T_COLON value;
+arg: ident T_COLON value {
+  $$ = ast_binary(AST_NODE_ARG, $1, $3);
+};
 
-list: T_BRACK_OPEN expr_list T_BRACK_CLOSE;
+list: T_BRACK_OPEN expr_list T_BRACK_CLOSE { $$ = $2 };
 
-expr_list: expr_list T_COMMA expr | expr;
+expr_list
+ : expr_list T_COMMA expr { $$ = ast_list_append($1, $3); }
+ | expr                   { $$ = ast_list(AST_NODE_LIST, $1); }
+ ;
 
-for: T_FOR T_IDENT T_IN value scope;
+for: T_FOR ident T_IN value scope {
+  $$ = ast_ternary(AST_NODE_FOR, $2, $4, $5);
+};
 
 %%
 

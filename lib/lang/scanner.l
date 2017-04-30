@@ -2,6 +2,7 @@
 %{
 /* include vfl headers. */
 #include <vfl/lang/object.h>
+#include <vfl/lang/ast.h>
 
 /* include the generated parser header. */
 #include "lib/lang/parser.h"
