@@ -4,18 +4,32 @@
 #define __VFL_AST_H__
 
 /* include vfl headers. */
-#include <vfl/lang/object.h>
+#include <vfl/lang/symbols.h>
 
-/* ast_node_type(): macro for accessing the node type of
- * an abstract syntax tree node structure pointer.
+/* ast_node_*(): macro for accessing the base members of
+ * any abstract syntax tree node structure pointer.
  */
-#define ast_node_type(T) \
-  (T)->base.type
+#define ast_node_type(T)   (T)->base.type
+#define ast_node_table(T)  (T)->base.tab
+#define ast_node_value(T)  (T)->base.obj
+
+/* AST_BASE: macro defining the base structure members of all
+ * abstract syntax tree nodes.
+ */
+#define AST_BASE \
+  ast_node_type_t type;  /* @type: syntax tree node type.     */  \
+  sym_table_t *tab;      /* @tab: current scope symbol table. */  \
+  object_t *obj;         /* @obj: object value of the node.   */
 
 /* ast_t: defined type for abstract syntax trees. */
 typedef union ast ast_t;
 
+/* ast_node_type_t: enumeration of all accepted syntax tree node types.
+ */
 typedef enum {
+  /* empty nodes. */
+  AST_NODE_EMPTY = 0,
+
   /* literal nodes. */
   AST_NODE_INT,
   AST_NODE_FLOAT,
@@ -50,14 +64,16 @@ ast_node_type_t;
 /* ast_node_t: empty nodes.
  */
 typedef struct {
-  ast_node_type_t type;
+  AST_BASE;
 }
 ast_node_t;
 
 /* ast_node_int_t: integer literal nodes.
  */
 typedef struct {
-  ast_node_type_t type;
+  AST_BASE;
+
+  /* @value: int value of the node. */
   long value;
 }
 ast_node_int_t;
@@ -65,7 +81,9 @@ ast_node_int_t;
 /* ast_node_float_t: float literal nodes.
  */
 typedef struct {
-  ast_node_type_t type;
+  AST_BASE;
+
+  /* @value: float value of the node. */
   double value;
 }
 ast_node_float_t;
@@ -73,7 +91,9 @@ ast_node_float_t;
 /* ast_node_string_t: string nodes, both literal and identifier.
  */
 typedef struct {
-  ast_node_type_t type;
+  AST_BASE;
+
+  /* @value: string value of the node. */
   char *value;
 }
 ast_node_string_t;
@@ -81,7 +101,9 @@ ast_node_string_t;
 /* ast_node_unary_t: nodes with exactly one child.
  */
 typedef struct {
-  ast_node_type_t type;
+  AST_BASE;
+
+  /* @sub: child node. */
   ast_t *sub;
 }
 ast_node_unary_t;
@@ -89,7 +111,11 @@ ast_node_unary_t;
 /* ast_node_binary_t: nodes with exactly two children.
  */
 typedef struct {
-  ast_node_type_t type;
+  AST_BASE;
+
+  /* @left: first child node.
+   * @right: second child node.
+   */
   ast_t *left, *right;
 }
 ast_node_binary_t;
@@ -97,7 +123,12 @@ ast_node_binary_t;
 /* ast_node_ternary_t: nodes with exactly three children.
  */
 typedef struct {
-  ast_node_type_t type;
+  AST_BASE;
+
+  /* @left: first child node.
+   * @mid: second child node.
+   * @right: third child node.
+   */
   ast_t *left, *mid, *right;
 }
 ast_node_ternary_t;
@@ -105,7 +136,11 @@ ast_node_ternary_t;
 /* ast_node_list_t: nodes with one or more children.
  */
 typedef struct {
-  ast_node_type_t type;
+  AST_BASE;
+
+  /* @values: array of child nodes.
+   * @len: size of child node array.
+   */
   ast_t **values;
   size_t len;
 }

@@ -93,17 +93,17 @@ all: $(LIB)
 
 # library linkage make target.
 $(LIB): $(OBJ)
-	@echo " LD $@"
+	@echo " LD   $@"
 	@$(CC) $(LDFLAGS) $^ -o $@ $(LIBS)
 
 # source compilation target.
 .c.o:
-	@echo " CC $^"
+	@echo " CC   $^"
 	@$(CC) $(CFLAGS) -c $^ -o $@
 
 # flex scanner generator target.
 .l.c:
-	@echo " LEX $^"
+	@echo " LEX  $^"
 	@$(LEX) $(LFLAGS) -o$@ $^
 
 # bison parser generator target.

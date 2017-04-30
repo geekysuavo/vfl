@@ -2,6 +2,27 @@
 /* include the abstract syntax tree header. */
 #include <vfl/lang/ast.h>
 
+/* ast_alloc(): allocate a blank abstract syntax tree node.
+ *
+ * returns:
+ *  newly allocated and initialized (at the base level)
+ *  abstract syntax tree node, or null on failure.
+ */
+static ast_t *ast_alloc (void) {
+  /* allocate a new node. */
+  ast_t *node = malloc(sizeof(ast_t));
+  if (!node)
+    return NULL;
+
+  /* initialize the node type, table, and value. */
+  ast_node_type(node) = AST_NODE_EMPTY;
+  ast_node_table(node) = NULL;
+  ast_node_value(node) = NULL;
+
+  /* return the new node. */
+  return node;
+}
+
 /* ast_int(): allocate a new integer literal node.
  *
  * arguments:
@@ -12,7 +33,7 @@
  */
 ast_t *ast_int (const long value) {
   /* allocate a new node. */
-  ast_t *node = malloc(sizeof(ast_t));
+  ast_t *node = ast_alloc();
   if (!node)
     return NULL;
 
@@ -34,7 +55,7 @@ ast_t *ast_int (const long value) {
  */
 ast_t *ast_float (const double value) {
   /* allocate a new node. */
-  ast_t *node = malloc(sizeof(ast_t));
+  ast_t *node = ast_alloc();
   if (!node)
     return NULL;
 
@@ -57,7 +78,7 @@ ast_t *ast_float (const double value) {
  */
 ast_t *ast_string (const ast_node_type_t type, const char *value) {
   /* allocate a new node. */
-  ast_t *node = malloc(sizeof(ast_t));
+  ast_t *node = ast_alloc();
   if (!node)
     return NULL;
 
@@ -80,7 +101,7 @@ ast_t *ast_string (const ast_node_type_t type, const char *value) {
  */
 ast_t *ast_unary (const ast_node_type_t type, ast_t *sub) {
   /* allocate a new node. */
-  ast_t *node = malloc(sizeof(ast_t));
+  ast_t *node = ast_alloc();
   if (!node)
     return NULL;
 
@@ -105,7 +126,7 @@ ast_t *ast_unary (const ast_node_type_t type, ast_t *sub) {
 ast_t *ast_binary (const ast_node_type_t type,
                    ast_t *left, ast_t *right) {
   /* allocate a new node. */
-  ast_t *node = malloc(sizeof(ast_t));
+  ast_t *node = ast_alloc();
   if (!node)
     return NULL;
 
@@ -132,7 +153,7 @@ ast_t *ast_binary (const ast_node_type_t type,
 ast_t *ast_ternary (const ast_node_type_t type,
                     ast_t *left, ast_t *mid, ast_t *right) {
   /* allocate a new node. */
-  ast_t *node = malloc(sizeof(ast_t));
+  ast_t *node = ast_alloc();
   if (!node)
     return NULL;
 
@@ -157,7 +178,7 @@ ast_t *ast_ternary (const ast_node_type_t type,
  */
 ast_t *ast_list (const ast_node_type_t type, ast_t *first) {
   /* allocate a new node. */
-  ast_t *node = malloc(sizeof(ast_t));
+  ast_t *node = ast_alloc();
   if (!node)
     return NULL;
 
