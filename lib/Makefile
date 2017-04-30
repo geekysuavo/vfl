@@ -30,7 +30,7 @@ LIB=libvfl.so
 C_UTIL=rng specfun int float vector matrix grid blas chol eigen search
 
 # basenames of C, flex, and bison source files.
-C_LANG=object ast
+C_LANG=object symbols ast
 L_LANG=scanner
 Y_LANG=parser
 

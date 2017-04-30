@@ -14,13 +14,19 @@
 #include "lib/lang/parser.h"
 
 /* scanner function declarations. */
-void vfl_scanner_push_string (const char *str);
-void vfl_scanner_push_file (FILE *fh);
-void vfl_scanner_pop (void);
+int vfl_parse_string (const char *str);
+int vfl_parse_file (FILE *fh);
 
 /* flex function declarations. */
 void yyerror (const char *msg);
 int yylex (void);
+
+/* parsing results:
+ *  @globals: the topmost symbol table.
+ *  @tree: the abstract syntax tree root.
+ */
+static sym_table_t *globals = NULL;
+static ast_t *tree = NULL;
 %}
 
 /* define the yylval type union. */
@@ -44,6 +50,7 @@ int yylex (void);
 %token T_FOR T_IN
 %token T_UNKNOWN
 
+/* declare the types of all tokens and symbols. */
 %type <v_int> T_INT
 %type <v_flt> T_FLOAT
 %type <v_str> T_IDENT T_STRING
@@ -53,9 +60,8 @@ int yylex (void);
 
 %%
 
-lang
- : { $$ = NULL; }
- | stmt_list
+lang:        { /* empty. */ }
+ | stmt_list { tree = $$ = $1; }
  ;
 
 scope: T_BRACE_OPEN stmt_list T_BRACE_CLOSE { $$ = $2; };
@@ -123,7 +129,7 @@ arg_list:               { $$ = NULL; }
  | arg                  { $$ = ast_list(AST_NODE_ARGS, $1); }
  ;
 
-arg: ident T_COLON value {
+arg: ident T_COLON expr {
   $$ = ast_binary(AST_NODE_ARG, $1, $3);
 };
 
@@ -151,6 +157,21 @@ void yyerror (const char *msg) {
   fflush(stderr);
 }
 
+/* vfl_prepare_parser(): prepare the global symbol table and
+ * syntax tree for a new round of parsing.
+ */
+static void vfl_prepare_parser (void) {
+  /* allocate the global symbol table. */
+  if (!globals)
+    globals = symbols_alloc(NULL);
+
+  /* initialize the abstract syntax tree. */
+  if (tree) {
+    ast_free(tree);
+    tree = NULL;
+  }
+}
+
 /* vfl_exec_file(): interpret the contents of a file handle.
  *
  * arguments:
@@ -164,13 +185,11 @@ int vfl_exec_file (FILE *fh) {
   if (!fh)
     return 0;
 
-  /* parse the file in a new buffer. */
-  vfl_scanner_push_file(fh);
-  int ret = (yyparse() == 0);
+  /* prepare the parser. */
+  vfl_prepare_parser();
 
-  /* release the buffer and return the result. */
-  vfl_scanner_pop();
-  return ret;
+  /* parse the file. */
+  return vfl_parse_file(fh);
 }
 
 /* vfl_exec_path(): interpret the contents of a file, specified
@@ -187,17 +206,18 @@ int vfl_exec_path (const char *fname) {
   if (!fname)
     return 0;
 
+  /* prepare the parser. */
+  vfl_prepare_parser();
+
   /* open the file. */
   FILE *fh = fopen(fname, "r");
   if (!fh)
     return 0;
 
-  /* parse the file in a new buffer. */
-  vfl_scanner_push_file(fh);
-  int ret = (yyparse() == 0);
+  /* parse the file. */
+  const int ret = vfl_parse_file(fh);
 
-  /* release the buffer and return the result. */
-  vfl_scanner_pop();
+  /* close the file and return the result. */
   fclose(fh);
   return ret;
 }
@@ -215,12 +235,10 @@ int vfl_exec_string (const char *str) {
   if (!str)
     return 0;
 
-  /* parse the string in a new buffer. */
-  vfl_scanner_push_string(str);
-  int ret = (yyparse() == 0);
+  /* prepare the parser. */
+  vfl_prepare_parser();
 
-  /* release the buffer and return the result. */
-  vfl_scanner_pop();
-  return ret;
+  /* parse the string. */
+  return vfl_parse_string(str);
 }
 

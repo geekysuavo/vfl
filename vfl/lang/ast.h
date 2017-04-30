@@ -12,14 +12,16 @@
 #define ast_node_type(T)   (T)->base.type
 #define ast_node_table(T)  (T)->base.tab
 #define ast_node_value(T)  (T)->base.obj
+#define ast_node_scope(T)  (T)->base.scope
 
 /* AST_BASE: macro defining the base structure members of all
  * abstract syntax tree nodes.
  */
 #define AST_BASE \
-  ast_node_type_t type;  /* @type: syntax tree node type.     */  \
-  sym_table_t *tab;      /* @tab: current scope symbol table. */  \
-  object_t *obj;         /* @obj: object value of the node.   */
+  ast_node_type_t type;  /* @type: syntax tree node type.       */  \
+  sym_table_t *tab;      /* @tab: current scope symbol table.   */  \
+  object_t *obj;         /* @obj: object value of the node.     */  \
+  int scope;             /* @scope: if the node owns its table. */
 
 /* ast_t: defined type for abstract syntax trees. */
 typedef union ast ast_t;

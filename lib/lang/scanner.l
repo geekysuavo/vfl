@@ -6,6 +6,9 @@
 
 /* include the generated parser header. */
 #include "lib/lang/parser.h"
+
+/* bison function declarations. */
+extern int yyparse (void);
 %}
 
 %option noyywrap
@@ -83,33 +86,52 @@ in  { return T_IN; }
 
 %%
 
-/* vfl_scanner_push_file(): push a new buffer state associated with
- * a file handle onto the buffer stack managed by flex.
+/* vfl_parse_string(): perform parsing of an in-memory string.
  *
  * arguments:
- *  @fh: file handle for the new buffer.
+ *  @str: string value to parse.
+ *
+ * returns:
+ *  integer indicating parse success (1) or failure (0).
  */
-void vfl_scanner_push_file (FILE *fh) {
-  /* push a file-based buffer to the stack. */
-  yypush_buffer_state(yy_create_buffer(fh, YY_BUF_SIZE));
+int vfl_parse_string (const char *str) {
+  /* store the current buffer state. */
+  YY_BUFFER_STATE prev = YY_CURRENT_BUFFER;
+
+  /* create a buffer for string parsing, and parse. */
+  YY_BUFFER_STATE curr = yy_scan_string(str);
+  const int ret = yyparse();
+
+  /* switch back to the previous buffer state. */
+  yy_delete_buffer(curr);
+  yy_switch_to_buffer(prev);
+
+  /* return the result. */
+  return (ret == 0);
 }
 
-/* vfl_scanner_push_string(): push a new buffer state associated with
- * a string onto the buffer stack managed by flex.
+/* vfl_parse_file(): perform parsing of a file handle.
  *
  * arguments:
- *  @str: string value for the new buffer.
+ *  @fh: file handle to read for parsing.
+ *
+ * returns:
+ *  integer indicating parse success (1) or failure (0).
  */
-void vfl_scanner_push_string (const char *str) {
-  /* push a string-based buffer to the stack. */
-  yypush_buffer_state(yy_scan_string(str));
-}
+int vfl_parse_file (FILE *fh) {
+  /* store the current buffer state. */
+  YY_BUFFER_STATE prev = YY_CURRENT_BUFFER;
 
-/* vfl_scanner_pop(): pop the topmost buffer state from the buffer
- * stack managed by flex.
- */
-void vfl_scanner_pop (void) {
-  /* pop the current buffer from the stack. */
-  yypop_buffer_state();
+  /* create a buffer for file parsing, and parse. */
+  YY_BUFFER_STATE curr = yy_create_buffer(fh, YY_BUF_SIZE);
+  yy_switch_to_buffer(curr);
+  const int ret = yyparse();
+
+  /* switch back to the previous buffer state. */
+  yy_delete_buffer(curr);
+  yy_switch_to_buffer(prev);
+
+  /* return the result. */
+  return (ret == 0);
 }
 
