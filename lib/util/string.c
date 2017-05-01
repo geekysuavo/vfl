@@ -1,6 +1,39 @@
 
-/* include the string header. */
+/* include the string and integer headers. */
 #include <vfl/util/string.h>
+#include <vfl/util/int.h>
+
+/* string_set_length(): set the amount of available memory
+ * in a string, but do not manage the contents.
+ *
+ * arguments:
+ *  @str: string structure pointer.
+ *  @len: new length to set.
+ *
+ * returns:
+ *  integer indicating resize success (1) or failure (0).
+ */
+static int string_set_length (string_t *str, const size_t len) {
+  /* check the input pointer. */
+  if (!str)
+    return 0;
+
+  /* reallocate the string value. */
+  const size_t sz = len + 1;
+  char *val = realloc (str->val, sz);
+  if (!val)
+    return 0;
+
+  /* store the new length and value. */
+  str->len = len;
+  str->val = val;
+
+  /* null-terminate the value. */
+  str->val[len] = '\0';
+
+  /* return success. */
+  return 1;
+}
 
 /* string_init(): initialize a string.
  *
@@ -12,16 +45,8 @@
  */
 int string_init (string_t *str) {
   /* initialize the value. */
-  str->val = malloc(1);
-  if (!str->val)
-    return 0;
-
-  /* terminate the value and length. */
-  str->val[0] = '\0';
-  str->len = 0;
-
-  /* return success. */
-  return 1;
+  str->val = NULL;
+  return string_set_length(str, 0);
 }
 
 /* string_copy(): copy the value of one string to another.
@@ -102,16 +127,85 @@ int string_set (string_t *str, const char *val) {
     return string_set(str, "");
 
   /* reallocate the string buffer. */
-  str->val = realloc(str->val, strlen(val) + 1);
-  if (!str->val)
+  if (!string_set_length(str, strlen(val)))
     return 0;
 
-  /* set the string length and value. */
-  str->len = strlen(val);
+  /* copy the new value. */
   strcpy(str->val, val);
 
   /* return success. */
   return 1;
+}
+
+/* string_add(): addition function for strings.
+ */
+string_t *string_add (const object_t *a, const object_t *b) {
+  /* check the input arguments. */
+  if (OBJECT_IS_STRING(a) && OBJECT_IS_STRING(b)) {
+    /* cast the arguments to strings. */
+    const string_t *sa = (string_t*) a;
+    const string_t *sb = (string_t*) b;
+
+    /* get the new string length. */
+    const size_t len = sa->len + sb->len;
+
+    /* allocate a new string. */
+    string_t *str = string_alloc();
+    if (str && string_set_length(str, len)) {
+      /* store the new string value. */
+      strcpy(str->val, sa->val);
+      strcat(str->val, sb->val);
+      return str;
+    }
+  }
+
+  /* return no result. */
+  return NULL;
+}
+
+/* string_mul(): multiplication function for strings.
+ */
+string_t *string_mul (const object_t *a, const object_t *b) {
+  /* declare required variables:
+   *  @sobj: string object in the product.
+   *  @iobj: integer multiplier.
+   */
+  string_t *sobj = NULL;
+  int_t *iobj = NULL;
+
+  /* check the argument types. */
+  if (OBJECT_IS_STRING(a) && OBJECT_IS_INT(b)) {
+    sobj = (string_t*) a;
+    iobj = (int_t*) b;
+  }
+  else if (OBJECT_IS_INT(a) && OBJECT_IS_STRING(b)) {
+    sobj = (string_t*) b;
+    iobj = (int_t*) a;
+  }
+  else
+    return NULL;
+
+  /* get the integer value. */
+  const long ival = int_get(iobj);
+  if (ival <= 0)
+    return NULL;
+
+  /* determine the new lengths. */
+  const size_t len = sobj->len;
+  const size_t newlen = len * ival;
+
+  /* allocate a new string. */
+  string_t *str = string_alloc();
+  if (!str || !string_set_length(str, newlen))
+    return NULL;
+
+  /* store the new string value. */
+  strcpy(str->val, "");
+  for (size_t i = 0; i < (size_t) ival; i++)
+    strcat(str->val, sobj->val);
+
+  /* return the new string. */
+  return str;
 }
 
 /* string_type: string type structure.
@@ -124,9 +218,9 @@ static object_type_t string_type = {
   (object_copy_fn) string_copy,                  /* copy      */
   (object_free_fn) string_free,                  /* free      */
 
-  NULL,                                          /* add       */
+  (object_binary_fn) string_add,                 /* add       */
   NULL,                                          /* sub       */
-  NULL,                                          /* mul       */
+  (object_binary_fn) string_mul,                 /* mul       */
   NULL,                                          /* div       */
 
   NULL                                           /* methods   */

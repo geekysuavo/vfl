@@ -14,12 +14,7 @@ mdl = tauvfr(
   data: dat,
   tau: 1.0,
   nu: 1.0e-6,
-  factors: [
-    cosine(mu: mu, tau: tau),
-    cosine(mu: mu, tau: tau),
-    cosine(mu: mu, tau: tau),
-    cosine(mu: mu, tau: tau)
-  ]
+  factors: 4 * [cosine(mu: mu, tau: tau)]
 );
 
 # randomize the factor means.

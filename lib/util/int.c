@@ -78,10 +78,10 @@ void int_set (int_t *i, const long val) {
 
 /* int_add(): addition function for integers.
  */
-int_t *int_add (const int_t *in1, const int_t *in2) {
+int_t *int_add (const int_t *a, const int_t *b) {
   /* if both arguments are integers, return a result. */
-  if (OBJECT_IS_INT(in1) && OBJECT_IS_INT(in2))
-    return int_alloc_with_value(in1->val + in2->val);
+  if (OBJECT_IS_INT(a) && OBJECT_IS_INT(b))
+    return int_alloc_with_value(a->val + b->val);
 
   /* return no result. */
   return NULL;
@@ -89,10 +89,10 @@ int_t *int_add (const int_t *in1, const int_t *in2) {
 
 /* int_sub(): subtraction function for integers.
  */
-int_t *int_sub (const int_t *in1, const int_t *in2) {
+int_t *int_sub (const int_t *a, const int_t *b) {
   /* if both arguments are integers, return a result. */
-  if (OBJECT_IS_INT(in1) && OBJECT_IS_INT(in2))
-    return int_alloc_with_value(in1->val - in2->val);
+  if (OBJECT_IS_INT(a) && OBJECT_IS_INT(b))
+    return int_alloc_with_value(a->val - b->val);
 
   /* return no result. */
   return NULL;
@@ -100,10 +100,10 @@ int_t *int_sub (const int_t *in1, const int_t *in2) {
 
 /* int_mul(): multiplication function for integers.
  */
-int_t *int_mul (const int_t *in1, const int_t *in2) {
+int_t *int_mul (const int_t *a, const int_t *b) {
   /* if both arguments are integers, return a result. */
-  if (OBJECT_IS_INT(in1) && OBJECT_IS_INT(in2))
-    return int_alloc_with_value(in1->val * in2->val);
+  if (OBJECT_IS_INT(a) && OBJECT_IS_INT(b))
+    return int_alloc_with_value(a->val * b->val);
 
   /* return no result. */
   return NULL;
@@ -111,10 +111,10 @@ int_t *int_mul (const int_t *in1, const int_t *in2) {
 
 /* int_div(): division function for integers.
  */
-int_t *int_div (const int_t *in1, const int_t *in2) {
+int_t *int_div (const int_t *a, const int_t *b) {
   /* if both arguments are integers, return a result. */
-  if (OBJECT_IS_INT(in1) && OBJECT_IS_INT(in2))
-    return int_alloc_with_value(in1->val / in2->val);
+  if (OBJECT_IS_INT(a) && OBJECT_IS_INT(b))
+    return int_alloc_with_value(a->val / b->val);
 
   /* return no result. */
   return NULL;

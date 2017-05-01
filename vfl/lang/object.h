@@ -67,13 +67,13 @@ typedef object_t* (*object_unary_fn) (const object_t *in);
 /* object_binary_fn(): perform a binary operation on two objects.
  *
  * arguments:
- *  @in1, @in2: input object structure pointers.
+ *  @a, @b: input object structure pointers.
  *
  * returns:
  *  output object structure pointer.
  */
-typedef object_t* (*object_binary_fn) (const object_t *in1,
-                                       const object_t *in2);
+typedef object_t* (*object_binary_fn) (const object_t *a,
+                                       const object_t *b);
 
 /* object_method_t: structure containing information about
  * a callable method.

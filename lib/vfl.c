@@ -44,6 +44,7 @@ int vfl_init (void) {
   /* register utility object types. */
   res &= vfl_register_type(vfl_object_rng);
   res &= vfl_register_type(vfl_object_data);
+  res &= vfl_register_type(vfl_object_list);
   res &= vfl_register_type(vfl_object_int);
   res &= vfl_register_type(vfl_object_float);
   res &= vfl_register_type(vfl_object_string);

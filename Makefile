@@ -53,11 +53,11 @@ lines: clean
 # fixme statement reporting target.
 fixme:
 	@echo " FIXME bin"
-	@$(GREP) fixme bin/*.c || echo " None found"
+	@$(GREP) fixme $(shell find bin -name '*.c') || echo " None found"
 	@echo " FIXME lib"
-	@$(GREP) fixme lib/*.c || echo " None found"
+	@$(GREP) fixme $(shell find lib -name '*.[cly]') || echo " None found"
 	@echo " FIXME vfl"
-	@$(GREP) fixme vfl/*.h || echo " None found"
+	@$(GREP) fixme $(shell find vfl -name '*.h') || echo " None found"
 
 # tarball creation target.
 dist: clean

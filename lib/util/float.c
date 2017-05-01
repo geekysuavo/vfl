@@ -95,10 +95,10 @@ flt_t *float_alloc_with_value (const double val) {
 
 /* float_add(): addition function for floats.
  */
-flt_t *float_add (const object_t *in1, const object_t *in2) {
+flt_t *float_add (const object_t *a, const object_t *b) {
   /* if both arguments are scalar numbers, return a result. */
-  if (OBJECT_IS_NUM(in1) && OBJECT_IS_NUM(in2))
-    return float_alloc_with_value(num_get(in1) + num_get(in2));
+  if (OBJECT_IS_NUM(a) && OBJECT_IS_NUM(b))
+    return float_alloc_with_value(num_get(a) + num_get(b));
 
   /* return no result. */
   return NULL;
@@ -106,10 +106,10 @@ flt_t *float_add (const object_t *in1, const object_t *in2) {
 
 /* float_sub(): subtraction function for floats.
  */
-flt_t *float_sub (const object_t *in1, const object_t *in2) {
+flt_t *float_sub (const object_t *a, const object_t *b) {
   /* if both arguments are scalar numbers, return a result. */
-  if (OBJECT_IS_NUM(in1) && OBJECT_IS_NUM(in2))
-    return float_alloc_with_value(num_get(in1) - num_get(in2));
+  if (OBJECT_IS_NUM(a) && OBJECT_IS_NUM(b))
+    return float_alloc_with_value(num_get(a) - num_get(b));
 
   /* return no result. */
   return NULL;
@@ -117,10 +117,10 @@ flt_t *float_sub (const object_t *in1, const object_t *in2) {
 
 /* float_mul(): multiplication function for floats.
  */
-flt_t *float_mul (const object_t *in1, const object_t *in2) {
+flt_t *float_mul (const object_t *a, const object_t *b) {
   /* if both arguments are scalar numbers, return a result. */
-  if (OBJECT_IS_NUM(in1) && OBJECT_IS_NUM(in2))
-    return float_alloc_with_value(num_get(in1) * num_get(in2));
+  if (OBJECT_IS_NUM(a) && OBJECT_IS_NUM(b))
+    return float_alloc_with_value(num_get(a) * num_get(b));
 
   /* return no result. */
   return NULL;
@@ -128,10 +128,10 @@ flt_t *float_mul (const object_t *in1, const object_t *in2) {
 
 /* float_div(): division function for floats.
  */
-flt_t *float_div (const object_t *in1, const object_t *in2) {
+flt_t *float_div (const object_t *a, const object_t *b) {
   /* if both arguments are scalar numbers, return a result. */
-  if (OBJECT_IS_NUM(in1) && OBJECT_IS_NUM(in2))
-    return float_alloc_with_value(num_get(in1) / num_get(in2));
+  if (OBJECT_IS_NUM(a) && OBJECT_IS_NUM(b))
+    return float_alloc_with_value(num_get(a) / num_get(b));
 
   /* return no result. */
   return NULL;

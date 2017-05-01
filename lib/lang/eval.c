@@ -121,6 +121,30 @@ static int ast_eval_arith (ast_t *node, sym_table_t *tab) {
   return (obj ? 1 : 0);
 }
 
+/* ast_eval_list(): evaluate a list node.
+ */
+static int ast_eval_list (ast_t *node, sym_table_t *tab) {
+  /* loop over each list element. */
+  for (size_t i = 0; i < node->n_list.len; i++) {
+    /* evaluate the element. */
+    if (!ast_eval(node->n_list.values[i], tab))
+      return 0;
+  }
+
+  /* allocate a list object. */
+  list_t *lst = list_alloc_with_length(node->n_list.len);
+  if (!lst)
+    return 0;
+
+  /* store the list elements. */
+  for (size_t i = 0; i < lst->len; i++)
+    list_set(lst, i, ast_node_value(node->n_list.values[i]));
+
+  /* store the node value and return success. */
+  ast_node_value(node) = (object_t*) lst;
+  return 1;
+}
+
 /* ast_eval_block(): evaluate a statement block.
  */
 static int ast_eval_block (ast_t *node, sym_table_t *tab) {
@@ -218,7 +242,12 @@ int ast_eval (ast_t *node, sym_table_t *symbols) {
       if (!ast_eval_arith(node, tab)) return 0;
       break;
 
-    /* block nodes (lists). */
+    /* list nodes. */
+    case AST_NODE_LIST:
+      if (!ast_eval_list(node, tab)) return 0;
+      break;
+
+    /* block nodes. */
     case AST_NODE_BLOCK:
       if (!ast_eval_block(node, tab)) return 0;
       break;
@@ -244,6 +273,8 @@ else if(OBJECT_IS_FLOAT(obj))
   printf("result[float] = %lf\n",float_get((flt_t*)obj));
 else if(OBJECT_IS_STRING(obj))
   printf("result[string] = '%s'\n",string_get((string_t*)obj));
+else if(OBJECT_IS_LIST(obj))
+  printf("result[list] = list<%lu>\n",((list_t*)obj)->len);
 }
 /*FIXME*/
 

@@ -14,13 +14,16 @@
 #include <vfl/factor.h>
 
 /* include vfl utility headers. */
+#include <vfl/util/list.h>
 #include <vfl/util/int.h>
 #include <vfl/util/float.h>
 #include <vfl/util/string.h>
-#include <vfl/util/vector.h>
-#include <vfl/util/matrix.h>
 #include <vfl/util/search.h>
 #include <vfl/util/rng.h>
+
+/* include non-object vfl utility headers. */
+#include <vfl/util/vector.h>
+#include <vfl/util/matrix.h>
 
 /* function declarations (vfl.c): */
 
