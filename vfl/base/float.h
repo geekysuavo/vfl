@@ -8,7 +8,7 @@
 #include <math.h>
 
 /* include vfl headers. */
-#include <vfl/util/int.h>
+#include <vfl/base/int.h>
 
 /* OBJECT_IS_FLOAT(): check if an object is a float.
  */
@@ -31,7 +31,7 @@ typedef struct {
 }
 flt_t;
 
-/* function declarations (util/float.c): */
+/* function declarations (base/float.c): */
 
 #define float_alloc() \
   (flt_t*) obj_alloc(vfl_object_float)

@@ -1,7 +1,7 @@
 
 /* include the string and integer headers. */
-#include <vfl/util/string.h>
-#include <vfl/util/int.h>
+#include <vfl/base/string.h>
+#include <vfl/base/int.h>
 
 /* string_set_length(): set the amount of available memory
  * in a string, but do not manage the contents.

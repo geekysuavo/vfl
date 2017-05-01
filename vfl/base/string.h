@@ -28,7 +28,7 @@ typedef struct {
 }
 string_t;
 
-/* function declarations (util/string.c): */
+/* function declarations (base/string.c): */
 
 #define string_alloc() \
   (string_t*) obj_alloc(vfl_object_string)

@@ -1,6 +1,6 @@
 
 /* include the float header. */
-#include <vfl/util/float.h>
+#include <vfl/base/float.h>
 
 /* num_get(): get the value of a scalar numeric object.
  *

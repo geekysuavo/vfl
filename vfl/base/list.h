@@ -29,7 +29,7 @@ typedef struct {
 }
 list_t;
 
-/* function declarations (util/list.c): */
+/* function declarations (base/list.c): */
 
 #define list_alloc() \
   (list_t*) obj_alloc(vfl_object_list)

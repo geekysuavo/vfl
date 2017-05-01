@@ -1,7 +1,7 @@
 
 /* include the list and integer headers. */
-#include <vfl/util/list.h>
-#include <vfl/util/int.h>
+#include <vfl/base/list.h>
+#include <vfl/base/int.h>
 
 /* list_set_length(): set the number of available elements
  * of an object list. this function does not manage the

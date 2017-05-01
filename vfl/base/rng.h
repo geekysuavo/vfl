@@ -33,7 +33,7 @@ typedef struct {
 }
 rng_t;
 
-/* function declarations (util/rng.c): */
+/* function declarations (base/rng.c): */
 
 #define rng_alloc() \
   (rng_t*) obj_alloc(vfl_object_rng)

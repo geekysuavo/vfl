@@ -7,21 +7,21 @@
 #include <vfl/lang/object.h>
 #include <vfl/lang.h>
 
-/* include vfl core headers. */
+/* include vfl base object headers. */
+#include <vfl/base/list.h>
+#include <vfl/base/int.h>
+#include <vfl/base/float.h>
+#include <vfl/base/string.h>
+#include <vfl/base/rng.h>
+
+/* include vfl inference object headers. */
 #include <vfl/data.h>
 #include <vfl/model.h>
 #include <vfl/optim.h>
 #include <vfl/factor.h>
 
 /* include vfl utility headers. */
-#include <vfl/util/list.h>
-#include <vfl/util/int.h>
-#include <vfl/util/float.h>
-#include <vfl/util/string.h>
 #include <vfl/util/search.h>
-#include <vfl/util/rng.h>
-
-/* include non-object vfl utility headers. */
 #include <vfl/util/vector.h>
 #include <vfl/util/matrix.h>
 

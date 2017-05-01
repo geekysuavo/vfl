@@ -1,6 +1,6 @@
 
 /* include the pseudorandom number generator header. */
-#include <vfl/util/rng.h>
+#include <vfl/base/rng.h>
 
 /* rng_get(): sample a uniform deviate than spans the values stored
  * by the 'unsigned long long' type.

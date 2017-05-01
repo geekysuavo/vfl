@@ -26,7 +26,7 @@ typedef struct {
 }
 int_t;
 
-/* function declarations (util/int.c): */
+/* function declarations (base/int.c): */
 
 #define int_alloc() \
   (int_t*) obj_alloc(vfl_object_int)

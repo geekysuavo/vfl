@@ -1,6 +1,6 @@
 
 /* include the integer header. */
-#include <vfl/util/int.h>
+#include <vfl/base/int.h>
 
 /* int_init(): initialize an integer.
  *

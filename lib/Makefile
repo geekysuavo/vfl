@@ -27,8 +27,10 @@ YFLAGS=-d
 LIB=libvfl.so
 
 # basenames of C utility source files.
-C_UTIL=list int float string rng specfun vector matrix
-C_UTIL+= grid blas chol eigen search
+C_UTIL=specfun vector matrix grid blas chol eigen search
+
+# basenames of C base type source files.
+C_BASE=list int float string rng
 
 # basenames of C, flex, and bison source files.
 C_LANG=object symbols ast eval
@@ -61,6 +63,7 @@ C=  $(addprefix util/,$(C_UTIL))
 C+= $(addprefix lang/,$(Y_LANG))
 C+= $(addprefix lang/,$(L_LANG))
 C+= $(addprefix lang/,$(C_LANG))
+C+= $(addprefix base/,$(C_BASE))
 C+= $(addprefix factor/,$(C_FACTOR))
 C+= $(addprefix model/,$(C_MODEL))
 C+= $(addprefix optim/,$(C_OPTIM))
