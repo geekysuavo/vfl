@@ -18,6 +18,7 @@ all:
 
 # intermediate file cleanup target.
 clean:
+	@$(MAKE) -sC bin clean
 	@$(MAKE) -sC lib clean
 	@$(MAKE) -sC tests/carbon-dioxide clean
 	@$(MAKE) -sC tests/cosines clean
@@ -36,11 +37,14 @@ again: clean all
 
 # installation target.
 install:
+	@$(MAKE) -sC bin install
 	@$(MAKE) -sC lib install
 	@$(MAKE) -sC vfl install
 
 # line-count reporting target.
 lines: clean
+	@echo " WC bin"
+	@$(WC) $(shell find bin -name '*.c')
 	@echo " WC lib"
 	@$(WC) $(shell find lib -name '*.[cly]')
 	@echo " WC vfl"
@@ -48,6 +52,8 @@ lines: clean
 
 # fixme statement reporting target.
 fixme:
+	@echo " FIXME bin"
+	@$(GREP) fixme bin/*.c || echo " None found"
 	@echo " FIXME lib"
 	@$(GREP) fixme lib/*.c || echo " None found"
 	@echo " FIXME vfl"

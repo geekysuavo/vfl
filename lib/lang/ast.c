@@ -232,7 +232,7 @@ ast_t *ast_list_append (ast_t *node, ast_t *next) {
   /* store the new child node. */
   node->n_list.len = n + 1;
   node->n_list.values = values;
-  node->n_list.values[node->n_list.len - 1] = next;
+  node->n_list.values[n] = next;
 
   /* return the modified node. */
   return node;

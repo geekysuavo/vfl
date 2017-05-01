@@ -37,6 +37,10 @@ void symbols_free (sym_table_t *tab) {
   if (!tab)
     return;
 
+  /* free each name in the symbol array. */
+  for (size_t i = 0; i < tab->n; i++)
+    free(tab->syms[i].name);
+
   /* free the symbol array and the structure. */
   free(tab->syms);
   free(tab);
@@ -88,30 +92,38 @@ object_t *symbols_get (sym_table_t *tab, const char *name) {
  */
 int symbols_set (sym_table_t *tab, const char *name, object_t *obj) {
   /* check the input pointers. */
-  if (!tab || !name || !obj)
-    return 0;
-
-  /* FIXME: implement symbols_set() */
-
-  /* return success. */
-  return 1;
-}
-
-/* symbols_delete(): remove a symbol from a symbol table.
- *
- * arguments:
- *  @tab: symbol table to modify.
- *  @name: symbol name to remove.
- *
- * returns:
- *  integer indicating success (1) or failure (0).
- */
-int symbols_delete (sym_table_t *tab, const char *name) {
-  /* check the input pointers. */
   if (!tab || !name)
     return 0;
 
-  /* FIXME: implement symbols_delete() */
+  /* search for the symbol in the table. */
+  for (size_t i = 0; i < tab->n; i++) {
+    /* on match, set the symbol value. */
+    if (strcmp(tab->syms[i].name, name) == 0) {
+      tab->syms[i].val = obj;
+      return 1;
+    }
+  }
+
+  /* no match. reallocate the symbol array. */
+  const size_t n = tab->n;
+  const size_t sz = (n + 1) * sizeof(sym_t);
+  sym_t *syms = realloc(tab->syms, sz);
+
+  /* allocate the symbol name string. */
+  char *dupname = malloc(strlen(name) + 1);
+
+  /* handle allocation failures. */
+  if (!syms || !dupname)
+    return 0;
+
+  /* store the new symbol information. */
+  strcpy(dupname, name);
+  syms[n].name = dupname;
+  syms[n].val = obj;
+
+  /* store the new symbols array. */
+  tab->n = n + 1;
+  tab->syms = syms;
 
   /* return success. */
   return 1;

@@ -51,7 +51,5 @@ object_t *symbols_get (sym_table_t *tab, const char *name);
 
 int symbols_set (sym_table_t *tab, const char *name, object_t *obj);
 
-int symbols_delete (sym_table_t *tab, const char *name);
-
 #endif /* !__VFL_SYMBOLS_H__ */
 

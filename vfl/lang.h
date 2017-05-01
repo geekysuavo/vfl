@@ -10,7 +10,7 @@
 /* include vfl headers. */
 #include <vfl/lang/object.h>
 
-/* function declarations, allocation (lang/): */
+/* function declarations, execution (lang/parser.y): */
 
 int vfl_exec_file (FILE *fh);
 

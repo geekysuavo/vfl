@@ -140,5 +140,13 @@ object_t *obj_copy (const object_t *obj);
 
 void obj_free (object_t *obj);
 
+object_t *obj_add (const object_t *a, const object_t *b);
+
+object_t *obj_sub (const object_t *a, const object_t *b);
+
+object_t *obj_mul (const object_t *a, const object_t *b);
+
+object_t *obj_div (const object_t *a, const object_t *b);
+
 #endif /* !__VFL_OBJECT_H__ */
 

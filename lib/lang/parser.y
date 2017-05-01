@@ -189,7 +189,15 @@ int vfl_exec_file (FILE *fh) {
   vfl_prepare_parser();
 
   /* parse the file. */
-  return vfl_parse_file(fh);
+  if (!vfl_parse_file(fh))
+    return 0;
+
+  /* evaluate the resulting syntax tree. */
+  if (!ast_eval(tree, globals))
+    return 0;
+
+  /* return success. */
+  return 1;
 }
 
 /* vfl_exec_path(): interpret the contents of a file, specified
@@ -214,12 +222,20 @@ int vfl_exec_path (const char *fname) {
   if (!fh)
     return 0;
 
-  /* parse the file. */
+  /* parse and close the file. */
   const int ret = vfl_parse_file(fh);
-
-  /* close the file and return the result. */
   fclose(fh);
-  return ret;
+
+  /* check for parse failures. */
+  if (!ret)
+    return 0;
+
+  /* evaluate the resulting syntax tree. */
+  if (!ast_eval(tree, globals))
+    return 0;
+
+  /* return success. */
+  return 1;
 }
 
 /* vfl_exec_string(): interpret the contents of a string.
@@ -239,6 +255,14 @@ int vfl_exec_string (const char *str) {
   vfl_prepare_parser();
 
   /* parse the string. */
-  return vfl_parse_string(str);
+  if (!vfl_parse_string(str))
+    return 0;
+
+  /* evaluate the resulting syntax tree. */
+  if (!ast_eval(tree, globals))
+    return 0;
+
+  /* return success. */
+  return 1;
 }
 

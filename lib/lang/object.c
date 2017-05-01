@@ -85,3 +85,103 @@ void obj_free (object_t *obj) {
   free(obj);
 }
 
+/* obj_add(): perform object addition.
+ *  - see object_binary_fn() for more information.
+ */
+object_t *obj_add (const object_t *a, const object_t *b) {
+  /* check the input arguments. */
+  if (!a || !b)
+    return NULL;
+
+  /* get the argument object types. */
+  const object_type_t *ta = OBJECT_TYPE(a);
+  const object_type_t *tb = OBJECT_TYPE(b);
+
+  /* try the first type function. */
+  object_t *c = NULL;
+  if (ta->add)
+    c = ta->add(a, b);
+
+  /* if unsuccessful, try the second type function. */
+  if (!c && tb->add)
+    c = tb->add(a, b);
+
+  /* return the result. */
+  return c;
+}
+
+/* obj_sub(): perform object subtraction.
+ *  - see object_binary_fn() for more information.
+ */
+object_t *obj_sub (const object_t *a, const object_t *b) {
+  /* check the input arguments. */
+  if (!a || !b)
+    return NULL;
+
+  /* get the argument object types. */
+  const object_type_t *ta = OBJECT_TYPE(a);
+  const object_type_t *tb = OBJECT_TYPE(b);
+
+  /* try the first type function. */
+  object_t *c = NULL;
+  if (ta->sub)
+    c = ta->sub(a, b);
+
+  /* if unsuccessful, try the second type function. */
+  if (!c && tb->sub)
+    c = tb->sub(a, b);
+
+  /* return the result. */
+  return c;
+}
+
+/* obj_mul(): perform object multiplication.
+ *  - see object_binary_fn() for more information.
+ */
+object_t *obj_mul (const object_t *a, const object_t *b) {
+  /* check the input arguments. */
+  if (!a || !b)
+    return NULL;
+
+  /* get the argument object types. */
+  const object_type_t *ta = OBJECT_TYPE(a);
+  const object_type_t *tb = OBJECT_TYPE(b);
+
+  /* try the first type function. */
+  object_t *c = NULL;
+  if (ta->mul)
+    c = ta->mul(a, b);
+
+  /* if unsuccessful, try the second type function. */
+  if (!c && tb->mul)
+    c = tb->mul(a, b);
+
+  /* return the result. */
+  return c;
+}
+
+/* obj_div(): perform object division.
+ *  - see object_binary_fn() for more information.
+ */
+object_t *obj_div (const object_t *a, const object_t *b) {
+  /* check the input arguments. */
+  if (!a || !b)
+    return NULL;
+
+  /* get the argument object types. */
+  const object_type_t *ta = OBJECT_TYPE(a);
+  const object_type_t *tb = OBJECT_TYPE(b);
+
+  /* try the first type function. */
+  object_t *c = NULL;
+  if (ta->div)
+    c = ta->div(a, b);
+
+  /* if unsuccessful, try the second type function. */
+  if (!c && tb->div)
+    c = tb->div(a, b);
+
+  /* return the result. */
+  return c;
+}
+

@@ -33,18 +33,18 @@ typedef enum {
   AST_NODE_EMPTY = 0,
 
   /* literal nodes. */
-  AST_NODE_INT,
+  AST_NODE_INT = 100,
   AST_NODE_FLOAT,
   AST_NODE_STRING,
   AST_NODE_IDENT,
 
   /* unary nodes. */
-  AST_NODE_MEMBER,
+  AST_NODE_MEMBER = 200,
   AST_NODE_METHOD,
   AST_NODE_ELEMENT,
 
   /* binary nodes. */
-  AST_NODE_ASSIGN,
+  AST_NODE_ASSIGN = 300,
   AST_NODE_ADD,
   AST_NODE_SUB,
   AST_NODE_MUL,
@@ -53,10 +53,10 @@ typedef enum {
   AST_NODE_NAME,
 
   /* ternary nodes. */
-  AST_NODE_FOR,
+  AST_NODE_FOR = 400,
 
   /* list nodes. */
-  AST_NODE_LIST,
+  AST_NODE_LIST = 500,
   AST_NODE_ARGS,
   AST_NODE_BLOCK,
   AST_NODE_QUALS
@@ -168,7 +168,7 @@ union ast {
   ast_node_list_t n_list;
 };
 
-/* function declarations (lang/ast.c): */
+/* function declarations, allocation (lang/ast.c): */
 
 ast_t *ast_int (const long value);
 
@@ -189,6 +189,10 @@ ast_t *ast_list (const ast_node_type_t type, ast_t *first);
 ast_t *ast_list_append (ast_t *node, ast_t *next);
 
 void ast_free (ast_t *node);
+
+/* function declarations, evaluation (lang/eval.c): */
+
+int ast_eval (ast_t *node, sym_table_t *symbols);
 
 #endif /* !__VFL_AST_H__ */
 
