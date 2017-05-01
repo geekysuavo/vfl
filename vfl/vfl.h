@@ -16,6 +16,7 @@
 /* include vfl utility headers. */
 #include <vfl/util/int.h>
 #include <vfl/util/float.h>
+#include <vfl/util/string.h>
 #include <vfl/util/vector.h>
 #include <vfl/util/matrix.h>
 #include <vfl/util/search.h>

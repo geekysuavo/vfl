@@ -46,6 +46,7 @@ int vfl_init (void) {
   res &= vfl_register_type(vfl_object_data);
   res &= vfl_register_type(vfl_object_int);
   res &= vfl_register_type(vfl_object_float);
+  res &= vfl_register_type(vfl_object_string);
   res &= vfl_register_type(vfl_object_search);
 
   /* return the result. */

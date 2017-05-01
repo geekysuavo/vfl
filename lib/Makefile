@@ -27,10 +27,11 @@ YFLAGS=-d
 LIB=libvfl.so
 
 # basenames of C utility source files.
-C_UTIL=rng specfun int float vector matrix grid blas chol eigen search
+C_UTIL=rng specfun int float string vector matrix
+C_UTIL+= grid blas chol eigen search
 
 # basenames of C, flex, and bison source files.
-C_LANG=object symbols ast
+C_LANG=object symbols ast eval
 L_LANG=scanner
 Y_LANG=parser
 
@@ -126,9 +127,9 @@ install: $(LIB)
 	@install $(LIB) $(LIBDIR)
 
 # line-count reporting target.
-lines:
+lines: clean
 	@echo " WC"
-	@$(WC) $(shell find * -name '*.c')
+	@$(WC) $(shell find * -name '*.[cly]')
 
 # fixme statement reporting target.
 fixme:

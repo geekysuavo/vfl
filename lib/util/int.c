@@ -5,7 +5,7 @@
 /* int_init(): initialize an integer.
  *
  * arguments:
- *  @int: integer object structure pointer.
+ *  @i: integer object structure pointer.
  *
  * returns:
  *  integer indicating success (1) or failure (0).

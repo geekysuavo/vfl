@@ -40,9 +40,9 @@ install:
 	@$(MAKE) -sC vfl install
 
 # line-count reporting target.
-lines:
+lines: clean
 	@echo " WC lib"
-	@$(WC) $(shell find lib -name '*.c')
+	@$(WC) $(shell find lib -name '*.[cly]')
 	@echo " WC vfl"
 	@$(WC) $(shell find vfl -name '*.h')
 
