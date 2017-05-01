@@ -6,6 +6,7 @@
 /* include vfl base object headers. */
 #include <vfl/base/object.h>
 #include <vfl/base/list.h>
+#include <vfl/base/map.h>
 #include <vfl/base/int.h>
 #include <vfl/base/float.h>
 #include <vfl/base/string.h>
