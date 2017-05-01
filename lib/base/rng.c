@@ -135,6 +135,9 @@ static object_type_t rng_type = {
   NULL,                                          /* mul       */
   NULL,                                          /* div       */
 
+  NULL,                                          /* get       */
+  NULL,                                          /* set       */
+  NULL,                                          /* props     */
   rng_methods                                    /* methods   */
 };
 

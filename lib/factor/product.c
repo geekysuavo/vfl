@@ -617,6 +617,9 @@ static factor_type_t product_type = {
     NULL,                                        /* mul       */
     NULL,                                        /* div       */
 
+    NULL,                                        /* get       */
+    NULL,                                        /* set       */
+    NULL,                                        /* props     */
     NULL                                         /* methods   */
   },
 

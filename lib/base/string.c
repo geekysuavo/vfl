@@ -223,6 +223,9 @@ static object_type_t string_type = {
   (object_binary_fn) string_mul,                 /* mul       */
   NULL,                                          /* div       */
 
+  NULL,                                          /* get       */
+  NULL,                                          /* set       */
+  NULL,                                          /* props     */
   NULL                                           /* methods   */
 };
 

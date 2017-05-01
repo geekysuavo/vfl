@@ -897,6 +897,9 @@ static object_type_t search_type = {
   NULL,                                          /* mul       */
   NULL,                                          /* div       */
 
+  NULL,                                          /* get       */
+  NULL,                                          /* set       */
+  NULL,                                          /* props     */
   NULL                                           /* methods   */
 };
 

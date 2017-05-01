@@ -152,6 +152,9 @@ static object_type_t float_type = {
   (object_binary_fn) float_mul,                  /* mul       */
   (object_binary_fn) float_div,                  /* div       */
 
+  NULL,                                          /* get       */
+  NULL,                                          /* set       */
+  NULL,                                          /* props     */
   NULL                                           /* methods   */
 };
 

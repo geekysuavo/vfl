@@ -7,7 +7,7 @@
 #include <stdio.h>
 
 /* include vfl headers. */
-#include <vfl/lang/object.h>
+#include <vfl/base/object.h>
 #include <vfl/lang/ast.h>
 
 /* include the generated parser header. */

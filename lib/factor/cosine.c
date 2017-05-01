@@ -228,6 +228,9 @@ static factor_type_t cosine_type = {
     NULL,                                        /* mul       */
     NULL,                                        /* div       */
 
+    NULL,                                        /* get       */
+    NULL,                                        /* set       */
+    NULL,                                        /* props     */
     NULL                                         /* methods   */
   },
 

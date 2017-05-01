@@ -414,6 +414,9 @@ static model_type_t tauvfr_type = {
     NULL,                                        /* mul       */
     NULL,                                        /* div       */
 
+    NULL,                                        /* get       */
+    NULL,                                        /* set       */
+    NULL,                                        /* props     */
     NULL                                         /* methods   */
   },
 

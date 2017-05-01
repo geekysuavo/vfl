@@ -135,6 +135,9 @@ static object_type_t int_type = {
   (object_binary_fn) int_mul,                    /* mul       */
   (object_binary_fn) int_div,                    /* div       */
 
+  NULL,                                          /* get       */
+  NULL,                                          /* set       */
+  NULL,                                          /* props     */
   NULL                                           /* methods   */
 };
 

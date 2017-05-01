@@ -420,6 +420,9 @@ static model_type_t vfr_type = {
     NULL,                                        /* mul       */
     NULL,                                        /* div       */
 
+    NULL,                                        /* get       */
+    NULL,                                        /* set       */
+    NULL,                                        /* props     */
     NULL                                         /* methods   */
   },
 

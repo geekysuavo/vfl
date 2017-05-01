@@ -1,6 +1,6 @@
 
 /* include the object header. */
-#include <vfl/lang/object.h>
+#include <vfl/base/object.h>
 
 /* obj_alloc(): allocate a new object by its type structure pointer.
  *

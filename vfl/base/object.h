@@ -75,13 +75,74 @@ typedef object_t* (*object_unary_fn) (const object_t *in);
 typedef object_t* (*object_binary_fn) (const object_t *a,
                                        const object_t *b);
 
+/* object_getprop_fn(): get the value of an object's property.
+ *
+ * arguments:
+ *  @obj: object structure pointer.
+ *
+ * returns:
+ *  object property value.
+ */
+typedef object_t* (*object_getprop_fn) (const object_t *obj);
+
+/* object_getelem_fn(): get the value of an object's element.
+ *
+ * arguments:
+ *  @obj: object structure pointer.
+ *  @idx: element index.
+ *
+ * returns:
+ *  object element value.
+ */
+typedef object_t* (*object_getelem_fn) (const object_t *obj,
+                                        const object_t *idx);
+
+/* object_setprop_fn(): set the value of an object's property.
+ *
+ * arguments:
+ *  @obj: object structure pointer.
+ *  @prop: property value.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+typedef int (*object_setprop_fn) (object_t *obj, object_t *prop);
+
+/* object_setelem_fn(): set the value of an object's element.
+ *
+ * arguments:
+ *  @obj: object structure pointer.
+ *  @idx: element index.
+ *  @elem: element value.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+typedef int (*object_setelem_fn) (object_t *obj, object_t *idx,
+                                  object_t *elem);
+
+/* object_property_t: structure containing information about
+ * accessible object properties.
+ */
+typedef struct {
+  /* property attributes:
+   *  @name: property name string.
+   *  @get: getter function pointer.
+   *  @set: setter function pointer.
+   */
+  const char *name;
+  object_getprop_fn get;
+  object_setprop_fn set;
+}
+object_property_t;
+
 /* object_method_t: structure containing information about
  * a callable method.
  */
 typedef struct {
   /* method attributes:
-   *  @name: method string name, for lookup.
-   *  @fn: method function pointer, for calling.
+   *  @name: method string name.
+   *  @fn: method function pointer.
    */
   const char *name;
   vfl_func fn;
@@ -118,7 +179,18 @@ typedef struct {
   object_binary_fn mul;
   object_binary_fn div;
 
-  /* @methods: object methods table. */
+  /* element access functions:
+   *  @get: element getter hook.
+   *  @set: element setter hook.
+   */
+  object_getelem_fn get;
+  object_setelem_fn set;
+
+  /* property and method tables:
+   *  @props: object property table.
+   *  @methods: object method table.
+   */
+  object_property_t *props;
   object_method_t *methods;
 }
 object_type_t;
@@ -132,7 +204,7 @@ struct object {
   /* object members are placed here. */
 };
 
-/* function declarations (lang/object.c): */
+/* function declarations (base/object.c): */
 
 object_t *obj_alloc (const object_type_t *type);
 

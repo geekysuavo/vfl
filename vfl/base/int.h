@@ -8,7 +8,7 @@
 #include <math.h>
 
 /* include vfl headers. */
-#include <vfl/lang/object.h>
+#include <vfl/base/object.h>
 
 /* OBJECT_IS_INT(): check if an object is an integer.
  */

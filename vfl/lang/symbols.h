@@ -7,7 +7,7 @@
 #include <string.h>
 
 /* include vfl headers. */
-#include <vfl/lang/object.h>
+#include <vfl/base/object.h>
 
 /* sym_table_t: defined type for symbol tables. */
 typedef struct sym_table sym_table_t;

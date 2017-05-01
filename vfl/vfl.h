@@ -3,16 +3,16 @@
 #ifndef __VFL_VFL_H__
 #define __VFL_VFL_H__
 
-/* include vfl language headers. */
-#include <vfl/lang/object.h>
-#include <vfl/lang.h>
-
 /* include vfl base object headers. */
+#include <vfl/base/object.h>
 #include <vfl/base/list.h>
 #include <vfl/base/int.h>
 #include <vfl/base/float.h>
 #include <vfl/base/string.h>
 #include <vfl/base/rng.h>
+
+/* include vfl language headers. */
+#include <vfl/lang.h>
 
 /* include vfl inference object headers. */
 #include <vfl/data.h>

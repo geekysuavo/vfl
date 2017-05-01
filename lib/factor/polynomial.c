@@ -97,6 +97,9 @@ static factor_type_t polynomial_type = {
     NULL,                                        /* mul       */
     NULL,                                        /* div       */
 
+    NULL,                                        /* get       */
+    NULL,                                        /* set       */
+    NULL,                                        /* props     */
     NULL                                         /* methods   */
   },
 

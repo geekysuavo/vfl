@@ -274,6 +274,39 @@ list_t *list_mul (const object_t *a, const object_t *b) {
   return lst;
 }
 
+/* list_getelem(): element getter for lists.
+ */
+object_t *list_getelem (const list_t *lst, const object_t *idx) {
+  /* only admit integer indices. */
+  if (!OBJECT_IS_INT(idx))
+    return NULL;
+
+  /* perform bounds checking on the index. */
+  const long ival = int_get((int_t*) idx);
+  if (ival < 0 || (size_t) ival >= lst->len)
+    return NULL;
+
+  /* return the list element. */
+  return list_get(lst, ival);
+}
+
+/* list_setelem(): element setter for lists.
+ */
+int list_setelem (list_t *lst, object_t *idx, object_t *elem) {
+  /* only admit integer indices. */
+  if (!OBJECT_IS_INT(idx))
+    return 0;
+
+  /* perform bounds checking on the index. */
+  const long ival = int_get((int_t*) idx);
+  if (ival < 0 || (size_t) ival >= lst->len)
+    return 0;
+
+  /* set the list element and return success. */
+  list_set(lst, ival, elem);
+  return 1;
+}
+
 /* list_type: list type structure.
  */
 static object_type_t list_type = {
@@ -289,6 +322,9 @@ static object_type_t list_type = {
   (object_binary_fn) list_mul,                   /* mul       */
   NULL,                                          /* div       */
 
+  (object_getelem_fn) list_getelem,              /* get       */
+  (object_setelem_fn) list_setelem,              /* set       */
+  NULL,                                          /* props     */
   NULL                                           /* methods   */
 };
 

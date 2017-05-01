@@ -8,7 +8,7 @@
 #include <stdlib.h>
 
 /* include vfl headers. */
-#include <vfl/lang/object.h>
+#include <vfl/base/object.h>
 
 /* function declarations, execution (lang/parser.y): */
 

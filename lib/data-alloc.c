@@ -166,6 +166,9 @@ static object_type_t data_type = {
   NULL,                                          /* mul       */
   NULL,                                          /* div       */
 
+  NULL,                                          /* get       */
+  NULL,                                          /* set       */
+  NULL,                                          /* props     */
   NULL                                           /* methods   */
 };
 

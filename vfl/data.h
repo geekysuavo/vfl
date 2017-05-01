@@ -8,7 +8,7 @@
 #include <stdlib.h>
 
 /* include vfl headers. */
-#include <vfl/lang/object.h>
+#include <vfl/base/object.h>
 #include <vfl/util/matrix.h>
 #include <vfl/util/vector.h>
 
