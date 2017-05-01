@@ -121,6 +121,40 @@ static int ast_eval_arith (ast_t *node, sym_table_t *tab) {
   return (obj ? 1 : 0);
 }
 
+/* ast_eval_for(): evaluate a for loop node.
+ */
+static int ast_eval_for (ast_t *node, sym_table_t *tab) {
+  /* get the three child nodes. */
+  ast_t *left = node->n_ternary.left;
+  ast_t *mid = node->n_ternary.mid;
+  ast_t *right = node->n_ternary.right;
+
+  /* evaluate the middle operand (loop values). */
+  if (!ast_eval(mid, tab))
+    return 0;
+
+  /* check that the loop values are now available as a list. */
+  object_t *obj = ast_node_value(mid);
+  if (!obj || !OBJECT_IS_LIST(obj))
+    return 0;
+
+  /* loop over the values of the iteration variable. */
+  list_t *values = (list_t*) obj;
+  const char *var = left->n_string.value;
+  for (size_t i = 0; i < values->len; i++) {
+    /* set the iteration symbol value. */
+    if (!symbols_set(tab, var, list_get(values, i)))
+      return 0;
+
+    /* evaluate the statement block. */
+    if (!ast_eval(right, tab))
+      return 0;
+  }
+
+  /* return success. */
+  return 1;
+}
+
 /* ast_eval_list(): evaluate a list node.
  */
 static int ast_eval_list (ast_t *node, sym_table_t *tab) {
@@ -240,6 +274,11 @@ int ast_eval (ast_t *node, sym_table_t *symbols) {
     case AST_NODE_MUL:
     case AST_NODE_DIV:
       if (!ast_eval_arith(node, tab)) return 0;
+      break;
+
+    /* for loop nodes. */
+    case AST_NODE_FOR:
+      if (!ast_eval_for(node, tab)) return 0;
       break;
 
     /* list nodes. */
