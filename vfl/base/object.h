@@ -210,6 +210,11 @@ struct object {
  */
 extern const object_t *vfl_nil;
 
+/* VFL_RETURN_NIL: macro for returning an empty object from methods.
+ */
+#define VFL_RETURN_NIL \
+  return (object_t*) vfl_nil;
+
 /* function declarations (base/object.c): */
 
 object_t *obj_alloc (const object_type_t *type);

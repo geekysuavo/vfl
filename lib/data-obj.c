@@ -116,7 +116,7 @@ static object_t *dataobj_write (data_t *dat, map_t *args) {
   data_fwrite(dat, fname);
 
   /* return nothing. */
-  return (object_t*) vfl_nil;
+  VFL_RETURN_NIL;
 }
 
 /* data_methods: array of callable object methods.
@@ -125,6 +125,8 @@ static object_method_t data_methods[] = {
   { "write", (object_method_fn) dataobj_write },
   { NULL, NULL }
 };
+
+/* --- */
 
 /* data_type: dataset type structure.
  */

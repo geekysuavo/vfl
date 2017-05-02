@@ -33,7 +33,7 @@ static object_t *stdobj_disp (object_t *std, map_t *args) {
   }
 
   /* return nothing. */
-  return (object_t*) vfl_nil;
+  VFL_RETURN_NIL;
 }
 
 /* func std.range (n: int|float);

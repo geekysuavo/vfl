@@ -13,10 +13,56 @@
 #include <vfl/util/blas.h>
 #include <vfl/data.h>
 
+/* OBJECT_IS_FACTOR(): check if an object is a factor.
+ */
+#define OBJECT_IS_FACTOR(obj) \
+  (OBJECT_TYPE(obj)->init == (object_init_fn) factor_init)
+
 /* FACTOR_TYPE(): macro function for casting factor structure pointers
  * to their associated type structures.
  */
 #define FACTOR_TYPE(s) ((factor_type_t*) (s)->type)
+
+/* FACTOR_PROP_BASE: base set of object properties available
+ * to all factors.
+ */
+#define FACTOR_PROP_BASE \
+  { "dim", \
+    (object_getprop_fn) factor_getprop_dim, \
+    (object_setprop_fn) factor_setprop_dim }, \
+  { "fixed", \
+    (object_getprop_fn) factor_getprop_fixed, \
+    (object_setprop_fn) factor_setprop_fixed }
+
+/* FACTOR_PROP(): macro function for inserting a static factor
+ * property into an object properties array.
+ */
+#define FACTOR_PROP(typ,name) \
+  { #name, \
+    (object_getprop_fn) typ ## obj_getparm_ ## name, \
+    (object_setprop_fn) typ ## obj_setparm_ ## name }
+
+/* FACTOR_PROP_GETSET(): macro function for defining property
+ * getter and setter functions for a static factor property.
+ */
+#define FACTOR_PROP_GETSET(typ,name,idx) \
+  FACTOR_PROP_GET (typ, name, idx) \
+  FACTOR_PROP_SET (typ, name, idx)
+
+/* FACTOR_PROP_GET(): macro function for defining a getter function
+ * for static factor properties.
+ */
+#define FACTOR_PROP_GET(typ,name,idx) \
+static flt_t *typ ## obj_getparm_ ## name (factor_t *f) { \
+  return float_alloc_with_value(factor_get(f, idx)); }
+
+/* FACTOR_PROP_SET(): macro function for defining a setter function
+ * for static factor properties.
+ */
+#define FACTOR_PROP_SET(typ,name,idx) \
+static int typ ## obj_setparm_ ## name (factor_t *f, object_t *val) { \
+  if (!OBJECT_IS_NUM(val)) return 0; \
+  return factor_set(f, idx, num_get(val)); }
 
 /* factor_t: defined type for the factor structure. */
 typedef struct factor factor_t;
@@ -436,7 +482,7 @@ struct factor {
   char **parnames;
 };
 
-/* function declarations (factor.c): */
+/* function declarations (factor-obj.c): */
 
 #define factor_alloc(T) \
   (factor_t*) obj_alloc((object_type_t*) T)
@@ -447,6 +493,22 @@ int factor_copy (const factor_t *f,
                  factor_t *fdup);
 
 void factor_free (factor_t *f);
+
+object_t *factor_add (const factor_t *a, const factor_t *b);
+
+object_t *factor_mul (const factor_t *a, const factor_t *b);
+
+object_t *factor_getprop_dim (const factor_t *f);
+
+object_t *factor_getprop_fixed (const factor_t *f);
+
+int factor_setprop_dim (factor_t *f, object_t *val);
+
+int factor_setprop_fixed (factor_t *f, object_t *val);
+
+object_t *factor_setprop (factor_t *f, object_t *args);
+
+/* function declarations (factor.c): */
 
 int factor_resize (factor_t *f,
                    const unsigned int D,
@@ -520,6 +582,10 @@ int fixed_impulse_set_location (factor_t *f, const double mu);
 int polynomial_set_order (factor_t *f, const unsigned int order);
 
 /* function declarations (factor/product.c): */
+
+unsigned int product_get_size (const factor_t *f);
+
+factor_t *product_get_factor (const factor_t *f, const unsigned int idx);
 
 int product_add_factor (factor_t *f, const unsigned int d, factor_t *fd);
 

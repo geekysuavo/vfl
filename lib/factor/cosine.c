@@ -2,6 +2,9 @@
 /* include the factor header. */
 #include <vfl/factor.h>
 
+/* include the float header. */
+#include <vfl/base/float.h>
+
 /* define the parameter indices. */
 #define P_MU   0
 #define P_TAU  1
@@ -205,12 +208,38 @@ FACTOR_SET (cosine) {
   return 0;
 }
 
+/* --- */
+
+/* define the static cosine factor properties. */
+FACTOR_PROP_GETSET (cosine, mu,  P_MU)
+FACTOR_PROP_GETSET (cosine, tau, P_TAU)
+
+/* cosine_properties: array of accessible cosine factor properties.
+ */
+static object_property_t cosine_properties[] = {
+  FACTOR_PROP_BASE,
+  FACTOR_PROP (cosine, mu),
+  FACTOR_PROP (cosine, tau),
+  { NULL, NULL, NULL }
+};
+
 /* cosine_names: table of cosine factor parameter names.
  */
 char *cosine_names[] = {
   "mu",
   "tau"
 };
+
+/* --- */
+
+/* cosine_methods: array of callable object methods.
+ */
+static object_method_t cosine_methods[] = {
+  { "set", (object_method_fn) factor_setprop },
+  { NULL, NULL }
+};
+
+/* --- */
 
 /* cosine_type: cosine factor type structure.
  */
@@ -223,15 +252,15 @@ static factor_type_t cosine_type = {
     (object_copy_fn) factor_copy,                /* copy      */
     (object_free_fn) factor_free,                /* free      */
 
-    NULL,                                        /* add       */
+    (object_binary_fn) factor_add,               /* add       */
     NULL,                                        /* sub       */
-    NULL,                                        /* mul       */
+    (object_binary_fn) factor_mul,               /* mul       */
     NULL,                                        /* div       */
 
     NULL,                                        /* get       */
     NULL,                                        /* set       */
-    NULL,                                        /* props     */
-    NULL                                         /* methods   */
+    cosine_properties,                           /* props     */
+    cosine_methods                               /* methods   */
   },
 
   1,                                             /* initial D */

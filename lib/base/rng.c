@@ -277,6 +277,8 @@ static object_method_t rng_methods[] = {
   { NULL, NULL }
 };
 
+/* --- */
+
 /* rng_type: random number generator type structure.
  */
 static object_type_t rng_type = {

@@ -484,6 +484,35 @@ FACTOR_FREE (product) {
   matrix_free(fx->B0);
 }
 
+/* product_get_size(): get the number of factors in a product factor.
+ *
+ * arguments:
+ *  @f: factor structure pointer.
+ *
+ * returns:
+ *  number of child factors in the product.
+ */
+unsigned int product_get_size (const factor_t *f) {
+  /* get the extended structure pointer. */
+  product_t *fx = (product_t*) f;
+  return (f ? fx->F : 0);
+}
+
+/* product_get_factor(): get a factor from a product factor.
+ *
+ * arguments:
+ *  @f: factor structure pointer.
+ *  @idx: factor index.
+ *
+ * returns:
+ *  requested child factor in the product.
+ */
+factor_t *product_get_factor (const factor_t *f, const unsigned int idx) {
+  /* return the requested factor. */
+  product_t *fx = (product_t*) f;
+  return (f && idx < fx->F ? fx->factors[idx] : NULL);
+}
+
 /* product_add_factor(): add a new factor to a product factor.
  *
  * arguments:
@@ -612,9 +641,9 @@ static factor_type_t product_type = {
     (object_copy_fn) factor_copy,                /* copy      */
     (object_free_fn) factor_free,                /* free      */
 
-    NULL,                                        /* add       */
+    (object_binary_fn) factor_add,               /* add       */
     NULL,                                        /* sub       */
-    NULL,                                        /* mul       */
+    (object_binary_fn) factor_mul,               /* mul       */
     NULL,                                        /* div       */
 
     NULL,                                        /* get       */

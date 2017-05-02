@@ -8,6 +8,7 @@
 
 /* include vfl headers. */
 #include <vfl/base/object.h>
+#include <vfl/base/int.h>
 #include <vfl/base/std.h>
 #include <vfl/lang/ast.h>
 
@@ -169,6 +170,10 @@ static void vfl_prepare_parser (void) {
 
     /* register the nil object with the table. */
     symbols_set(globals, "nil", (object_t*) vfl_nil);
+
+    /* register true and false with the table. */
+    symbols_set(globals, "true", (object_t*) int_alloc_with_value(1));
+    symbols_set(globals, "false", (object_t*) int_alloc_with_value(0));
 
     /* register the standard method library with the table. */
     object_t *stdobj = std_alloc();
