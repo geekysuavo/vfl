@@ -1,12 +1,15 @@
 
 /* include the pseudorandom number generator header. */
 #include <vfl/base/rng.h>
+#include <vfl/base/map.h>
+#include <vfl/base/int.h>
+#include <vfl/base/float.h>
 
 /* rng_get(): sample a uniform deviate than spans the values stored
  * by the 'unsigned long long' type.
  *
  * arguments:
- *  @gen: pointer to the generator structure to use for sampling.
+ *  @gen: generator structure pointer.
  *
  * returns:
  *  new uniformly distributed sample.
@@ -23,6 +26,27 @@ static inline unsigned long long rng_get (rng_t *gen) {
   return (x + gen->v) ^ gen->w;
 }
 
+/* rng_reseed(): re-initialize the state of a random number generator
+ * with a specified seed number.
+ *
+ * arguments:
+ *  @gen: generator structure pointer.
+ *  @seed: new seed value.
+ */
+static void rng_reseed (rng_t *gen, unsigned long long seed) {
+  /* set the provided seed value. */
+  gen->seed = seed;
+
+  /* initialize the core generator variables. */
+  gen->v = 4101842887655102017ll;
+  gen->u = gen->seed ^ gen->v;
+  rng_get(gen);
+  gen->v = gen->u;
+  rng_get(gen);
+  gen->w = gen->v;
+  rng_get(gen);
+}
+
 /* --- */
 
 /* rng_init(): initialize a pseudorandom number generator, seeded
@@ -36,22 +60,34 @@ static inline unsigned long long rng_get (rng_t *gen) {
  *  integer indicating success (1) or failure (0).
  */
 int rng_init (rng_t *gen) {
-  /* initialize the random seed. */
-  gen->seed = 12357;
-
   /* if available, read a seed from the environment. */
   char *sstr = getenv("RNG_SEED");
   if (sstr)
-    gen->seed = atoll(sstr);
+    rng_reseed(gen, atoll(sstr));
+  else
+    rng_reseed(gen, 12357);
 
-  /* initialize the core generator variables. */
-  gen->v = 4101842887655102017ll;
-  gen->u = gen->seed ^ gen->v;
-  rng_get(gen);
-  gen->v = gen->u;
-  rng_get(gen);
-  gen->w = gen->v;
-  rng_get(gen);
+  /* return success. */
+  return 1;
+}
+
+/* rng_copy(): copy the contents of a random number generator.
+ *
+ * arguments:
+ *  @gen: source rng structure pointer.
+ *  @gendup: destination rng structure pointer.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int rng_copy (const rng_t *gen, rng_t *gendup) {
+  /* copy the generator seed. */
+  gendup->seed = gen->seed;
+
+  /* copy the generator state. */
+  gendup->u = gen->u;
+  gendup->v = gen->v;
+  gendup->w = gen->w;
 
   /* return success. */
   return 1;
@@ -103,20 +139,141 @@ double rng_normal (rng_t *gen) {
 
 /* --- */
 
-/* FIXME: comment and actually use. */
-static int vfl_method_rng_uniform (const object_t *argin,
-                                   object_t **argout) {
-  return 0;
+/* rngobj_get_seed(): get the seed value of a random number generator.
+ *  - see object_getprop_fn() for more information.
+ */
+static int_t *rngobj_get_seed (const rng_t *gen) {
+  /* return the seed value as an integer. */
+  return int_alloc_with_value(gen->seed);
 }
 
-static int vfl_method_rng_normal (const object_t *argin,
-                                  object_t **argout) {
-  return 0;
+/* rngobj_set_seed(): set the seed value of a random number generator.
+ *  - see object_setprop_fn() for more information.
+ */
+static int rngobj_set_seed (rng_t *gen, object_t *val) {
+  /* admit only integer arguments. */
+  if (!OBJECT_IS_INT(val))
+    return 0;
+
+  /* re-seed the random number generator. */
+  rng_reseed(gen, int_get((int_t*) val));
+  return 1;
 }
 
+/* rng_properties: array of accessible object properties.
+ */
+static object_property_t rng_properties[] = {
+  { "seed",
+    (object_getprop_fn) rngobj_get_seed,
+    (object_setprop_fn) rngobj_set_seed
+  },
+  { NULL, NULL, NULL }
+};
+
+/* --- */
+
+/* rngobj_uniform(): sample a uniform random deviate from
+ * a random number generator.
+ *  - see object_method_fn() for more information.
+ */
+static flt_t *rngobj_uniform (rng_t *gen, map_t *args) {
+  /* declare required variables:
+   *  @dev: standard uniform random deviate.
+   *  @lower: transformation lower bound.
+   *  @upper: transformation upper bound.
+   */
+  double dev, lower, upper;
+
+  /* initialize the variables. */
+  dev = rng_uniform(gen);
+  lower = 0.0;
+  upper = 1.0;
+
+  /* get the lower bound value. */
+  object_t *arg = map_get(args, "lower");
+  if (arg) {
+    if (OBJECT_IS_INT(arg))
+      lower = int_get((int_t*) arg);
+    else if (OBJECT_IS_FLOAT(arg))
+      lower = float_get((flt_t*) arg);
+    else
+      return NULL;
+  }
+
+  /* get the upper bound value. */
+  arg = map_get(args, "upper");
+  if (arg) {
+    if (OBJECT_IS_INT(arg))
+      upper = int_get((int_t*) arg);
+    else if (OBJECT_IS_FLOAT(arg))
+      upper = float_get((flt_t*) arg);
+    else
+      return NULL;
+  }
+
+  /* return the transformed random deviate. */
+  return float_alloc_with_value(dev * (upper - lower) + lower);
+}
+
+/* rngobj_normal(): sample a normal random deviate from
+ * a random number generator.
+ *  - see object_method_fn() for more information.
+ */
+static flt_t *rngobj_normal (rng_t *gen, map_t *args) {
+  /* declare required variables:
+   *  @dev: standard normal random deviate.
+   *  @sigma: transformation scaling.
+   *  @mu: transformation shift.
+   */
+  double dev, sigma, mu;
+
+  /* initialize the variables. */
+  dev = rng_normal(gen);
+  sigma = 1.0;
+  mu = 0.0;
+
+  /* get the shift value. */
+  object_t *arg = map_get(args, "mu");
+  if (arg) {
+    if (OBJECT_IS_INT(arg))
+      mu = int_get((int_t*) arg);
+    else if (OBJECT_IS_FLOAT(arg))
+      mu = float_get((flt_t*) arg);
+    else
+      return NULL;
+  }
+
+  /* get the scale value, as standard deviation. */
+  arg = map_get(args, "sigma");
+  if (arg) {
+    if (OBJECT_IS_INT(arg))
+      sigma = int_get((int_t*) arg);
+    else if (OBJECT_IS_FLOAT(arg))
+      sigma = float_get((flt_t*) arg);
+    else
+      return NULL;
+  }
+
+  /* get the scale value, as precision. */
+  arg = map_get(args, "tau");
+  if (arg) {
+    if (OBJECT_IS_INT(arg))
+      sigma = 1.0 / sqrt((double) int_get((int_t*) arg));
+    else if (OBJECT_IS_FLOAT(arg))
+      sigma = 1.0 / sqrt(float_get((flt_t*) arg));
+    else
+      return NULL;
+  }
+
+  /* return the transformed random deviate. */
+  return float_alloc_with_value(mu + dev * sigma);
+}
+
+/* rng_methods: array of callable object methods.
+ */
 static object_method_t rng_methods[] = {
-  { "uniform", vfl_method_rng_uniform },
-  { "normal", vfl_method_rng_normal },
+  { "uniform", (object_method_fn) rngobj_uniform },
+  { "normal",  (object_method_fn) rngobj_normal },
   { NULL, NULL }
 };
 
@@ -127,7 +284,7 @@ static object_type_t rng_type = {
   sizeof(rng_t),                                 /* size      */
 
   (object_init_fn) rng_init,                     /* init      */
-  NULL,                                          /* copy      */
+  (object_copy_fn) rng_copy,                     /* copy      */
   NULL,                                          /* free      */
 
   NULL,                                          /* add       */
@@ -137,7 +294,7 @@ static object_type_t rng_type = {
 
   NULL,                                          /* get       */
   NULL,                                          /* set       */
-  NULL,                                          /* props     */
+  rng_properties,                                /* props     */
   rng_methods                                    /* methods   */
 };
 

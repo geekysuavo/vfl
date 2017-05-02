@@ -5,6 +5,7 @@
 
 /* include c library headers. */
 #include <stdlib.h>
+#include <string.h>
 
 /* OBJECT_TYPE(): macro function for casting object structure pointers
  * to their associated base type structures.
@@ -14,16 +15,17 @@
 /* object_t: defined type for the base object structure. */
 typedef struct object object_t;
 
-/* vfl_func(): execute a function from the vfl interpreter.
+/* object_method_fn(): execute an object method.
  *
  * arguments:
- *  @argin: input argument, could be a list.
- *  @argout: pointer to the output argument.
+ *  @obj: object structure pointer to call with.
+ *  @args: mapping holding method arguments.
+ *  @out: pointer to the output value.
  *
  * returns:
- *  integer indicating function success (1) or failure (0).
+ *  output from the method, or null on failure.
  */
-typedef int (*vfl_func) (const object_t *argin, object_t **argout);
+typedef object_t* (*object_method_fn) (object_t *obj, const object_t *args);
 
 /* object_init_fn(): initialize the contents of an object.
  *
@@ -118,7 +120,7 @@ typedef int (*object_setprop_fn) (object_t *obj, object_t *prop);
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-typedef int (*object_setelem_fn) (object_t *obj, object_t *idx,
+typedef int (*object_setelem_fn) (object_t *obj, const object_t *idx,
                                   object_t *elem);
 
 /* object_property_t: structure containing information about
@@ -145,7 +147,7 @@ typedef struct {
    *  @fn: method function pointer.
    */
   const char *name;
-  vfl_func fn;
+  object_method_fn fn;
 }
 object_method_t;
 
@@ -219,6 +221,17 @@ object_t *obj_sub (const object_t *a, const object_t *b);
 object_t *obj_mul (const object_t *a, const object_t *b);
 
 object_t *obj_div (const object_t *a, const object_t *b);
+
+object_t *obj_getprop (const object_t *obj, const char *name);
+
+object_t *obj_getelem (const object_t *obj, const object_t *idx);
+
+int obj_setprop (object_t *obj, const char *name, object_t *val);
+
+int obj_setelem (object_t *obj, const object_t *idx,
+                 object_t *val);
+
+object_t *obj_method (object_t *obj, const char *name, object_t *args);
 
 #endif /* !__VFL_OBJECT_H__ */
 

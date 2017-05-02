@@ -117,14 +117,14 @@ qual_list
  ;
 
 qual
- : T_POINT ident { $$ = ast_unary(AST_NODE_MEMBER, $2); }
- | arguments     { $$ = ast_unary(AST_NODE_METHOD, $1); }
- | list          { $$ = ast_unary(AST_NODE_ELEMENT, $1); }
+ : T_POINT ident { $$ = $2; }
+ | arguments
+ | list
  ;
 
 arguments: T_PAREN_OPEN arg_list T_PAREN_CLOSE { $$ = $2; };
 
-arg_list:               { $$ = NULL; }
+arg_list:               { $$ = ast_list(AST_NODE_ARGS, NULL); }
  | arg_list T_COMMA arg { $$ = ast_list_append($1, $3); }
  | arg                  { $$ = ast_list(AST_NODE_ARGS, $1); }
  ;

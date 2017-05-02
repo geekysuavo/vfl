@@ -48,7 +48,11 @@ map_t;
 #define map_alloc() \
   (map_t*) obj_alloc(vfl_object_map)
 
-object_t *map_get (map_t *map, const char *key);
+const char *map_key (const map_t *map, const size_t idx);
+
+object_t *map_val (const map_t *map, const size_t idx);
+
+object_t *map_get (const map_t *map, const char *key);
 
 int map_set (map_t *map, const char *key, object_t *val);
 

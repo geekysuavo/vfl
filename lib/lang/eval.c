@@ -67,18 +67,49 @@ static int ast_eval_assign (ast_t *node, sym_table_t *tab) {
   if (!ast_eval(right, tab))
     return 0;
 
+  /* get the right hand side value. */
+  object_t *val = ast_node_value(right);
+
   /* check the type of assignment. */
   if (ast_node_type(left) == AST_NODE_IDENT) {
     /* variable assignment... free the existing node value. */
     obj_free(ast_node_value(left));
 
     /* set the symbol table entry. */
-    if (!symbols_set(tab, left->n_string.value, ast_node_value(right)))
+    if (!symbols_set(tab, left->n_string.value, val))
       return 0;
   }
-  else {
-    /* FIXME: implement qualified assignments. */
+  else if (ast_node_type(left) == AST_NODE_NAME) {
+    /* qualified assignment... get the qualifier node array. */
+    ast_t **quals = left->n_binary.right->n_list.values;
+    const size_t n_quals = left->n_binary.right->n_list.len;
+
+    /* get the object used for calling setters. */
+    object_t *obj = NULL;
+    if (n_quals == 1)
+      obj = ast_node_value(left->n_binary.left);
+    else
+      obj = ast_node_value(quals[n_quals - 2]);
+
+    /* determine the type of qualified assignment. */
+    ast_t *qend = quals[n_quals - 1];
+    if (ast_node_type(qend) == AST_NODE_IDENT) {
+      /* call the property set method. */
+      const char *propname = qend->n_string.value;
+      if (!obj_setprop(obj, propname, val))
+        return 0;
+    }
+    else if (ast_node_type(qend) == AST_NODE_LIST) {
+      /* call the element set method. */
+      object_t *idx = ast_node_value(qend);
+      if (!obj_setelem(obj, idx, val))
+        return 0;
+    }
+    else
+      return 0;
   }
+  else
+    return 0;
 
   /* store the node value and return success. */
   ast_node_value(node) = ast_node_value(right);
@@ -119,6 +150,111 @@ static int ast_eval_arith (ast_t *node, sym_table_t *tab) {
   /* store the node value and return. */
   ast_node_value(node) = obj;
   return (obj ? 1 : 0);
+}
+
+/* ast_eval_ctor(): evaluate a constructor node.
+ */
+static int ast_eval_ctor (ast_t *node, sym_table_t *tab,
+                          const char *name, map_t *args) {
+  /* lookup the object type from the name string. */
+  const object_type_t *type = vfl_lookup_type(name);
+  if (!type)
+    return 0;
+
+  /* allocate an object with the specified type. */
+  object_t *obj = obj_alloc(type);
+  if (!obj)
+    return 0;
+
+  /* apply the constructor arguments. */
+  for (size_t i = 0; i < args->len; i++) {
+    /* apply the argument as a property. */
+    if (!obj_setprop(obj, map_key(args, i), map_val(args, i)))
+      return 0;
+  }
+
+  /* set the node value and return success. */
+  ast_node_value(node) = obj;
+  return 1;
+}
+
+/* ast_eval_name(): evaluate a qualified name node.
+ */
+static int ast_eval_name (ast_t *node, sym_table_t *tab) {
+  /* get the identifier node. */
+  ast_t *id = node->n_binary.left;
+  const char *idstr = id->n_string.value;
+
+  /* get the qualifier array and count. */
+  ast_t **quals = node->n_binary.right->n_list.values;
+  const size_t n_quals = node->n_binary.right->n_list.len;
+
+  /* check for constructor calls. */
+  if (n_quals == 1 && ast_node_type(quals[0]) == AST_NODE_ARGS) {
+    /* evaluate the argument list. */
+    if (!ast_eval(quals[0], tab))
+      return 0;
+
+    /* evaluate the constructor. */
+    map_t *map = (map_t*) ast_node_value(quals[0]);
+    return ast_eval_ctor(node, tab, idstr, map);
+  }
+
+  /* evaluate the identifier node. */
+  if (!ast_eval(id, tab))
+    return 0;
+
+  /* initialize the resolved node value. */
+  object_t *obj = ast_node_value(id);
+
+  /* loop over the qualifiers. */
+  for (size_t i = 0; i < n_quals; i++) {
+    /* get the qualifier node type. */
+    const ast_node_type_t qtype = ast_node_type(quals[i]);
+    if (qtype == AST_NODE_LIST) {
+      /* evaluate the element index. */
+      if (!ast_eval(quals[i], tab))
+        return 0;
+
+      /* get the element from the currently resolved object. */
+      object_t *idx = ast_node_value(quals[i]);
+      obj = obj_getelem(obj, idx);
+      if (!obj)
+        return 0;
+    }
+    else if (qtype == AST_NODE_IDENT) {
+      /* check if the next node is an argument list. */
+      const size_t j = i + 1;
+      if (j < n_quals && ast_node_type(quals[j]) == AST_NODE_ARGS) {
+        /* evaluate the argument list. */
+        if (!ast_eval(quals[j], tab))
+          return 0;
+
+        /* call the method of the currently resolved object. */
+        const char *methname = quals[i]->n_string.value;
+        obj = obj_method(obj, methname, ast_node_value(quals[j]));
+        if (!obj)
+          return 0;
+
+        /* skip the argument list. */
+        i++;
+      }
+      else {
+        /* get the property from the currently resolved object. */
+        const char *propname = quals[i]->n_string.value;
+        obj = obj_getprop(obj, propname);
+        if (!obj)
+          return 0;
+      }
+    }
+
+    /* store the qualifier node value. */
+    ast_node_value(quals[i]) = obj;
+  }
+
+  /* return success. */
+  ast_node_value(node) = obj;
+  return 1;
 }
 
 /* ast_eval_for(): evaluate a for loop node.
@@ -176,6 +312,45 @@ static int ast_eval_list (ast_t *node, sym_table_t *tab) {
 
   /* store the node value and return success. */
   ast_node_value(node) = (object_t*) lst;
+  return 1;
+}
+
+/* ast_eval_args(): evaluate an argument list block.
+ */
+static int ast_eval_args (ast_t *node, sym_table_t *tab) {
+  /* allocate a mapping for storing arguments. */
+  map_t *map = map_alloc();
+  if (!map)
+    return 0;
+
+  /* store the map as the node value. */
+  ast_node_value(node) = (object_t*) map;
+
+  /* loop over each argument. */
+  for (size_t i = 0; i < node->n_list.len; i++) {
+    /* get the argument node. */
+    ast_t *arg = node->n_list.values[i];
+    if (!arg)
+      continue;
+
+    /* get the argument identifier and expression nodes. */
+    ast_t *id = arg->n_binary.left;
+    ast_t *ex = arg->n_binary.right;
+
+    /* evaluate the expression. */
+    if (!ast_eval(ex, tab))
+      return 0;
+
+    /* get the key string and value object. */
+    const char *key = id->n_string.value;
+    object_t *val = ast_node_value(ex);
+
+    /* store the key-value pair in the map. */
+    if (!map_set(map, key, val))
+      return 0;
+  }
+
+  /* return success. */
   return 1;
 }
 
@@ -276,6 +451,11 @@ int ast_eval (ast_t *node, sym_table_t *symbols) {
       if (!ast_eval_arith(node, tab)) return 0;
       break;
 
+    /* qualified name nodes. */
+    case AST_NODE_NAME:
+      if (!ast_eval_name(node, tab)) return 0;
+      break;
+
     /* for loop nodes. */
     case AST_NODE_FOR:
       if (!ast_eval_for(node, tab)) return 0;
@@ -286,6 +466,11 @@ int ast_eval (ast_t *node, sym_table_t *symbols) {
       if (!ast_eval_list(node, tab)) return 0;
       break;
 
+    /* arguments nodes. */
+    case AST_NODE_ARGS:
+      if (!ast_eval_args(node, tab)) return 0;
+      break;
+
     /* block nodes. */
     case AST_NODE_BLOCK:
       if (!ast_eval_block(node, tab)) return 0;
@@ -293,29 +478,8 @@ int ast_eval (ast_t *node, sym_table_t *symbols) {
 
     /* other. */
     default:
-/*FIXME*/
-fprintf(stderr,"node = 0x%lx:\n", (size_t) node);
-fprintf(stderr,"  type  = %u\n", ast_node_type(node));
-fprintf(stderr,"  value = 0x%lx\n", (size_t) ast_node_value(node));
-fprintf(stderr,"  table = 0x%lx\n", (size_t) ast_node_table(node));
-fprintf(stderr,"  scope = %u\n", ast_node_scope(node));
-fflush(stderr);
-/*FIXME*/
       break;
   }
-/*FIXME*/
-object_t *obj=ast_node_value(node);
-if(obj){
-if(OBJECT_IS_INT(obj))
-  printf("result[int] = %ld\n",int_get((int_t*)obj));
-else if(OBJECT_IS_FLOAT(obj))
-  printf("result[float] = %lf\n",float_get((flt_t*)obj));
-else if(OBJECT_IS_STRING(obj))
-  printf("result[string] = '%s'\n",string_get((string_t*)obj));
-else if(OBJECT_IS_LIST(obj))
-  printf("result[list] = list<%lu>\n",((list_t*)obj)->len);
-}
-/*FIXME*/
 
   /* return success on leaf nodes. */
   return 1;

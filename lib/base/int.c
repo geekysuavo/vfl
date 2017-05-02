@@ -77,6 +77,7 @@ void int_set (int_t *i, const long val) {
 }
 
 /* int_add(): addition function for integers.
+ *  - see object_binary_fn() for details.
  */
 int_t *int_add (const int_t *a, const int_t *b) {
   /* if both arguments are integers, return a result. */
@@ -88,6 +89,7 @@ int_t *int_add (const int_t *a, const int_t *b) {
 }
 
 /* int_sub(): subtraction function for integers.
+ *  - see object_binary_fn() for details.
  */
 int_t *int_sub (const int_t *a, const int_t *b) {
   /* if both arguments are integers, return a result. */
@@ -99,6 +101,7 @@ int_t *int_sub (const int_t *a, const int_t *b) {
 }
 
 /* int_mul(): multiplication function for integers.
+ *  - see object_binary_fn() for details.
  */
 int_t *int_mul (const int_t *a, const int_t *b) {
   /* if both arguments are integers, return a result. */
@@ -110,6 +113,7 @@ int_t *int_mul (const int_t *a, const int_t *b) {
 }
 
 /* int_div(): division function for integers.
+ *  - see object_binary_fn() for details.
  */
 int_t *int_div (const int_t *a, const int_t *b) {
   /* if both arguments are integers, return a result. */

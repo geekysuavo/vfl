@@ -91,29 +91,6 @@ ast_t *ast_string (const ast_node_type_t type, const char *value) {
   return node;
 }
 
-/* ast_unary(): allocate a new unary node.
- *
- * arguments:
- *  @type: type of the node.
- *  @sub: child for the node.
- *
- * returns:
- *  newly allocated tree node, or null on failure.
- */
-ast_t *ast_unary (const ast_node_type_t type, ast_t *sub) {
-  /* allocate a new node. */
-  ast_t *node = ast_alloc();
-  if (!node)
-    return NULL;
-
-  /* set the node type and child. */
-  ast_node_type(node) = type;
-  node->n_unary.sub = sub;
-
-  /* return the new node. */
-  return node;
-}
-
 /* ast_binary(): allocate a new binary node.
  *
  * arguments:
@@ -255,14 +232,6 @@ void ast_free (ast_t *node) {
     case AST_NODE_IDENT:
       /* free the string value. */
       free(node->n_string.value);
-      break;
-
-    /* unary nodes. */
-    case AST_NODE_MEMBER:
-    case AST_NODE_METHOD:
-    case AST_NODE_ELEMENT:
-      /* free the child node. */
-      ast_free(node->n_unary.sub);
       break;
 
     /* binary nodes. */

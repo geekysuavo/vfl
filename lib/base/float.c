@@ -94,6 +94,7 @@ flt_t *float_alloc_with_value (const double val) {
 }
 
 /* float_add(): addition function for floats.
+ *  - see object_binary_fn() for details.
  */
 flt_t *float_add (const object_t *a, const object_t *b) {
   /* if both arguments are scalar numbers, return a result. */
@@ -105,6 +106,7 @@ flt_t *float_add (const object_t *a, const object_t *b) {
 }
 
 /* float_sub(): subtraction function for floats.
+ *  - see object_binary_fn() for details.
  */
 flt_t *float_sub (const object_t *a, const object_t *b) {
   /* if both arguments are scalar numbers, return a result. */
@@ -116,6 +118,7 @@ flt_t *float_sub (const object_t *a, const object_t *b) {
 }
 
 /* float_mul(): multiplication function for floats.
+ *  - see object_binary_fn() for details.
  */
 flt_t *float_mul (const object_t *a, const object_t *b) {
   /* if both arguments are scalar numbers, return a result. */
@@ -127,6 +130,7 @@ flt_t *float_mul (const object_t *a, const object_t *b) {
 }
 
 /* float_div(): division function for floats.
+ *  - see object_binary_fn() for details.
  */
 flt_t *float_div (const object_t *a, const object_t *b) {
   /* if both arguments are scalar numbers, return a result. */

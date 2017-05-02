@@ -185,3 +185,143 @@ object_t *obj_div (const object_t *a, const object_t *b) {
   return c;
 }
 
+/* obj_getprop(): get the value of an object property.
+ *
+ * arguments:
+ *  @obj: object structure pointer.
+ *  @name: property name.
+ *
+ * returns:
+ *  requested property value, or null.
+ */
+object_t *obj_getprop (const object_t *obj, const char *name) {
+  /* check the input arguments. */
+  if (!obj || !name)
+    return NULL;
+
+  /* get the object type and check for a property table. */
+  const object_type_t *type = OBJECT_TYPE(obj);
+  if (!type->props)
+    return NULL;
+
+  /* search for the named property. */
+  for (size_t i = 0; type->props[i].name; i++) {
+    /* on match, execute the property getter. */
+    if (strcmp(type->props[i].name, name) == 0 && type->props[i].get)
+      return type->props[i].get(obj);
+  }
+
+  /* no getter found. */
+  return NULL;
+}
+
+/* obj_getelem(): get the value of an object element.
+ *
+ * arguments:
+ *  @obj: object structure pointer.
+ *  @idx: element index.
+ *
+ * returns:
+ *  requested element value, or null.
+ */
+object_t *obj_getelem (const object_t *obj, const object_t *idx) {
+  /* check the input arguments. */
+  if (!obj || !idx)
+    return NULL;
+
+  /* get the object type and check for a getter. */
+  const object_type_t *type = OBJECT_TYPE(obj);
+  if (type->get)
+    return type->get(obj, idx);
+
+  /* no getter available. */
+  return NULL;
+}
+
+/* obj_setprop(): set the value of an object property.
+ *
+ * arguments:
+ *  @obj: object structure pointer.
+ *  @name: property name.
+ *  @val: property value.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int obj_setprop (object_t *obj, const char *name, object_t *val) {
+  /* check the input arguments. */
+  if (!obj || !name)
+    return 0;
+
+  /* get the object type and check for a property table. */
+  const object_type_t *type = OBJECT_TYPE(obj);
+  if (!type->props)
+    return 0;
+
+  /* search for the named property. */
+  for (size_t i = 0; type->props[i].name; i++) {
+    /* on match, execute the property setter. */
+    if (strcmp(type->props[i].name, name) == 0 && type->props[i].set)
+      return type->props[i].set(obj, val);
+  }
+
+  /* no setter found. */
+  return 0;
+}
+
+/* obj_setelem(): set the value of an object element.
+ *
+ * arguments:
+ *  @obj: object structure pointer.
+ *  @idx: element index.
+ *  @val: element value.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int obj_setelem (object_t *obj, const object_t *idx,
+                 object_t *val) {
+  /* check the input arguments. */
+  if (!obj || !idx)
+    return 0;
+
+  /* get the object type and check for a setter. */
+  const object_type_t *type = OBJECT_TYPE(obj);
+  if (type->set)
+    return type->set(obj, idx, val);
+
+  /* no setter available. */
+  return 0;
+}
+
+/* obj_method(): call an object method.
+ *
+ * arguments:
+ *  @obj: object structure pointer.
+ *  @name: method name.
+ *  @args: arguments.
+ *
+ * returns:
+ *  result of the called method, or null.
+ */
+object_t *obj_method (object_t *obj, const char *name, object_t *args) {
+  /* check the input arguments. */
+  if (!obj || !name)
+    return NULL;
+
+  /* get the object type and check for a method table. */
+  const object_type_t *type = OBJECT_TYPE(obj);
+  if (!type->methods)
+    return NULL;
+
+  /* search for the named method. */
+  for (size_t i = 0; type->methods[i].name; i++) {
+    /* on match, execute the method. */
+    if (strcmp(type->methods[i].name, name) == 0)
+      return type->methods[i].fn(obj, args);
+  }
+
+  /* no method found. */
+  return NULL;
+}
+

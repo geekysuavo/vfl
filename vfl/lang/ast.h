@@ -38,13 +38,8 @@ typedef enum {
   AST_NODE_STRING,
   AST_NODE_IDENT,
 
-  /* unary nodes. */
-  AST_NODE_MEMBER = 200,
-  AST_NODE_METHOD,
-  AST_NODE_ELEMENT,
-
   /* binary nodes. */
-  AST_NODE_ASSIGN = 300,
+  AST_NODE_ASSIGN = 200,
   AST_NODE_ADD,
   AST_NODE_SUB,
   AST_NODE_MUL,
@@ -53,10 +48,10 @@ typedef enum {
   AST_NODE_NAME,
 
   /* ternary nodes. */
-  AST_NODE_FOR = 400,
+  AST_NODE_FOR = 300,
 
   /* list nodes. */
-  AST_NODE_LIST = 500,
+  AST_NODE_LIST = 400,
   AST_NODE_ARGS,
   AST_NODE_BLOCK,
   AST_NODE_QUALS
@@ -99,16 +94,6 @@ typedef struct {
   char *value;
 }
 ast_node_string_t;
-
-/* ast_node_unary_t: nodes with exactly one child.
- */
-typedef struct {
-  AST_BASE;
-
-  /* @sub: child node. */
-  ast_t *sub;
-}
-ast_node_unary_t;
 
 /* ast_node_binary_t: nodes with exactly two children.
  */
@@ -159,8 +144,7 @@ union ast {
   ast_node_float_t n_float;
   ast_node_string_t n_string;
 
-  /* unary, binary and ternary nodes. */
-  ast_node_unary_t n_unary;
+  /* binary and ternary nodes. */
   ast_node_binary_t n_binary;
   ast_node_ternary_t n_ternary;
 
@@ -175,8 +159,6 @@ ast_t *ast_int (const long value);
 ast_t *ast_float (const double value);
 
 ast_t *ast_string (const ast_node_type_t type, const char *value);
-
-ast_t *ast_unary (const ast_node_type_t type, ast_t *sub);
 
 ast_t *ast_binary (const ast_node_type_t type,
                    ast_t *left, ast_t *right);

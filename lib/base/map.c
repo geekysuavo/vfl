@@ -31,6 +31,42 @@ void map_free (map_t *map) {
   free(map->pairs);
 }
 
+/* map_key(): get the key string of an indexed map entry.
+ *
+ * arguments:
+ *  @map: mapping structure pointer.
+ *  @idx: key-value pair index.
+ *
+ * returns:
+ *  key string, or null on failure.
+ */
+const char *map_key (const map_t *map, const size_t idx) {
+  /* if possible, return the key string. */
+  if (map && idx < map->len)
+    return map->pairs[idx].key;
+
+  /* index out of bounds. */
+  return NULL;
+}
+
+/* map_val(): get the value object of an indexed map entry.
+ *
+ * arguments:
+ *  @map: mapping structure pointer.
+ *  @idx: key-value pair index.
+ *
+ * returns:
+ *  value object, or null on failure.
+ */
+object_t *map_val (const map_t *map, const size_t idx) {
+  /* if possible, return the key string. */
+  if (map && idx < map->len)
+    return map->pairs[idx].val;
+
+  /* index out of bounds. */
+  return NULL;
+}
+
 /* map_get(): get the object value associated with a key
  * within a mapping structure.
  *
@@ -41,7 +77,7 @@ void map_free (map_t *map) {
  * returns:
  *  mapped object value associated with the key.
  */
-object_t *map_get (map_t *map, const char *key) {
+object_t *map_get (const map_t *map, const char *key) {
   /* check the input pointers. */
   if (!map || !key)
     return NULL;

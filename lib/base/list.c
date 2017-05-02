@@ -187,6 +187,7 @@ int list_prepend (list_t *lst, object_t *obj) {
 }
 
 /* list_add(): addition function for lists.
+ *  - see object_binary_fn() for details.
  */
 list_t *list_add (const object_t *a, const object_t *b) {
   /* check the argument types. */
@@ -230,6 +231,7 @@ list_t *list_add (const object_t *a, const object_t *b) {
 }
 
 /* list_mul(): multiplication function for lists.
+ *  - see object_binary_fn() for details.
  */
 list_t *list_mul (const object_t *a, const object_t *b) {
   /* declare required variables:
@@ -275,14 +277,20 @@ list_t *list_mul (const object_t *a, const object_t *b) {
 }
 
 /* list_getelem(): element getter for lists.
+ *  - see object_getelem_fn() for details.
  */
-object_t *list_getelem (const list_t *lst, const object_t *idx) {
+object_t *list_getelem (const list_t *lst, const list_t *idx) {
+  /* only admit single-element indices. */
+  if (idx->len != 1)
+    return NULL;
+
   /* only admit integer indices. */
-  if (!OBJECT_IS_INT(idx))
+  object_t *idxobj = list_get(idx, 0);
+  if (!OBJECT_IS_INT(idxobj))
     return NULL;
 
   /* perform bounds checking on the index. */
-  const long ival = int_get((int_t*) idx);
+  const long ival = int_get((int_t*) idxobj);
   if (ival < 0 || (size_t) ival >= lst->len)
     return NULL;
 
@@ -291,14 +299,20 @@ object_t *list_getelem (const list_t *lst, const object_t *idx) {
 }
 
 /* list_setelem(): element setter for lists.
+ *  - see object_setelem_fn() for details.
  */
-int list_setelem (list_t *lst, object_t *idx, object_t *elem) {
+int list_setelem (list_t *lst, list_t *idx, object_t *elem) {
+  /* only admit single-element indices. */
+  if (idx->len != 1)
+    return 0;
+
   /* only admit integer indices. */
-  if (!OBJECT_IS_INT(idx))
+  object_t *idxobj = list_get(idx, 0);
+  if (!OBJECT_IS_INT(idxobj))
     return 0;
 
   /* perform bounds checking on the index. */
-  const long ival = int_get((int_t*) idx);
+  const long ival = int_get((int_t*) idxobj);
   if (ival < 0 || (size_t) ival >= lst->len)
     return 0;
 
