@@ -206,6 +206,10 @@ struct object {
   /* object members are placed here. */
 };
 
+/* vfl_nil: externally globally available 'empty object'.
+ */
+extern const object_t *vfl_nil;
+
 /* function declarations (base/object.c): */
 
 object_t *obj_alloc (const object_type_t *type);

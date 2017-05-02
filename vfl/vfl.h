@@ -11,6 +11,7 @@
 #include <vfl/base/float.h>
 #include <vfl/base/string.h>
 #include <vfl/base/rng.h>
+#include <vfl/base/std.h>
 
 /* include vfl language headers. */
 #include <vfl/lang.h>

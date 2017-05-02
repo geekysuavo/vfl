@@ -140,7 +140,7 @@ double rng_normal (rng_t *gen) {
 /* --- */
 
 /* rngobj_get_seed(): get the seed value of a random number generator.
- *  - see object_getprop_fn() for more information.
+ *  - see object_getprop_fn() for details.
  */
 static int_t *rngobj_get_seed (const rng_t *gen) {
   /* return the seed value as an integer. */
@@ -148,7 +148,7 @@ static int_t *rngobj_get_seed (const rng_t *gen) {
 }
 
 /* rngobj_set_seed(): set the seed value of a random number generator.
- *  - see object_setprop_fn() for more information.
+ *  - see object_setprop_fn() for details.
  */
 static int rngobj_set_seed (rng_t *gen, object_t *val) {
   /* admit only integer arguments. */
@@ -174,7 +174,7 @@ static object_property_t rng_properties[] = {
 
 /* rngobj_uniform(): sample a uniform random deviate from
  * a random number generator.
- *  - see object_method_fn() for more information.
+ *  - see object_method_fn() for details.
  */
 static flt_t *rngobj_uniform (rng_t *gen, map_t *args) {
   /* declare required variables:
@@ -217,7 +217,7 @@ static flt_t *rngobj_uniform (rng_t *gen, map_t *args) {
 
 /* rngobj_normal(): sample a normal random deviate from
  * a random number generator.
- *  - see object_method_fn() for more information.
+ *  - see object_method_fn() for details.
  */
 static flt_t *rngobj_normal (rng_t *gen, map_t *args) {
   /* declare required variables:

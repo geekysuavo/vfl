@@ -30,7 +30,7 @@ LIB=libvfl.so
 C_UTIL=specfun vector matrix grid blas chol eigen search
 
 # basenames of C base type source files.
-C_BASE=object list map int float string rng
+C_BASE=object list map int float string rng std
 
 # basenames of C, flex, and bison source files.
 C_LANG=symbols ast eval
@@ -69,7 +69,8 @@ C+= $(addprefix model/,$(C_MODEL))
 C+= $(addprefix optim/,$(C_OPTIM))
 
 # basenames of core C source files.
-C+= data-alloc data-entries data-fileio data-sort factor model optim vfl
+C+= data-alloc data-entries data-fileio data-object data-sort
+C+= factor model optim vfl
 
 # filenames of C sources.
 SRC=$(addsuffix .c,$(C))

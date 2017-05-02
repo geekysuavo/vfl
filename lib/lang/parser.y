@@ -8,6 +8,7 @@
 
 /* include vfl headers. */
 #include <vfl/base/object.h>
+#include <vfl/base/std.h>
 #include <vfl/lang/ast.h>
 
 /* include the generated parser header. */
@@ -161,9 +162,18 @@ void yyerror (const char *msg) {
  * syntax tree for a new round of parsing.
  */
 static void vfl_prepare_parser (void) {
-  /* allocate the global symbol table. */
-  if (!globals)
+  /* prepare the global symbol table. */
+  if (!globals) {
+    /* allocate a new table. */
     globals = symbols_alloc(NULL);
+
+    /* register the nil object with the table. */
+    symbols_set(globals, "nil", (object_t*) vfl_nil);
+
+    /* register the standard method library with the table. */
+    object_t *stdobj = std_alloc();
+    symbols_set(globals, "std", stdobj);
+  }
 
   /* initialize the abstract syntax tree. */
   if (tree) {

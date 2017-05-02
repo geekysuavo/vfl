@@ -1,9 +1,9 @@
 
 # create a pseudorandom number generator.
-rand = rng();
+rand = rng(seed: 7321);
 
 # create a dataset.
-dat = data(file: 'cosines.dat');
+dat = data(file: '../tests/cosines/cosines.dat');
 
 # define factor prior parameters.
 mu = 0.0;
@@ -18,7 +18,7 @@ mdl = tauvfr(
 );
 
 # randomize the factor means.
-for j in range(n: mdl.M) {
+for j in std.range(n: mdl.M) {
   mdl.factors[j].mu = rand.normal(mu: mu, tau: tau);
 }
 
@@ -31,12 +31,15 @@ opt = fg(
 # optimize.
 opt.execute();
 
+# build gridded datasets for prediction.
 G = [0.0, 1.0e-3, 0.5];
 mean = data(grid: G);
 var = data(grid: G);
 
+# compute the model prediction.
 mdl.predict(mean: mean, var: var);
 
+# write the prediction results.
 mean.write(file: 'mean.dat');
 var.write(file: 'var.dat');
 

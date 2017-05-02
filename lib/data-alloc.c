@@ -2,27 +2,6 @@
 /* include the dataset header. */
 #include <vfl/data.h>
 
-/* data_init(): initialize the contents of a dataset.
- *
- * arguments:
- *  @dat: dataset structure pointer.
- *
- * returns:
- *  integer indicating success (1) or failure (0).
- */
-int data_init (data_t *dat) {
-  /* initialize the size of the dataset. */
-  dat->N = 0;
-  dat->D = 0;
-
-  /* initialize the data array. */
-  dat->data = NULL;
-  dat->swp.x = NULL;
-
-  /* return success. */
-  return 1;
-}
-
 /* data_alloc_from_file(): allocate a new dataset, filled with
  * observations that have been read from a file.
  *
@@ -80,19 +59,6 @@ data_t *data_alloc_from_grid (const unsigned int P,
   return dat;
 }
 
-/* data_free(): free the contents of a dataset.
- *
- * arguments:
- *  @dat: dataset structure pointer to free.
- */
-void data_free (data_t *dat) {
-  /* free the swap vector. */
-  vector_free(dat->swp.x);
-
-  /* free the array of observations. */
-  free(dat->data);
-}
-
 /* data_resize(): resize the observation array of a dataset.
  *
  * arguments:
@@ -148,30 +114,4 @@ int data_resize (data_t *dat, const unsigned int N, const unsigned int D) {
   /* return success. */
   return 1;
 }
-
-/* --- */
-
-/* data_type: dataset type structure.
- */
-static object_type_t data_type = {
-  "data",                                        /* name      */
-  sizeof(data_t),                                /* size      */
-
-  (object_init_fn) data_init,                    /* init      */
-  NULL,                                          /* copy      */
-  (object_free_fn) data_free,                    /* free      */
-
-  NULL,                                          /* add       */
-  NULL,                                          /* sub       */
-  NULL,                                          /* mul       */
-  NULL,                                          /* div       */
-
-  NULL,                                          /* get       */
-  NULL,                                          /* set       */
-  NULL,                                          /* props     */
-  NULL                                           /* methods   */
-};
-
-/* vfl_object_data: address of the data_type structure. */
-const object_type_t *vfl_object_data = &data_type;
 

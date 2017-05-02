@@ -5,16 +5,16 @@
 /* num_get(): get the value of a scalar numeric object.
  *
  * arguments:
- *  @obj: integer or float object structure pointer.
+ *  @num: integer or float object structure pointer.
  *
  * returns:
  *  floating-point value of the object.
  */
-static inline double num_get (const object_t *obj) {
+double num_get (const object_t *num) {
   /* return the value. */
-  return (OBJECT_IS_INT(obj)
-           ? (double) int_get((int_t*) obj)
-           : float_get((flt_t*) obj));
+  return (OBJECT_IS_INT(num)
+           ? (double) int_get((int_t*) num)
+           :          float_get((flt_t*) num));
 }
 
 /* float_get(): get the value of a float object.

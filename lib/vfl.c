@@ -2,6 +2,19 @@
 /* include the vfl header. */
 #include <vfl/vfl.h>
 
+/* vfl_nil: address of the vfl_nilstruct structure. */
+static object_t vfl_nilstruct;
+const object_t *vfl_nil = &vfl_nilstruct;
+
+/* nil_type: empty object type structure.
+ */
+static object_type_t nil_type = {
+  "nil", sizeof(object_t),   /* name, size               */
+  NULL, NULL, NULL,          /* init, copy, free         */
+  NULL, NULL, NULL, NULL,    /* add, sub, mul, div       */
+  NULL, NULL, NULL, NULL     /* get, set, props, methods */
+};
+
 /* object_types: global registry of all recognized object types.
  */
 static object_type_t **object_types;
@@ -19,6 +32,9 @@ int vfl_init (void) {
    *  @res: combined result of registering core vfl types.
    */
   int res = 1;
+
+  /* initialize the nil object type. */
+  vfl_nilstruct.type = &nil_type;
 
   /* initialize the type registry. */
   object_types = NULL;
