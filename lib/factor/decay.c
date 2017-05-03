@@ -1,6 +1,7 @@
 
-/* include the factor header. */
+/* include the factor and float headers. */
 #include <vfl/factor.h>
+#include <vfl/base/float.h>
 
 /* define the parameter indices. */
 #define P_ALPHA  0
@@ -203,12 +204,38 @@ FACTOR_SET (decay) {
   return 0;
 }
 
+/* --- */
+
+/* define the static decay factor properties. */
+FACTOR_PROP_GETSET (decay, alpha, P_ALPHA)
+FACTOR_PROP_GETSET (decay, beta,  P_BETA)
+
+/* decay_properties: array of accessible decay factor properties.
+ */
+static object_property_t decay_properties[] = {
+  FACTOR_PROP_BASE,
+  FACTOR_PROP (decay, alpha),
+  FACTOR_PROP (decay, beta),
+  { NULL, NULL, NULL }
+};
+
 /* decay_names: table of decay factor parameter names.
  */
 char *decay_names[] = {
   "alpha",
   "beta"
 };
+
+/* --- */
+
+/* decay_methods: array of callable object methods.
+ */
+static object_method_t decay_methods[] = {
+  FACTOR_METHOD_BASE,
+  { NULL, NULL }
+};
+
+/* --- */
 
 /* decay_type: decay factor type structure.
  */
@@ -221,15 +248,15 @@ static factor_type_t decay_type = {
     (object_copy_fn) factor_copy,                /* copy      */
     (object_free_fn) factor_free,                /* free      */
 
-    NULL,                                        /* add       */
+    (object_binary_fn) factor_add,               /* add       */
     NULL,                                        /* sub       */
-    NULL,                                        /* mul       */
+    (object_binary_fn) factor_mul,               /* mul       */
     NULL,                                        /* div       */
 
     NULL,                                        /* get       */
     NULL,                                        /* set       */
-    NULL,                                        /* props     */
-    NULL                                         /* methods   */
+    decay_properties,                            /* props     */
+    decay_methods                                /* methods   */
   },
 
   1,                                             /* initial D */

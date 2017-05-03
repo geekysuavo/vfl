@@ -34,6 +34,12 @@
     (object_getprop_fn) factor_getprop_fixed, \
     (object_setprop_fn) factor_setprop_fixed }
 
+/* FACTOR_METHOD_BASE: base set of object methods available
+ * to all factors.
+ */
+#define FACTOR_METHOD_BASE \
+  { "set", (object_method_fn) factor_setprop }
+
 /* FACTOR_PROP(): macro function for inserting a static factor
  * property into an object properties array.
  */
@@ -53,7 +59,7 @@
  * for static factor properties.
  */
 #define FACTOR_PROP_GET(typ,name,idx) \
-static flt_t *typ ## obj_getparm_ ## name (factor_t *f) { \
+static flt_t *typ ## obj_getparm_ ## name (const factor_t *f) { \
   return float_alloc_with_value(factor_get(f, idx)); }
 
 /* FACTOR_PROP_SET(): macro function for defining a setter function

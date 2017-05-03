@@ -1,6 +1,7 @@
 
-/* include the factor header. */
+/* include the factor and float headers. */
 #include <vfl/factor.h>
+#include <vfl/base/float.h>
 
 /* define the parameter indices. */
 #define P_MU   0
@@ -112,12 +113,38 @@ FACTOR_SET (impulse) {
   return 0;
 }
 
+/* --- */
+
+/* define the static impulse factor properties. */
+FACTOR_PROP_GETSET (impulse, mu,  P_MU)
+FACTOR_PROP_GETSET (impulse, tau, P_TAU)
+
+/* impulse_properties: array of accessible impulse factor properties.
+ */
+static object_property_t impulse_properties[] = {
+  FACTOR_PROP_BASE,
+  FACTOR_PROP (impulse, mu),
+  FACTOR_PROP (impulse, tau),
+  { NULL, NULL, NULL }
+};
+
 /* impulse_names: table of impulse factor parameter names.
  */
 char *impulse_names[] = {
   "mu",
   "tau"
 };
+
+/* --- */
+
+/* impulse_methods: array of callable object methods.
+ */
+static object_method_t impulse_methods[] = {
+  FACTOR_METHOD_BASE,
+  { NULL, NULL }
+};
+
+/* --- */
 
 /* impulse_type: impulse factor type structure.
  */
@@ -130,15 +157,15 @@ static factor_type_t impulse_type = {
     (object_copy_fn) factor_copy,                /* copy      */
     (object_free_fn) factor_free,                /* free      */
 
-    NULL,                                        /* add       */
+    (object_binary_fn) factor_add,               /* add       */
     NULL,                                        /* sub       */
-    NULL,                                        /* mul       */
+    (object_binary_fn) factor_mul,               /* mul       */
     NULL,                                        /* div       */
 
     NULL,                                        /* get       */
     NULL,                                        /* set       */
-    NULL,                                        /* props     */
-    NULL                                         /* methods   */
+    impulse_properties,                          /* props     */
+    impulse_methods                              /* methods   */
   },
 
   1,                                             /* initial D */

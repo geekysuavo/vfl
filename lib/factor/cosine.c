@@ -1,8 +1,6 @@
 
-/* include the factor header. */
+/* include the factor and float headers. */
 #include <vfl/factor.h>
-
-/* include the float header. */
 #include <vfl/base/float.h>
 
 /* define the parameter indices. */
@@ -235,7 +233,7 @@ char *cosine_names[] = {
 /* cosine_methods: array of callable object methods.
  */
 static object_method_t cosine_methods[] = {
-  { "set", (object_method_fn) factor_setprop },
+  FACTOR_METHOD_BASE,
   { NULL, NULL }
 };
 

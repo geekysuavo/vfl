@@ -1,6 +1,7 @@
 
-/* include the factor header. */
+/* include the factor and float headers. */
 #include <vfl/factor.h>
+#include <vfl/base/float.h>
 
 /* define the parameter indices. */
 #define P_TAU  0
@@ -158,11 +159,61 @@ int fixed_impulse_set_location (factor_t *f, const double mu) {
   return 1;
 }
 
+/* --- */
+
+/* fixed_impulse_getprop_mu(): get a fixed impulse factor location.
+ *  - see object_getprop_fn() for details.
+ */
+static flt_t *fixed_impulse_getprop_mu (const factor_t *f) {
+  /* return the location as a float. */
+  fixed_impulse_t *fx = (fixed_impulse_t*) f;
+  return float_alloc_with_value(fx->mu);
+}
+
+/* fixed_impulse_setprop_mu(): set a fixed impulse factor location.
+ *  - see object_setprop_fn() for details.
+ */
+static int fixed_impulse_setprop_mu (factor_t *f, object_t *val) {
+  /* only allow numbers. */
+  if (!OBJECT_IS_NUM(val))
+    return 0;
+
+  /* set the location and return success. */
+  return fixed_impulse_set_location(f, num_get(val));
+}
+
+/* define the static fixed impulse factor properties. */
+FACTOR_PROP_GETSET (fixed_impulse, tau, P_TAU)
+
+/* fixed_impulse_properties: array of accessible fixed
+ * impulse factor properties.
+ */
+static object_property_t fixed_impulse_properties[] = {
+  FACTOR_PROP_BASE,
+  { "mu",
+    (object_getprop_fn) fixed_impulse_getprop_mu,
+    (object_setprop_fn) fixed_impulse_setprop_mu
+  },
+  FACTOR_PROP (fixed_impulse, tau),
+  { NULL, NULL, NULL }
+};
+
 /* fixed_impulse_names: table of fixed impulse factor parameter names.
  */
 char *fixed_impulse_names[] = {
   "tau"
 };
+
+/* --- */
+
+/* fixed_impulse_methods: array of callable object methods.
+ */
+static object_method_t fixed_impulse_methods[] = {
+  FACTOR_METHOD_BASE,
+  { NULL, NULL }
+};
+
+/* --- */
 
 /* fixed_impulse_type: fixed impulse factor type structure.
  */
@@ -175,15 +226,15 @@ static factor_type_t fixed_impulse_type = {
     (object_copy_fn) factor_copy,                /* copy      */
     (object_free_fn) factor_free,                /* free      */
 
-    NULL,                                        /* add       */
+    (object_binary_fn) factor_add,               /* add       */
     NULL,                                        /* sub       */
-    NULL,                                        /* mul       */
+    (object_binary_fn) factor_mul,               /* mul       */
     NULL,                                        /* div       */
 
     NULL,                                        /* get       */
     NULL,                                        /* set       */
-    NULL,                                        /* props     */
-    NULL                                         /* methods   */
+    fixed_impulse_properties,                    /* props     */
+    fixed_impulse_methods                        /* methods   */
   },
 
   1,                                             /* initial D */

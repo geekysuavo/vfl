@@ -1,6 +1,7 @@
 
-/* include the factor header. */
+/* include the factor and integer headers. */
 #include <vfl/factor.h>
+#include <vfl/base/int.h>
 
 /* polynomial_init(): initialize the polynomial factor structure.
  *  - see factor_init_fn() for more information.
@@ -81,6 +82,56 @@ int polynomial_set_order (factor_t *f, const unsigned int order) {
   return factor_resize(f, f->D, f->P, order + 1);
 }
 
+/* --- */
+
+/* polynomial_getprop_order(): get a polynomial factor order.
+ *  - see object_getprop_fn() for details.
+ */
+static int_t *polynomial_getprop_order (const factor_t *f) {
+  /* return the order as an integer. */
+  return int_alloc_with_value(f->K - 1);
+}
+
+/* polynomial_setprop_order(): set a polynomial factor order.
+ *  - see object_setprop_fn() for details.
+ */
+static int polynomial_setprop_order (factor_t *f, object_t *val) {
+  /* only allow integers. */
+  if (!OBJECT_IS_INT(val))
+    return 0;
+
+  /* only allow non-negative orders. */
+  const long ord = int_get((int_t*) val);
+  if (ord < 0)
+    return 0;
+
+  /* set the order and return success. */
+  return polynomial_set_order(f, ord);
+}
+
+/* polynomial_properties: array of accessible
+ * polynomial factor properties.
+ */
+static object_property_t polynomial_properties[] = {
+  FACTOR_PROP_BASE,
+  { "order",
+    (object_getprop_fn) polynomial_getprop_order,
+    (object_setprop_fn) polynomial_setprop_order
+  },
+  { NULL, NULL, NULL }
+};
+
+/* --- */
+
+/* polynomial_methods: array of callable object methods.
+ */
+static object_method_t polynomial_methods[] = {
+  FACTOR_METHOD_BASE,
+  { NULL, NULL }
+};
+
+/* --- */
+
 /* polynomial_type: polynomial factor type structure.
  */
 static factor_type_t polynomial_type = {
@@ -92,15 +143,15 @@ static factor_type_t polynomial_type = {
     (object_copy_fn) factor_copy,                /* copy      */
     (object_free_fn) factor_free,                /* free      */
 
-    NULL,                                        /* add       */
+    (object_binary_fn) factor_add,               /* add       */
     NULL,                                        /* sub       */
-    NULL,                                        /* mul       */
+    (object_binary_fn) factor_mul,               /* mul       */
     NULL,                                        /* div       */
 
     NULL,                                        /* get       */
     NULL,                                        /* set       */
-    NULL,                                        /* props     */
-    NULL                                         /* methods   */
+    polynomial_properties,                       /* props     */
+    polynomial_methods                           /* methods   */
   },
 
   1,                                             /* initial D */

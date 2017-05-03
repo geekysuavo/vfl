@@ -2,6 +2,11 @@
 /* include the factor header. */
 #include <vfl/factor.h>
 
+/* include the required object headers. */
+#include <vfl/base/int.h>
+#include <vfl/base/map.h>
+#include <vfl/base/list.h>
+
 /* product_t: structure for holding a product factor.
  */
 typedef struct {
@@ -630,6 +635,105 @@ int product_update (factor_t *f) {
   return 1;
 }
 
+/* --- */
+
+/* product_getelem(): element getter for product factors.
+ *  - see object_getelem_fn() for details.
+ */
+static object_t *product_getelem (const product_t *obj,
+                                  const list_t *idx) {
+  /* only admit single-element incides. */
+  if (idx->len != 1)
+    return NULL;
+
+  /* only admit integer indices. */
+  object_t *idxobj = list_get(idx, 0);
+  if (!OBJECT_IS_INT(idxobj))
+    return NULL;
+
+  /* perform bounds checking on the index. */
+  const long idxval = int_get((int_t*) idxobj);
+  if (idxval < 0 || (unsigned int) idxval >= obj->F)
+    return NULL;
+
+  /* return the product sub-factor. */
+  return (object_t*) obj->factors[idxval];
+}
+
+/* product_properties: array of accessible object properties.
+ */
+static object_property_t product_properties[] = {
+  FACTOR_PROP_BASE,
+  { NULL, NULL, NULL }
+};
+
+/* --- */
+
+/* productobj_add(): method for adding factors to product objects.
+ *  - see object_method_fn() for details.
+ */
+static object_t *productobj_add (factor_t *f, map_t *args) {
+  /* check for single-factor arguments. */
+  object_t *arg = map_get(args, "factor");
+  if (arg) {
+    /* ensure the argument is a factor. */
+    if (!OBJECT_IS_FACTOR(arg))
+      return NULL;
+
+    /* add the factor to the product. */
+    factor_t *fd = (factor_t*) arg;
+    if (!product_add_factor(f, fd->d, fd))
+      return NULL;
+  }
+
+  /* check for list arguments. */
+  arg = map_get(args, "factors");
+  if (arg) {
+    /* ensure the argument is a list. */
+    if (!OBJECT_IS_LIST(arg))
+      return NULL;
+
+    /* cast the argument to a list. */
+    list_t *lst = (list_t*) arg;
+
+    /* add the list elements to the product. */
+    for (size_t i = 0; i < lst->len; i++) {
+      /* ensure the list element is a factor. */
+      object_t *elem = list_get(lst, i);
+      if (!OBJECT_IS_FACTOR(elem))
+        return NULL;
+
+      /* add the factor to the product. */
+      factor_t *fd = (factor_t*) elem;
+      if (!product_add_factor(f, fd->d, fd))
+        return NULL;
+    }
+  }
+
+  /* return nothing. */
+  VFL_RETURN_NIL;
+}
+
+/* productobj_update(): method for updating product factors.
+ *  - see object_method_fn() for details.
+ */
+static object_t *productobj_update (factor_t *obj, map_t *args) {
+  /* update the product factor and return nothing. */
+  product_update(obj);
+  VFL_RETURN_NIL;
+}
+
+/* product_methods: array of callable object methods.
+ */
+static object_method_t product_methods[] = {
+  FACTOR_METHOD_BASE,
+  { "add", (object_method_fn) productobj_add },
+  { "update", (object_method_fn) productobj_update },
+  { NULL, NULL }
+};
+
+/* --- */
+
 /* product_type: product factor type structure.
  */
 static factor_type_t product_type = {
@@ -646,10 +750,10 @@ static factor_type_t product_type = {
     (object_binary_fn) factor_mul,               /* mul       */
     NULL,                                        /* div       */
 
-    NULL,                                        /* get       */
+    (object_getelem_fn) product_getelem,         /* get       */
     NULL,                                        /* set       */
-    NULL,                                        /* props     */
-    NULL                                         /* methods   */
+    product_properties,                          /* props     */
+    product_methods                              /* methods   */
   },
 
   1,                                             /* initial D */

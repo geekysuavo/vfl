@@ -290,12 +290,12 @@ object_t *list_getelem (const list_t *lst, const list_t *idx) {
     return NULL;
 
   /* perform bounds checking on the index. */
-  const long ival = int_get((int_t*) idxobj);
-  if (ival < 0 || (size_t) ival >= lst->len)
+  const long idxval = int_get((int_t*) idxobj);
+  if (idxval < 0 || (size_t) idxval >= lst->len)
     return NULL;
 
   /* return the list element. */
-  return list_get(lst, ival);
+  return list_get(lst, idxval);
 }
 
 /* list_setelem(): element setter for lists.
@@ -321,6 +321,25 @@ int list_setelem (list_t *lst, list_t *idx, object_t *elem) {
   return 1;
 }
 
+/* --- */
+
+/* list_getprop_len(): length property getter.
+ *  - see object_getprop_fn() for details.
+ */
+static int_t *list_getprop_len (const list_t *lst) {
+  /* return the list length as an integer. */
+  return int_alloc_with_value(lst->len);
+}
+
+/* list_properties: array of accessible object properties.
+ */
+static object_property_t list_properties[] = {
+  { "len", (object_getprop_fn) list_getprop_len, NULL },
+  { NULL, NULL, NULL }
+};
+
+/* --- */
+
 /* list_type: list type structure.
  */
 static object_type_t list_type = {
@@ -338,7 +357,7 @@ static object_type_t list_type = {
 
   (object_getelem_fn) list_getelem,              /* get       */
   (object_setelem_fn) list_setelem,              /* set       */
-  NULL,                                          /* props     */
+  list_properties,                               /* props     */
   NULL                                           /* methods   */
 };
 
