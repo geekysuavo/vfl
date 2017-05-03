@@ -404,6 +404,28 @@ MODEL_MEANFIELD (vfr) {
   return 1;
 }
 
+/* --- */
+
+/* vfr_properties: array of accessible vfr model object properties.
+ */
+static object_property_t vfr_properties[] = {
+  MODEL_PROP_BASE,
+  MODEL_PROP_TAU_READONLY,
+  MODEL_PROP_ALPHA0,
+  MODEL_PROP_BETA0,
+  MODEL_PROP_ALPHA,
+  MODEL_PROP_BETA,
+  MODEL_PROP_NU,
+  { NULL, NULL, NULL }
+};
+
+/* vfr_methods: array of callable vfr model object methods.
+ */
+static object_method_t vfr_methods[] = {
+  MODEL_METHOD_BASE,
+  { NULL, NULL }
+};
+
 /* vfr_type: model type structure for variational feature regression.
  */
 static model_type_t vfr_type = {
@@ -422,8 +444,8 @@ static model_type_t vfr_type = {
 
     NULL,                                        /* get       */
     NULL,                                        /* set       */
-    NULL,                                        /* props     */
-    NULL                                         /* methods   */
+    vfr_properties,                              /* props     */
+    vfr_methods                                  /* methods   */
   },
 
   NULL,                                          /* init      */

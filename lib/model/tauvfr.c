@@ -397,6 +397,23 @@ int tauvfr_set_tau (model_t *mdl, const double tau) {
   return 1;
 }
 
+/* tauvfr_properties: array of accessible fixed-tau vfr
+ * model object properties.
+ */
+static object_property_t tauvfr_properties[] = {
+  MODEL_PROP_BASE,
+  MODEL_PROP_TAU,
+  MODEL_PROP_NU,
+  { NULL, NULL, NULL }
+};
+
+/* tauvfr_methods: array of callable fixed-tau vfr model object methods.
+ */
+static object_method_t tauvfr_methods[] = {
+  MODEL_METHOD_BASE,
+  { NULL, NULL }
+};
+
 /* tauvfr_type: model type structure for fixed-tau
  * variational feature regression.
  */
@@ -416,8 +433,8 @@ static model_type_t tauvfr_type = {
 
     NULL,                                        /* get       */
     NULL,                                        /* set       */
-    NULL,                                        /* props     */
-    NULL                                         /* methods   */
+    tauvfr_properties,                           /* props     */
+    tauvfr_methods                               /* methods   */
   },
 
   NULL,                                          /* init      */

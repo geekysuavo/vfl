@@ -1,6 +1,8 @@
 
-/* include the factor object headers. */
+/* include the factor header. */
 #include <vfl/factor.h>
+
+/* include the required object headers. */
 #include <vfl/base/map.h>
 #include <vfl/base/list.h>
 #include <vfl/base/float.h>

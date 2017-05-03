@@ -359,6 +359,23 @@ MODEL_GRADIENT (vfc) {
   return 1;
 }
 
+/* --- */
+
+/* vfc_properties: array of accessible vfc model object properties.
+ */
+static object_property_t vfc_properties[] = {
+  MODEL_PROP_BASE,
+  MODEL_PROP_NU,
+  { NULL, NULL, NULL }
+};
+
+/* vfc_methods: array of callable vfc model object methods.
+ */
+static object_method_t vfc_methods[] = {
+  MODEL_METHOD_BASE,
+  { NULL, NULL }
+};
+
 /* vfc_type: model type structure for variational feature classification.
  */
 static model_type_t vfc_type = {
@@ -377,8 +394,8 @@ static model_type_t vfc_type = {
 
     NULL,                                        /* get       */
     NULL,                                        /* set       */
-    NULL,                                        /* props     */
-    NULL                                         /* methods   */
+    vfc_properties,                              /* props     */
+    vfc_methods                                  /* methods   */
   },
 
   NULL,                                          /* init      */

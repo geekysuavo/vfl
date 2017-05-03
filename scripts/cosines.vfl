@@ -2,18 +2,15 @@
 # create a pseudorandom number generator.
 rand = rng(seed: 7321);
 
-# create a dataset.
-dat = data(file: '../tests/cosines/cosines.dat');
-
 # define factor prior parameters.
 mu = 0.0;
 tau = 1.0e-5;
 
 # create a model.
 mdl = tauvfr(
-  data: dat,
   tau: 1.0,
   nu: 1.0e-6,
+  data: data(file: '../tests/cosines/cosines.dat'),
   factors: 4 * [cosine(mu: mu, tau: tau)]
 );
 

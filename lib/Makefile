@@ -64,13 +64,12 @@ C+= $(addprefix lang/,$(Y_LANG))
 C+= $(addprefix lang/,$(L_LANG))
 C+= $(addprefix lang/,$(C_LANG))
 C+= $(addprefix base/,$(C_BASE))
-C+= $(addprefix factor/,$(C_FACTOR))
-C+= $(addprefix model/,$(C_MODEL))
-C+= $(addprefix optim/,$(C_OPTIM))
+C+= $(addprefix factor/,$(C_FACTOR)) factor-obj factor
+C+= $(addprefix model/,$(C_MODEL)) model-obj model
+C+= $(addprefix optim/,$(C_OPTIM)) optim
 
 # basenames of core C source files.
-C+= data-obj data-alloc data-entries data-fileio data-sort
-C+= factor factor-obj model optim vfl
+C+= data-alloc data-entries data-fileio data-sort data-obj vfl
 
 # filenames of C sources.
 SRC=$(addsuffix .c,$(C))

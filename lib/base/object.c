@@ -250,7 +250,7 @@ object_t *obj_getelem (const object_t *obj, const object_t *idx) {
  */
 int obj_setprop (object_t *obj, const char *name, object_t *val) {
   /* check the input arguments. */
-  if (!obj || !name)
+  if (!obj || !name || !val)
     return 0;
 
   /* get the object type and check for a property table. */
@@ -282,7 +282,7 @@ int obj_setprop (object_t *obj, const char *name, object_t *val) {
 int obj_setelem (object_t *obj, const object_t *idx,
                  object_t *val) {
   /* check the input arguments. */
-  if (!obj || !idx)
+  if (!obj || !idx || !val)
     return 0;
 
   /* get the object type and check for a setter. */
@@ -306,7 +306,7 @@ int obj_setelem (object_t *obj, const object_t *idx,
  */
 object_t *obj_method (object_t *obj, const char *name, object_t *args) {
   /* check the input arguments. */
-  if (!obj || !name)
+  if (!obj || !name || !args)
     return NULL;
 
   /* get the object type and check for a method table. */

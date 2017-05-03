@@ -11,10 +11,82 @@
 #include <vfl/util/chol.h>
 #include <vfl/factor.h>
 
+/* OBJECT_IS_MODEL(): check if an object is a model.
+ */
+#define OBJECT_IS_MODEL(obj) \
+  (OBJECT_TYPE(obj)->init == (object_init_fn) model_init)
+
 /* MODEL_TYPE(): macro function for casting model structure pointers
  * to their associated type structures.
  */
 #define MODEL_TYPE(s) ((model_type_t*) (s)->type)
+
+/* MODEL_PROP_BASE: base set of object properties available
+ * to all models.
+ */
+#define MODEL_PROP_BASE \
+  { "D", (object_getprop_fn) model_getprop_dims, NULL }, \
+  { "P", (object_getprop_fn) model_getprop_pars, NULL }, \
+  { "M", (object_getprop_fn) model_getprop_cmps, NULL }, \
+  { "K", (object_getprop_fn) model_getprop_wgts, NULL }, \
+  { "data", \
+    (object_getprop_fn) model_getprop_data, \
+    (object_setprop_fn) model_setprop_data }, \
+  { "factors", \
+    (object_getprop_fn) model_getprop_factors, \
+    (object_setprop_fn) model_setprop_factors }
+
+/* MODEL_METHOD_BASE: base set of object methods available
+ * to all models.
+ */
+#define MODEL_METHOD_BASE \
+  { "add", (object_method_fn) model_method_add }, \
+  { "reset", (object_method_fn) model_method_reset }, \
+  { "infer", (object_method_fn) model_method_infer }
+
+/* MODEL_PROP_ALPHA0: property array entry for prior noise shape.
+ */
+#define MODEL_PROP_ALPHA0 \
+  { "alpha0", \
+    (object_getprop_fn) model_getprop_alpha0, \
+    (object_setprop_fn) model_setprop_alpha0 }
+
+/* MODEL_PROP_BETA0: property array entry for prior noise rate.
+ */
+#define MODEL_PROP_BETA0 \
+  { "beta0", \
+    (object_getprop_fn) model_getprop_beta0, \
+    (object_setprop_fn) model_setprop_beta0 }
+
+/* MODEL_PROP_ALPHA: property array entry for posterior noise shape.
+ */
+#define MODEL_PROP_ALPHA \
+  { "alpha", (object_getprop_fn) model_getprop_alpha, NULL }
+
+/* MODEL_PROP_BETA: property array entry for posterior noise rate.
+ */
+#define MODEL_PROP_BETA \
+  { "beta", (object_getprop_fn) model_getprop_beta, NULL }
+
+/* MODEL_PROP_TAU: property array entry for read/write noise precision.
+ */
+#define MODEL_PROP_TAU \
+  { "tau", \
+    (object_getprop_fn) model_getprop_tau, \
+    (object_setprop_fn) model_setprop_tau }
+
+/* MODEL_PROP_TAU_READONLY: property array entry for
+ * read-only noise precision.
+ */
+#define MODEL_PROP_TAU_READONLY \
+  { "tau", (object_getprop_fn) model_getprop_tau, NULL }
+
+/* MODEL_PROP_NU: property entry for relative noise/weight precision.
+ */
+#define MODEL_PROP_NU \
+  { "nu", \
+    (object_getprop_fn) model_getprop_nu, \
+    (object_setprop_fn) model_setprop_nu }
 
 /* model_t: defined type for the model structure. */
 typedef struct model model_t;
@@ -260,7 +332,7 @@ struct model {
   vector_t *tmp;
 };
 
-/* function declarations (model.c): */
+/* function declarations (model-obj.c): */
 
 #define model_alloc(T) \
   (model_t*) obj_alloc((object_type_t*) T)
@@ -268,6 +340,50 @@ struct model {
 int model_init (model_t *mdl);
 
 void model_free (model_t *mdl);
+
+object_t *model_getprop_dims (const model_t *mdl);
+
+object_t *model_getprop_pars (const model_t *mdl);
+
+object_t *model_getprop_cmps (const model_t *mdl);
+
+object_t *model_getprop_wgts (const model_t *mdl);
+
+data_t *model_getprop_data (const model_t *mdl);
+
+object_t *model_getprop_factors (const model_t *mdl);
+
+object_t *model_getprop_alpha0 (const model_t *mdl);
+
+object_t *model_getprop_beta0 (const model_t *mdl);
+
+object_t *model_getprop_alpha (const model_t *mdl);
+
+object_t *model_getprop_beta (const model_t *mdl);
+
+object_t *model_getprop_tau (const model_t *mdl);
+
+object_t *model_getprop_nu (const model_t *mdl);
+
+int model_setprop_data (model_t *mdl, object_t *val);
+
+int model_setprop_factors (model_t *mdl, object_t *val);
+
+int model_setprop_alpha0 (model_t *mdl, object_t *val);
+
+int model_setprop_beta0 (model_t *mdl, object_t *val);
+
+int model_setprop_tau (model_t *mdl, object_t *val);
+
+int model_setprop_nu (model_t *mdl, object_t *val);
+
+object_t *model_method_add (model_t *mdl, object_t *args);
+
+object_t *model_method_infer (model_t *mdl, object_t *args);
+
+object_t *model_method_reset (model_t *mdl, object_t *args);
+
+/* function declarations (model.c): */
 
 int model_set_alpha0 (model_t *mdl, const double alpha0);
 

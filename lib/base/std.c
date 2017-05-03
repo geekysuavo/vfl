@@ -36,8 +36,8 @@ static object_t *stdobj_disp (object_t *std, map_t *args) {
   VFL_RETURN_NIL;
 }
 
-/* func std.range (n: int|float);
- *                (start: int|float, end: int|float, step: 1);
+/* func std.range (n: int);
+ *                (start: int, end: int, step: 1);
  */
 static object_t *stdobj_range (object_t *std, map_t *args) {
   /* declare required variables:
@@ -46,19 +46,19 @@ static object_t *stdobj_range (object_t *std, map_t *args) {
    *  @end: ending range value.
    *  @arg: mapped arguments.
    */
-  double start, step, end;
+  long start, step, end;
   object_t *arg;
 
   /* initialize the range variables. */
-  start = 0.0;
-  step = 1.0;
-  end = 0.0;
+  start = 0;
+  step = 1;
+  end = 0;
 
   /* get the range length. */
   arg = map_get(args, "n");
   if (arg) {
-    if (OBJECT_IS_NUM(arg))
-      end = num_get(arg) - 1.0;
+    if (OBJECT_IS_INT(arg))
+      end = int_get((int_t*) arg) - 1;
     else
       return NULL;
   }
@@ -66,8 +66,8 @@ static object_t *stdobj_range (object_t *std, map_t *args) {
   /* get the start value. */
   arg = map_get(args, "start");
   if (arg) {
-    if (OBJECT_IS_NUM(arg))
-      start = num_get(arg);
+    if (OBJECT_IS_INT(arg))
+      start = int_get((int_t*) arg);
     else
       return NULL;
   }
@@ -75,8 +75,8 @@ static object_t *stdobj_range (object_t *std, map_t *args) {
   /* get the end value. */
   arg = map_get(args, "end");
   if (arg) {
-    if (OBJECT_IS_NUM(arg))
-      end = num_get(arg);
+    if (OBJECT_IS_INT(arg))
+      end = int_get((int_t*) arg);
     else
       return NULL;
   }
@@ -84,8 +84,8 @@ static object_t *stdobj_range (object_t *std, map_t *args) {
   /* get the step amount. */
   arg = map_get(args, "step");
   if (arg) {
-    if (OBJECT_IS_NUM(arg))
-      step = num_get(arg);
+    if (OBJECT_IS_INT(arg))
+      step = int_get((int_t*) arg);
     else
       return NULL;
   }
@@ -98,7 +98,7 @@ static object_t *stdobj_range (object_t *std, map_t *args) {
 
   /* set the list elements. */
   for (size_t i = 0; i < len; i++, start += step)
-    list_set(lst, i, (object_t*) float_alloc_with_value(start));
+    list_set(lst, i, (object_t*) int_alloc_with_value(start));
 
   /* return the new list. */
   return (object_t*) lst;
