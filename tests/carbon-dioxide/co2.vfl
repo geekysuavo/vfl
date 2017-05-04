@@ -18,8 +18,7 @@ mdl = vfr(
 
 # shift the data locations for easier inference.
 for i in std.range(n: mdl.data.N) {
-  di = mdl.data[i];
-  mdl.data[i] = [di[0], [di[1][0] - 1995], di[2]];
+  mdl.data[i][0] = mdl.data[i][0] - 1995;
 }
 
 # create a full-gradient optimizer.
@@ -42,11 +41,8 @@ mdl.predict(mean: mean, var: var);
 
 # shift the predictions back to the original data locations.
 for i in std.range(n: mean.N) {
-  mi = mean[i];
-  vi = var[i];
-
-  mean[i] = [mi[0], [mi[1][0] + 1995], mi[2]];
-  var[i] = [vi[0], [vi[1][0] + 1995], vi[2]];
+  mean[i][0] = mean[i][0] + 1995;
+  var[i][0] = var[i][0] + 1995;
 }
 
 # write the prediction results.

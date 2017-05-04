@@ -11,25 +11,12 @@
 #include <vfl/base/object.h>
 #include <vfl/util/matrix.h>
 #include <vfl/util/vector.h>
+#include <vfl/datum.h>
 
 /* OBJECT_IS_DATA(): check if an object is a dataset.
  */
 #define OBJECT_IS_DATA(obj) \
   (OBJECT_TYPE(obj) == vfl_object_data)
-
-/* datum_t: structure for holding a single observation.
- */
-typedef struct {
-  /* properties of each observation:
-   *  @p: observation output index.
-   *  @x: observation location.
-   *  @y: observed value.
-   */
-  unsigned int p;
-  vector_t *x;
-  double y;
-}
-datum_t;
 
 /* data_t: structure for holding observations.
  */
@@ -88,8 +75,6 @@ int data_fread (data_t *dat, const char *fname);
 int data_fwrite (const data_t *dat, const char *fname);
 
 /* function declarations, sorting (data-sort.c): */
-
-int data_cmp (const datum_t *d1, const datum_t *d2);
 
 int data_sort_single (data_t *dat, const unsigned int i);
 

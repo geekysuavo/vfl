@@ -28,42 +28,6 @@ static inline void data_swap (data_t *dat,
   dat->data[j].p = dat->swp.p;
 }
 
-/* data_cmp(): compare two data for equality or inequality.
- *
- * arguments:
- *  @d1: first datum structure pointer.
- *  @d2: second datum structure pointer.
- *
- * returns:
- *  -1,  if d1 < d2
- *  +1,  if d1 > d2
- *   0,  if d1 = d2
- */
-int data_cmp (const datum_t *d1, const datum_t *d2) {
-  /* examine output indices first. */
-  if (d1->p < d2->p)
-    return -1;
-  else if (d1->p > d2->p)
-    return +1;
-
-  /* examine locations next. */
-  const unsigned int D = d1->x->len;
-  for (unsigned int d = 0; d < D; d++) {
-    /* get the location vector elements. */
-    const double x1 = vector_get(d1->x, d);
-    const double x2 = vector_get(d2->x, d);
-
-    /* compare the vector elements. */
-    if (x1 < x2)
-      return -1;
-    else if (x1 > x2)
-      return +1;
-  }
-
-  /* no differences detected, return equality. */
-  return 0;
-}
-
 /* data_sort(): sort the entries of a dataset.
  *
  * this function should never be necessary to call from the
@@ -87,7 +51,7 @@ int data_sort (data_t *dat) {
     unsigned int j = i;
 
     /* loop until the current element has been sorted. */
-    while (j > 0 && data_cmp(dat->data + (j - 1), dat->data + j) > 0) {
+    while (j > 0 && datum_cmp(dat->data + (j - 1), dat->data + j) > 0) {
       data_swap(dat, j - 1, j);
       j--;
     }
@@ -122,14 +86,14 @@ int data_sort_single (data_t *dat, const unsigned int i) {
   unsigned int j = i;
 
   /* while the element is less than its leftmost neighbor... */
-  while (j > 0 && data_cmp(dat->data + j, dat->data + (j - 1)) < 0) {
+  while (j > 0 && datum_cmp(dat->data + j, dat->data + (j - 1)) < 0) {
     /* ... shift it left. */
     data_swap(dat, j, j - 1);
     j--;
   }
 
   /* while the element is greater than its rightmost neighbor... */
-  while (j < jmax && data_cmp(dat->data + j, dat->data + (j + 1)) > 0) {
+  while (j < jmax && datum_cmp(dat->data + j, dat->data + (j + 1)) > 0) {
     /* ... shift it right. */
     data_swap(dat, j, j + 1);
     j++;

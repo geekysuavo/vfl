@@ -69,7 +69,8 @@ C+= $(addprefix model/,$(C_MODEL)) model-obj model
 C+= $(addprefix optim/,$(C_OPTIM)) optim-obj optim
 
 # basenames of core C source files.
-C+= data-alloc data-entries data-fileio data-sort data-obj vfl
+C+= data-alloc data-entries data-fileio data-sort data-obj
+C+= datum-obj datum vfl
 
 # filenames of C sources.
 SRC=$(addsuffix .c,$(C))

@@ -102,7 +102,7 @@ unsigned int data_find (const data_t *dat, const datum_t *d) {
   while (imin <= imax) {
     /* get the midpoint and compare. */
     const unsigned i = (imin + imax) / 2;
-    const int cmp = data_cmp(dat->data + i, d);
+    const int cmp = datum_cmp(dat->data + i, d);
 
     /* check the comparison result. */
     if (cmp == 0)

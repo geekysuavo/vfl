@@ -2,21 +2,17 @@
 # create a pseudorandom number generator.
 rand = rng(seed: 7321);
 
-# define factor prior parameters.
-mu = 0.0;
-tau = 1.0e-5;
-
 # create a model.
 mdl = tauvfr(
   tau: 1.0,
   nu: 1.0e-6,
   data: data(file: 'cosines.dat'),
-  factors: 4 * [cosine(mu: mu, tau: tau)]
+  factors: 4 * [cosine(mu: 0, tau: 1e-5)]
 );
 
 # randomize the factor means.
 for j in std.range(n: mdl.M) {
-  mdl.factors[j].mu = rand.normal(mu: mu, tau: tau);
+  mdl.factors[j].mu = rand.normal(sigma: 300);
 }
 
 # create a full-gradient optimizer.

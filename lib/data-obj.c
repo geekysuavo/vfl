@@ -62,33 +62,8 @@ static object_t *data_getelem (const data_t *dat, const list_t *idx) {
   if (idxval < 0 || (unsigned int) idxval >= dat->N)
     return NULL;
 
-  /* allocate a list to store the datum. */
-  list_t *lst = list_alloc_with_length(3);
-  if (!lst)
-    return NULL;
-
-  /* extract the requested datum into objects. */
-  datum_t *di = data_get(dat, idxval);
-  int_t *p = int_alloc_with_value(di->p);
-  flt_t *y = float_alloc_with_value(di->y);
-  object_t *x = list_alloc_from_vector(di->x);
-
-  /* store the datum objects into the list. */
-  list_set(lst, 0, (object_t*) p);
-  list_set(lst, 2, (object_t*) y);
-  list_set(lst, 1, x);
-
-  /* handle allocation failures. */
-  if (!p || !x || !y)
-    goto fail;
-
-  /* return the new list. */
-  return (object_t*) lst;
-
-fail:
-  /* free allocated objects and return failure. */
-  list_deepfree(lst);
-  return NULL;
+  /* return the requested datum. */
+  return (object_t*) data_get(dat, idxval);
 }
 
 /* data_setelem(): method for setting/modifying dataset entries.
@@ -109,56 +84,15 @@ static int data_setelem (data_t *dat, const list_t *idx, object_t *val) {
   if (idxval < 0 || (unsigned int) idxval >= dat->N)
     return 0;
 
-  /* gain access to the indexed datum. */
-  datum_t *di = data_get(dat, idxval);
-
   /* determine whether to set or modify. */
-  if (OBJECT_IS_LIST(val)) {
-    /* cast the value to a list. */
-    list_t *lst = (list_t*) val;
-
-    /* check the list length. */
-    if (lst->len != 3)
+  if (OBJECT_IS_DATUM(val)) {
+    /* set: store the entire datum. */
+    if (!data_set(dat, idxval, (datum_t*) val))
       return 0;
-
-    /* get the list elements. */
-    object_t *p = list_get(lst, 0);
-    object_t *x = list_get(lst, 1);
-    object_t *y = list_get(lst, 2);
-
-    /* check the element types. */
-    if (!OBJECT_IS_INT(p) || !OBJECT_IS_LIST(x) || !OBJECT_IS_NUM(y))
-      return 0;
-
-    /* bounds check the output index. */
-    const long pval = int_get((int_t*) p);
-    if (pval < 0)
-      return 0;
-
-    /* cast the x-list to a vector. */
-    vector_t *xval = list_to_vector((list_t*) x);
-    if (!xval)
-      return 0;
-
-    /* get the observation value. */
-    const double yval = num_get(y);
-
-    /* check the vector length. */
-    if (xval->len != dat->D) {
-      vector_free(xval);
-      return 0;
-    }
-
-    /* store the datum values. */
-    vector_copy(di->x, xval);
-    di->p = pval;
-    di->y = yval;
-
-    /* free the vector. */
-    vector_free(xval);
   }
   else if (OBJECT_IS_NUM(val)) {
-    /* store the observation value. */
+    /* modify: store the observation value. */
+    datum_t *di = data_get(dat, idxval);
     di->y = num_get(val);
   }
   else
@@ -245,6 +179,21 @@ static object_t *data_method_augment (data_t *dat, map_t *args) {
 
     /* augment the dataset. */
     if (!data_augment_from_data(dat, (data_t*) dsrc))
+      return NULL;
+
+    /* return nothing. */
+    VFL_RETURN_NIL;
+  }
+
+  /* check for the datum argument. */
+  object_t *dum = map_get(args, "datum");
+  if (dum) {
+    /* check the argument type. */
+    if (!OBJECT_IS_DATUM(dum))
+      return NULL;
+
+    /* augment the dataset. */
+    if (!data_augment(dat, (datum_t*) dum))
       return NULL;
 
     /* return nothing. */

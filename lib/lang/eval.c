@@ -72,11 +72,7 @@ static int ast_eval_assign (ast_t *node, sym_table_t *tab) {
 
   /* check the type of assignment. */
   if (ast_node_type(left) == AST_NODE_IDENT) {
-    /* variable assignment... free the existing node value. */
-    if (ast_node_value(left) != vfl_nil)
-      obj_free(ast_node_value(left));
-
-    /* set the symbol table entry. */
+    /* symbol assignment... set the symbol table entry. */
     if (!symbols_set(tab, left->n_string.value, val))
       return 0;
   }

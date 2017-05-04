@@ -89,8 +89,12 @@ int data_resize (data_t *dat, const unsigned int N, const unsigned int D) {
   char *ptr = (char*) data;
   ptr += N * sizeof(datum_t);
 
-  /* initialize each vector in the observation array. */
+  /* initialize each member of the observation array. */
   for (unsigned int i = 0; i < N; i++) {
+    /* point the element to the datum type structure. */
+    data[i].type = (object_type_t*) vfl_object_datum;
+
+    /* initialize the location vector. */
     data[i].x = (vector_t*) ptr;
     vector_init(data[i].x, D);
     ptr += vbytes;

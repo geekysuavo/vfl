@@ -67,11 +67,11 @@ int main (int argc, char **argv) {
   data_fwrite(var, "var.dat");
 
   /* free the structures. */
-  optim_free(opt);
-  model_free(mdl);
-  data_free(mean);
-  data_free(var);
-  data_free(dat);
+  obj_free((object_t*) opt);
+  obj_free((object_t*) mdl);
+  obj_free((object_t*) mean);
+  obj_free((object_t*) var);
+  obj_free((object_t*) dat);
 
   /* return success. */
   return 0;

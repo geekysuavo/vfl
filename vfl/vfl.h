@@ -17,6 +17,7 @@
 #include <vfl/lang.h>
 
 /* include vfl inference object headers. */
+#include <vfl/datum.h>
 #include <vfl/data.h>
 #include <vfl/model.h>
 #include <vfl/optim.h>

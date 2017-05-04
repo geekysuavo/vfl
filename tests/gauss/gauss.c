@@ -39,7 +39,9 @@ int main (int argc, char **argv) {
 
   /* add factors to the model. */
   for (unsigned int j = 0; parms[j].pb; j++) {
-    factor_t *f = factor_alloc(j ? vfl_factor_impulse : vfl_factor_decay);
+    factor_t *f;
+    if (j) f = factor_alloc(vfl_factor_impulse);
+    else   f = factor_alloc(vfl_factor_decay);
     factor_set(f, 0, parms[j].pa);
     factor_set(f, 1, parms[j].pb);
     model_add_factor(mdl, f);
@@ -64,11 +66,11 @@ int main (int argc, char **argv) {
   data_fwrite(var, "var.dat");
 
   /* free the structures. */
-  optim_free(opt);
-  model_free(mdl);
-  data_free(mean);
-  data_free(var);
-  data_free(dat);
+  obj_free((object_t*) opt);
+  obj_free((object_t*) mdl);
+  obj_free((object_t*) mean);
+  obj_free((object_t*) var);
+  obj_free((object_t*) dat);
 
   /* return success. */
   return 0;

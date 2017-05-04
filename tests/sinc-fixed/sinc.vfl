@@ -9,7 +9,7 @@ mdl = vfr(
 
 # add each data point to the model.
 for i in std.range(n: mdl.data.N) {
-  xi = mdl.data[i][1];
+  xi = mdl.data[i].x;
   mdl.add(factor: fixedImpulse(mu: xi[0], tau: 0.001));
 }
 
