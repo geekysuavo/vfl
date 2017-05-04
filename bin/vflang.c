@@ -18,12 +18,11 @@
  */
 int main (int argc, char **argv) {
   /* declare required variables:
-   *  @buf: buffer string for reading input.
    *  @prompt: prompt string buffer.
    *  @ncmd: command counter.
    */
-  char buf[1024], prompt[32];
   unsigned int ncmd = 1;
+  char prompt[32];
 
   /* initialize the type registry. */
   if (!vfl_init()) {

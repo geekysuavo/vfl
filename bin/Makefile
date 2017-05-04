@@ -6,7 +6,7 @@ WC=wc -l
 GREP=grep -RHni --color
 
 # compilation and linkage flags.
-CFLAGS+= -ggdb -O3 -std=gnu99 -I..
+CFLAGS+= -ggdb -O3 -std=gnu99 -I.. -Wall -Wextra
 LDFLAGS+= -L../lib
 
 # required libraries.
