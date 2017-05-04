@@ -41,6 +41,8 @@ static int list_set_length (list_t *lst, const size_t len) {
   return 1;
 }
 
+/* --- */
+
 /* list_init(): initialize an object list.
  *
  * arguments:
@@ -115,6 +117,32 @@ list_t *list_alloc_with_length (const size_t len) {
 
   /* return the new list. */
   return lst;
+}
+
+/* list_alloc_from_vector(): allocate an object list that holds
+ * the contents of a vector.
+ *
+ * arguments:
+ *  @v: vector structure pointer to access.
+ *
+ * returns:
+ *  newly allocated and initialized list, or null on failure.
+ */
+list_t *list_alloc_from_vector (const vector_t *v) {
+  /* FIXME: implement list_alloc_from_vector() */ return NULL;
+}
+
+/* list_alloc_from_matrix(): allocate an object list that holds
+ * the contents of a matrix.
+ *
+ * arguments:
+ *  @A: matrix structure pointer to access.
+ *
+ * returns:
+ *  newly allocated and initialized list, or null on failure.
+ */
+list_t *list_alloc_from_matrix (const matrix_t *A) {
+  /* FIXME: implement list_alloc_from_matrix() */ return NULL;
 }
 
 /* list_get(): get an element from an object list.

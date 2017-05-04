@@ -37,6 +37,10 @@ list_t;
 
 list_t *list_alloc_with_length (const size_t len);
 
+list_t *list_alloc_from_vector (const vector_t *v);
+
+list_t *list_alloc_from_matrix (const matrix_t *A);
+
 object_t *list_get (const list_t *lst, const size_t idx);
 
 void list_set (list_t *lst, const size_t idx, const object_t *obj);
