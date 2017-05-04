@@ -42,7 +42,9 @@
 #define MODEL_METHOD_BASE \
   { "add", (object_method_fn) model_method_add }, \
   { "reset", (object_method_fn) model_method_reset }, \
-  { "infer", (object_method_fn) model_method_infer }
+  { "infer", (object_method_fn) model_method_infer }, \
+  { "eval", (object_method_fn) model_method_eval }, \
+  { "predict", (object_method_fn) model_method_predict }
 
 /* MODEL_PROP_ALPHA0: property array entry for prior noise shape.
  */
@@ -383,6 +385,10 @@ object_t *model_method_infer (model_t *mdl, object_t *args);
 
 object_t *model_method_reset (model_t *mdl, object_t *args);
 
+object_t *model_method_eval (model_t *mdl, object_t *args);
+
+object_t *model_method_predict (model_t *mdl, object_t *args);
+
 /* function declarations (model.c): */
 
 int model_set_alpha0 (model_t *mdl, const double alpha0);
@@ -397,9 +403,6 @@ int model_set_parms (model_t *mdl, const unsigned int j,
 int model_set_data (model_t *mdl, data_t *dat);
 
 int model_add_factor (model_t *mdl, factor_t *f);
-
-double model_eval (const model_t *mdl, const vector_t *x,
-                   const unsigned int p);
 
 double model_mean (const model_t *mdl,
                    const vector_t *x, const unsigned int p,
@@ -420,14 +423,17 @@ char *model_kernel (const model_t *mdl);
 
 double model_bound (const model_t *mdl);
 
+double model_eval (const model_t *mdl, const vector_t *x,
+                   const unsigned int p);
+
 int model_predict (const model_t *mdl, const vector_t *x,
                    const unsigned int p,
                    double *mean,
                    double *var);
 
-int model_predict_all (const model_t *mdl,
-                       data_t *mean,
-                       data_t *var);
+int model_eval_all (const model_t *mdl, data_t *dat);
+
+int model_predict_all (const model_t *mdl, data_t *mean, data_t *var);
 
 int model_reset (model_t *mdl);
 

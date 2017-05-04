@@ -328,3 +328,54 @@ object_t *model_method_infer (model_t *mdl, object_t *args) {
   VFL_RETURN_NIL;
 }
 
+/* model_method_eval(): method for evaluating models.
+ *  - see object_method_fn() for details.
+ */
+object_t *model_method_eval (model_t *mdl, object_t *args) {
+  /* check for dataset arguments. */
+  object_t *dat = map_get((map_t*) args, "data");
+  if (dat) {
+    /* check the argument type. */
+    if (!OBJECT_IS_DATA(dat))
+      return NULL;
+
+    /* perform dataset-based evaluation. */
+    if (!model_eval_all(mdl, (data_t*) dat))
+      return NULL;
+
+    /* return nothing. */
+    VFL_RETURN_NIL;
+  }
+
+  /* FIXME: check for value arguments. */
+
+  /* invalid arguments, return failure. */
+  return NULL;
+}
+
+/* model_method_predict(): method for computing model predictions.
+ *  - see object_method_fn() for details.
+ */
+object_t *model_method_predict (model_t *mdl, object_t *args) {
+  /* check for the dataset arguments. */
+  object_t *mean = map_get((map_t*) args, "mean");
+  object_t *var  = map_get((map_t*) args, "var");
+  if (mean || var) {
+    /* check the argument types. */
+    if (mean && !OBJECT_IS_DATA(mean)) return NULL;
+    if (var  && !OBJECT_IS_DATA(var))  return NULL;
+
+    /* perform dataset-based prediction. */
+    if (!model_predict_all(mdl, (data_t*) mean, (data_t*) var))
+      return NULL;
+
+    /* return nothing. */
+    VFL_RETURN_NIL;
+  }
+
+  /* FIXME: check for value arguments. */
+
+  /* invalid arguments, return failure. */
+  return NULL;
+}
+

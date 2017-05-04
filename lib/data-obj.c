@@ -81,11 +81,17 @@ static int dataobj_set_grid (data_t *dat, object_t *val) {
   if (!OBJECT_IS_LIST(val))
     return 0;
 
-  /* FIXME: implement dataobj_set_grid() */
-  return 0;
+  /* cast the list to a matrix. */
+  matrix_t *grid = list_to_matrix((list_t*) val);
+  if (!grid)
+    return 0;
 
-  /* return success. */
-  return 1;
+  /* augment the dataset with the grid. */
+  const int ret = data_augment_from_grid(dat, 0, grid);
+
+  /* free the allocated matrix and return. */
+  matrix_free(grid);
+  return ret;
 }
 
 /* data_properties: array of accessible object properties.
@@ -100,10 +106,20 @@ static object_property_t data_properties[] = {
 
 /* --- */
 
-/* dataobj_write(): write a dataset object to a file.
+/* data_method_augment(): augment a dataset with new points.
  *  - see object_method_fn() for details.
  */
-static object_t *dataobj_write (data_t *dat, map_t *args) {
+static object_t *data_method_augment (data_t *dat, map_t *args) {
+  /* FIXME: implement data_method_augment() */
+
+  /* return nothing. */
+  VFL_RETURN_NIL;
+}
+
+/* data_method_write(): write a dataset object to a file.
+ *  - see object_method_fn() for details.
+ */
+static object_t *data_method_write (data_t *dat, map_t *args) {
   /* get the filename argument. */
   object_t *arg = map_get(args, "file");
   if (!arg)
@@ -124,7 +140,8 @@ static object_t *dataobj_write (data_t *dat, map_t *args) {
 /* data_methods: array of callable object methods.
  */
 static object_method_t data_methods[] = {
-  { "write", (object_method_fn) dataobj_write },
+  { "augment", (object_method_fn) data_method_augment },
+  { "write", (object_method_fn) data_method_write },
   { NULL, NULL }
 };
 

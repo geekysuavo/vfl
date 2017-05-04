@@ -8,6 +8,7 @@
 
 /* include vfl headers. */
 #include <vfl/base/object.h>
+#include <vfl/util/matrix.h>
 
 /* OBJECT_IS_LIST(): check if an object is a list.
  */
@@ -39,6 +40,14 @@ list_t *list_alloc_with_length (const size_t len);
 object_t *list_get (const list_t *lst, const size_t idx);
 
 void list_set (list_t *lst, const size_t idx, const object_t *obj);
+
+int list_append (list_t *lst, object_t *obj);
+
+int list_prepend (list_t *lst, object_t *obj);
+
+vector_t *list_to_vector (const list_t *lst);
+
+matrix_t *list_to_matrix (const list_t *lst);
 
 /* available object types: */
 

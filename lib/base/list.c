@@ -1,7 +1,7 @@
 
 /* include the list and integer headers. */
 #include <vfl/base/list.h>
-#include <vfl/base/int.h>
+#include <vfl/base/float.h>
 
 /* list_set_length(): set the number of available elements
  * of an object list. this function does not manage the
@@ -186,6 +186,116 @@ int list_prepend (list_t *lst, object_t *obj) {
   return 1;
 }
 
+/* list_to_vector(): cast a list into a vector, if possible.
+ *
+ * arguments:
+ *  @lst: object list to access.
+ *
+ * returns:
+ *  vector of the list elements, if the list contained only
+ *  integers and/or floats.
+ */
+vector_t *list_to_vector (const list_t *lst) {
+  /* check the list structure pointer. */
+  if (!lst)
+    return NULL;
+
+  /* get the vector length. */
+  const size_t len = lst->len;
+  if (len == 0)
+    return NULL;
+
+  /* verify that all list elements are numbers. */
+  for (size_t i = 0; i < len; i++) {
+    /* fail on encountering a non-numeric element. */
+    if (!OBJECT_IS_NUM(lst->objs[i]))
+      return NULL;
+  }
+
+  /* allocate a vector to store the list elements. */
+  vector_t *v = vector_alloc(len);
+  if (!v)
+    return NULL;
+
+  /* transfer the list contents to the vector. */
+  for (size_t i = 0; i < len; i++)
+    vector_set(v, i, num_get(lst->objs[i]));
+
+  /* return the new vector. */
+  return v;
+}
+
+/* list_to_matrix(): cast a list into a matrix, if possible.
+ *
+ * arguments:
+ *  @lst: object list to access.
+ *
+ * returns:
+ *  matrix of the list elements, if the list contained only
+ *  equally-sized lists of integers and/or floats.
+ */
+matrix_t *list_to_matrix (const list_t *lst) {
+  /* check the list structure pointer. */
+  if (!lst)
+    return NULL;
+
+  /* get the matrix row count. */
+  const size_t rows = lst->len;
+  if (rows == 0)
+    return NULL;
+
+  /* verify that all list elements are lists. */
+  for (size_t i = 0; i < rows; i++) {
+    /* fail on encountering a non-list element. */
+    if (!OBJECT_IS_LIST(lst->objs[i]))
+      return NULL;
+  }
+
+  /* get the first-row length. */
+  list_t *row0 = (list_t*) lst->objs[0];
+  const size_t cols = row0->len;
+  if (cols == 0)
+    return NULL;
+
+  /* verify that all row lists have the same length. */
+  for (size_t i = 1; i < rows; i++) {
+    /* fail on encountering a different length. */
+    list_t *row = (list_t*) lst->objs[i];
+    if (row->len != cols)
+      return NULL;
+  }
+
+  /* verify that all row lists contain only numbers. */
+  for (size_t i = 0; i < rows; i++) {
+    /* verify the current row elements. */
+    list_t *row = (list_t*) lst->objs[i];
+    for (size_t j = 0; j < cols; j++) {
+      /* fail on encountering a non-numeric row element. */
+      object_t *elem = row->objs[j];
+      if (!OBJECT_IS_NUM(elem))
+        return NULL;
+    }
+  }
+
+  /* allocate a matrix to store the list elements. */
+  matrix_t *A = matrix_alloc(rows, cols);
+  if (!A)
+    return NULL;
+
+  /* transfer the list contents to the matrix. */
+  for (size_t i = 0; i < rows; i++) {
+    /* transfer the current row elements. */
+    list_t *row = (list_t*) list_get(lst, i);
+    for (size_t j = 0; j < cols; j++)
+      matrix_set(A, i, j, num_get(row->objs[j]));
+  }
+
+  /* return the new matrix. */
+  return A;
+}
+
+/* --- */
+
 /* list_add(): addition function for lists.
  *  - see object_binary_fn() for details.
  */
@@ -275,6 +385,8 @@ list_t *list_mul (const object_t *a, const object_t *b) {
   /* return the new list. */
   return lst;
 }
+
+/* --- */
 
 /* list_getelem(): element getter for lists.
  *  - see object_getelem_fn() for details.

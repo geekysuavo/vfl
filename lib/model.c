@@ -274,38 +274,6 @@ int model_add_factor (model_t *mdl, factor_t *f) {
   return 1;
 }
 
-/* model_eval(): evalute the underlying linear function of a model
- * at the current mode of its variational distribution.
- *
- * arguments:
- *  @mdl: model structure pointer.
- *  @x: observation input vector.
- *  @p: function output index.
- *
- * returns:
- *  maximum posterior estimate of the model function.
- */
-double model_eval (const model_t *mdl, const vector_t *x,
-                   const unsigned int p) {
-  /* check the input pointers. */
-  if (!mdl || !x)
-    return 0.0;
-
-  /* compute the model estimate. */
-  double mode = 0.0;
-  for (unsigned int j = 0, i = 0; j < mdl->M; j++) {
-    /* get the current factor. */
-    const factor_t *fj = mdl->factors[j];
-
-    /* loop over the weights assigned to the factor. */
-    for (unsigned int k = 0; k < fj->K; k++, i++)
-      mode += vector_get(mdl->wbar, i) * factor_eval(fj, x, p, k);
-  }
-
-  /* return computed estimate. */
-  return mode;
-}
-
 /* model_mean(): return the first moment of a model basis element.
  *
  * arguments:
@@ -486,6 +454,38 @@ double model_bound (const model_t *mdl) {
   return bound_fn(mdl) - div;
 }
 
+/* model_eval(): evalute the underlying linear function of a model
+ * at the current mode of its variational distribution.
+ *
+ * arguments:
+ *  @mdl: model structure pointer.
+ *  @x: observation input vector.
+ *  @p: function output index.
+ *
+ * returns:
+ *  maximum posterior estimate of the model function.
+ */
+double model_eval (const model_t *mdl, const vector_t *x,
+                   const unsigned int p) {
+  /* check the input pointers. */
+  if (!mdl || !x)
+    return 0.0;
+
+  /* compute the model estimate. */
+  double mode = 0.0;
+  for (unsigned int j = 0, i = 0; j < mdl->M; j++) {
+    /* get the current factor. */
+    const factor_t *fj = mdl->factors[j];
+
+    /* loop over the weights assigned to the factor. */
+    for (unsigned int k = 0; k < fj->K; k++, i++)
+      mode += vector_get(mdl->wbar, i) * factor_eval(fj, x, p, k);
+  }
+
+  /* return computed estimate. */
+  return mode;
+}
+
 /* model_predict(): return the model posterior prediction.
  *  - see model_predict_fn() for more information.
  */
@@ -510,6 +510,36 @@ int model_predict (const model_t *mdl, const vector_t *x,
   return predict_fn(mdl, x, p, mean, var);
 }
 
+/* model_eval_all(): return model maximum posterior evaluations
+ * for all observations in a dataset.
+ *
+ * arguments:
+ *  @mdl: model structure pointer.
+ *  @dat: dataset for evaluation storage.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int model_eval_all (const model_t *mdl, data_t *dat) {
+  /* check the input pointers. */
+  if (!mdl || !dat)
+    return 0;
+
+  /* check that the model and input dataset match in dimensionality. */
+  if (dat->D != mdl->D)
+    return 0;
+
+  /* loop over each observation. */
+  for (unsigned int i = 0; i < dat->N; i++) {
+    /* compute and store the model evaluation. */
+    datum_t *di = data_get(dat, i);
+    di->y = model_eval(mdl, di->x, di->p);
+  }
+
+  /* return success. */
+  return 1;
+}
+
 /* model_predict_all(): return model posterior predictions for
  * all observations in a pair of datasets. the two datasets
  * must have equal sizes, but no checking is performed on
@@ -523,31 +553,43 @@ int model_predict (const model_t *mdl, const vector_t *x,
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-int model_predict_all (const model_t *mdl,
-                       data_t *mean,
-                       data_t *var) {
+int model_predict_all (const model_t *mdl, data_t *mean, data_t *var) {
   /* declare required variables:
-   *  @mu: individual means.
-   *  @eta: individual variances.
+   *  @mu, @eta: individual means and variances.
+   *  @xdata: dataset used for predictions.
    */
   double mu, eta;
+  data_t *xdata;
 
   /* check the input pointers. */
-  if (!mdl || !mean || !var)
+  if (!mdl)
     return 0;
 
-  /* check that the structures have matching dimensionality. */
-  if (mean->D != mdl->D || var->D != mdl->D || mean->N != var->N)
+  /* determine which dataset to use for input locations. */
+  if (mean)
+    xdata = mean;
+  else if (var)
+    xdata = var;
+  else
+    return 0;
+
+  /* if both datasets are provided, make sure they have matching size. */
+  if (mean && var && (mean->D != var->D || mean->N != var->N))
+    return 0;
+
+  /* check that the model and input dataset match in dimensionality. */
+  if (xdata->D != mdl->D)
     return 0;
 
   /* loop over each observation. */
-  for (unsigned int i = 0; i < mean->N; i++) {
+  for (unsigned int i = 0; i < xdata->N; i++) {
     /* compute the posterior mean and variance. */
-    model_predict(mdl, mean->data[i].x, mean->data[i].p, &mu, &eta);
+    datum_t *xdatum = data_get(xdata, i);
+    model_predict(mdl, xdatum->x, xdatum->p, &mu, &eta);
 
     /* store the predictions. */
-    mean->data[i].y = mu;
-    var->data[i].y = eta;
+    if (mean) mean->data[i].y = mu;
+    if (var)  var->data[i].y = eta;
   }
 
   /* return success. */
