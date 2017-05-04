@@ -6,10 +6,7 @@ BIN=gauss
 SRC=gauss.c
 
 # DAT: output data filenames.
-DAT=mean.dat var.dat model.dat
-
-# TESTFLAGS: environment variables to set during testing.
-TESTFLAGS=RNG_SEED=7321
+DAT=mean.dat var.dat model.p0.dat
 
 # include the testing base makefile.
 include ../tests.mk

@@ -1,0 +1,55 @@
+
+# create a model.
+mdl = vfr(
+  alpha0: 100,
+  beta0: 100,
+  nu: 1e-6,
+  data: data(file: 'co2.dat'),
+  factors: [cosine(mu: 0.0,  tau: 1e5),
+            cosine(mu: 0.01, tau: 100),
+            cosine(mu: 0.1,  tau: 10),
+            cosine(mu: 1.0,  tau: 10),
+            cosine(mu: 2.0,  tau: 10),
+            cosine(mu: 3.0,  tau: 10),
+            cosine(mu: 4.0,  tau: 10),
+            cosine(mu: 5.0,  tau: 0.1),
+            cosine(mu: 10,   tau: 0.1)]
+);
+
+# shift the data locations for easier inference.
+for i in std.range(n: mdl.data.N) {
+  di = mdl.data[i];
+  mdl.data[i] = [di[0], [di[1][0] - 1995], di[2]];
+}
+
+# create a full-gradient optimizer.
+opt = fg(
+  model: mdl,
+  maxIters: 2000,
+  lipschitzInit: 0.0001
+);
+
+# optimize.
+opt.execute();
+
+# build gridded datasets for prediction.
+G = [[-25, 1e-2, 75]];
+mean = data(grid: G);
+var = data(grid: G);
+
+# compute the model prediction.
+mdl.predict(mean: mean, var: var);
+
+# shift the predictions back to the original data locations.
+for i in std.range(n: mean.N) {
+  mi = mean[i];
+  vi = var[i];
+
+  mean[i] = [mi[0], [mi[1][0] + 1995], mi[2]];
+  var[i] = [vi[0], [vi[1][0] + 1995], vi[2]];
+}
+
+# write the prediction results.
+mean.write(file: 'mean.dat');
+var.write(file: 'var.dat');
+

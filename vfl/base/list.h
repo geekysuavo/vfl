@@ -35,11 +35,13 @@ list_t;
 #define list_alloc() \
   (list_t*) obj_alloc(vfl_object_list)
 
+void list_deepfree (list_t *lst);
+
 list_t *list_alloc_with_length (const size_t len);
 
-list_t *list_alloc_from_vector (const vector_t *v);
+object_t *list_alloc_from_vector (const vector_t *v);
 
-list_t *list_alloc_from_matrix (const matrix_t *A);
+object_t *list_alloc_from_matrix (const matrix_t *A);
 
 object_t *list_get (const list_t *lst, const size_t idx);
 

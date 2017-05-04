@@ -90,6 +90,25 @@ void list_free (list_t *lst) {
   list_set_length(lst, 0);
 }
 
+/* list_deepfree(): free the contents of an object list, including
+ * the list elements themselves.
+ *
+ * arguments:
+ *  @lst: list structure pointer to free.
+ */
+void list_deepfree (list_t *lst) {
+  /* return if the list is null. */
+  if (!lst)
+    return;
+
+  /* free the list elements. */
+  for (size_t i = 0; i < lst->len; i++)
+    obj_free(lst->objs[i]);
+
+  /* free the list object. */
+  obj_free((object_t*) lst);
+}
+
 /* list_alloc_with_length(): allocate an object list
  * with a specified number of array elements.
  *
@@ -128,8 +147,35 @@ list_t *list_alloc_with_length (const size_t len) {
  * returns:
  *  newly allocated and initialized list, or null on failure.
  */
-list_t *list_alloc_from_vector (const vector_t *v) {
-  /* FIXME: implement list_alloc_from_vector() */ return NULL;
+object_t *list_alloc_from_vector (const vector_t *v) {
+  /* check the input pointer. */
+  if (!v)
+    return NULL;
+
+  /* return nothing if the vector is empty. */
+  if (v->len == 0)
+    VFL_RETURN_NIL;
+
+  /* allocate a new list. */
+  list_t *lst = list_alloc_with_length(v->len);
+  if (!lst)
+    return NULL;
+
+  /* allocate the list elements. */
+  for (size_t i = 0; i < lst->len; i++) {
+    /* allocate and store the element. */
+    lst->objs[i] = (object_t*) float_alloc_with_value(vector_get(v, i));
+    if (!lst->objs[i])
+      goto fail;
+  }
+
+  /* return the new list. */
+  return (object_t*) lst;
+
+fail:
+  /* free all allocated objects and return null. */
+  list_deepfree(lst);
+  return NULL;
 }
 
 /* list_alloc_from_matrix(): allocate an object list that holds
@@ -141,8 +187,40 @@ list_t *list_alloc_from_vector (const vector_t *v) {
  * returns:
  *  newly allocated and initialized list, or null on failure.
  */
-list_t *list_alloc_from_matrix (const matrix_t *A) {
-  /* FIXME: implement list_alloc_from_matrix() */ return NULL;
+object_t *list_alloc_from_matrix (const matrix_t *A) {
+  /* check the input pointer. */
+  if (!A)
+    return NULL;
+
+  /* return nothing if the matrix is empty. */
+  if (A->rows == 0 || A->cols == 0)
+    VFL_RETURN_NIL;
+
+  /* allocate the row list. */
+  list_t *rows = list_alloc_with_length(A->rows);
+  if (!rows)
+    return NULL;
+
+  /* allocate each row. */
+  for (size_t i = 0; i < rows->len; i++) {
+    /* build a list of the current row elements. */
+    vector_view_t Arow = matrix_row(A, i);
+    rows->objs[i] = list_alloc_from_vector(&Arow);
+    if (!rows->objs[i])
+      goto fail;
+  }
+
+  /* return the new list. */
+  return (object_t*) rows;
+
+fail:
+  /* free all row lists. */
+  for (size_t i = 0; i < rows->len; i++)
+    list_deepfree((list_t*) rows->objs[i]);
+
+  /* free all the row and return null. */
+  list_deepfree(rows);
+  return NULL;
 }
 
 /* list_get(): get an element from an object list.

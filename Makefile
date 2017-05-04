@@ -15,11 +15,13 @@ DATE=$(shell date +%Y%m%d)
 
 # global, default make target.
 all:
+	@$(MAKE) -sC lib
+	@$(MAKE) -sC bin
 
 # intermediate file cleanup target.
 clean:
-	@$(MAKE) -sC bin clean
 	@$(MAKE) -sC lib clean
+	@$(MAKE) -sC bin clean
 	@$(MAKE) -sC tests/carbon-dioxide clean
 	@$(MAKE) -sC tests/cosines clean
 	@$(MAKE) -sC tests/gauss clean
@@ -37,8 +39,8 @@ again: clean all
 
 # installation target.
 install:
-	@$(MAKE) -sC bin install
 	@$(MAKE) -sC lib install
+	@$(MAKE) -sC bin install
 	@$(MAKE) -sC vfl install
 
 # line-count reporting target.

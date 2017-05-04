@@ -101,6 +101,10 @@ static int ast_eval_assign (ast_t *node, sym_table_t *tab) {
         return 0;
     }
     else if (ast_node_type(qend) == AST_NODE_LIST) {
+      /* re-evaluate the index node. */
+      if (!ast_eval(qend, tab))
+        return 0;
+
       /* call the element set method. */
       object_t *idx = ast_node_value(qend);
       if (!obj_setelem(obj, idx, val))

@@ -1,0 +1,25 @@
+
+# create a model.
+mdl = vfr(
+  alpha0: 1000,
+  beta0: 2.5,
+  nu: 1e-3,
+  data: data(file: '../sinc/sinc.dat'),
+  factors: polynomial(order: 10)
+);
+
+# perform inference.
+mdl.infer();
+
+# build gridded datasets for prediction.
+G = [[-10, 1e-3, 10]];
+mean = data(grid: G);
+var = data(grid: G);
+
+# compute the model prediction.
+mdl.predict(mean: mean, var: var);
+
+# write the prediction results.
+mean.write(file: 'mean.dat');
+var.write(file: 'var.dat');
+

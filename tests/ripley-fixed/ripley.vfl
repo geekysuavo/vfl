@@ -1,0 +1,44 @@
+
+# create a model.
+mdl = vfc(
+  nu: 1.0e-6,
+  data: data(file: 'ripley.dat')
+);
+
+# add every tenth data point to the model.
+for i in std.range(begin: 0, step: 10, end: mdl.data.N - 1) {
+  xi = mdl.data[i][1];
+  mdl.add(factor: fixedImpulse(dim: 0, mu: xi[0], tau: 0.1) *
+                  fixedImpulse(dim: 1, mu: xi[1], tau: 0.1));
+}
+
+# initialize the factor parameters.
+for j in std.range(n: mdl.M) {
+  mdl.factors[j][0].tau = 10;
+  mdl.factors[j][1].tau = 10;
+  mdl.factors[j].update();
+}
+
+# create a full-gradient optimizer.
+opt = fg(
+  model: mdl,
+  maxIters: 50,
+  lipschitzInit: 0.001
+);
+
+# optimize.
+opt.execute();
+
+# build gridded datasets for prediction.
+G = [[-1.5, 0.01, 1.0],
+     [-0.3, 0.02, 1.2]];
+mean = data(grid: G);
+var = data(grid: G);
+
+# compute the model prediction.
+mdl.predict(mean: mean, var: var);
+
+# write the prediction results.
+mean.write(file: 'mean.dat');
+var.write(file: 'var.dat');
+

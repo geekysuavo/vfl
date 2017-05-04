@@ -332,7 +332,7 @@ object_t *model_method_infer (model_t *mdl, object_t *args) {
  *  - see object_method_fn() for details.
  */
 object_t *model_method_eval (model_t *mdl, object_t *args) {
-  /* check for dataset arguments. */
+  /* check for the dataset argument. */
   object_t *dat = map_get((map_t*) args, "data");
   if (dat) {
     /* check the argument type. */
@@ -347,10 +347,47 @@ object_t *model_method_eval (model_t *mdl, object_t *args) {
     VFL_RETURN_NIL;
   }
 
-  /* FIXME: check for value arguments. */
+  /* check for the output index argument. */
+  object_t *p = map_get((map_t*) args, "output");
+  if (!p) p = map_get((map_t*) args, "p");
+  long pval = 0;
+  if (p) {
+    /* check the argument type. */
+    if (!OBJECT_IS_INT(p))
+      return NULL;
 
-  /* invalid arguments, return failure. */
-  return NULL;
+    /* check that the output index is in bounds. */
+    pval = int_get((int_t*) p);
+    if (pval < 0)
+      return NULL;
+  }
+
+  /* check for the location argument. */
+  object_t *x = map_get((map_t*) args, "input");
+  if (!x) x = map_get((map_t*) args, "x");
+  if (!x)
+    return NULL;
+
+  /* check that the location is a list. */
+  if (!OBJECT_IS_LIST(x))
+    return NULL;
+
+  /* check the list length. */
+  list_t *xlst = (list_t*) x;
+  if (xlst->len != mdl->D)
+    return NULL;
+
+  /* cast the list to a vector. */
+  vector_t *xval = list_to_vector(xlst);
+  if (!xval)
+    return NULL;
+
+  /* compute the result and free the vector. */
+  const double yhat = model_eval(mdl, xval, (unsigned int) pval);
+  vector_free(xval);
+
+  /* return the result. */
+  return (object_t*) float_alloc_with_value(yhat);
 }
 
 /* model_method_predict(): method for computing model predictions.
@@ -373,9 +410,64 @@ object_t *model_method_predict (model_t *mdl, object_t *args) {
     VFL_RETURN_NIL;
   }
 
-  /* FIXME: check for value arguments. */
+  /* check for the output index argument. */
+  object_t *p = map_get((map_t*) args, "output");
+  if (!p) p = map_get((map_t*) args, "p");
+  long pval = 0;
+  if (p) {
+    /* check the argument type. */
+    if (!OBJECT_IS_INT(p))
+      return NULL;
 
-  /* invalid arguments, return failure. */
-  return NULL;
+    /* check that the output index is in bounds. */
+    pval = int_get((int_t*) p);
+    if (pval < 0)
+      return NULL;
+  }
+
+  /* check for the location argument. */
+  object_t *x = map_get((map_t*) args, "input");
+  if (!x) x = map_get((map_t*) args, "x");
+  if (!x)
+    return NULL;
+
+  /* check that the location is a list. */
+  if (!OBJECT_IS_LIST(x))
+    return NULL;
+
+  /* check the list length. */
+  list_t *xlst = (list_t*) x;
+  if (xlst->len != mdl->D)
+    return NULL;
+
+  /* cast the list to a vector. */
+  vector_t *xval = list_to_vector(xlst);
+  if (!xval)
+    return NULL;
+
+  /* compute the result and free the vector. */
+  double mu, eta;
+  model_predict(mdl, xval, (unsigned int) pval, &mu, &eta);
+  vector_free(xval);
+
+  /* allocate a list to store the results into. */
+  list_t *ylst = list_alloc_with_length(2);
+  if (!ylst)
+    return NULL;
+
+  /* fill the list. */
+  object_t *y0 = (object_t*) float_alloc_with_value(mu);
+  object_t *y1 = (object_t*) float_alloc_with_value(eta);
+  list_set(ylst, 0, y0);
+  list_set(ylst, 1, y1);
+
+  /* handle allocation failures. */
+  if (!y0 || !y1) {
+    list_deepfree(ylst);
+    return NULL;
+  }
+
+  /* return the new list. */
+  return (object_t*) ylst;
 }
 

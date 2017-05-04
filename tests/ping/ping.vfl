@@ -1,0 +1,33 @@
+
+# create a random number generator.
+rand = rng(seed: 7321);
+
+# create a model.
+mdl = vfr(
+  alpha0: 100,
+  beta0: 100,
+  nu: 1e-6,
+  data: data(file: 'ping.dat'),
+  factors: decay(alpha: 200, beta: 1000) * cosine(mu: 0, tau: 0.1)
+);
+
+# randomize the frequency mean.
+mdl.factors[0][1].mu = rand.normal(mu: 0, tau: 0.1);
+mdl.factors[0].update();
+
+# create a full-gradient optimizer.
+opt = fg(model: mdl);
+opt.execute();
+
+# build gridded datasets for prediction.
+G = [[0, 1e-3, 10]];
+mean = data(grid: G);
+var = data(grid: G);
+
+# compute the model prediction.
+mdl.predict(mean: mean, var: var);
+
+# write the prediction results.
+mean.write(file: 'mean.dat');
+var.write(file: 'var.dat');
+

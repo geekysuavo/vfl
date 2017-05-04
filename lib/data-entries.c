@@ -152,7 +152,7 @@ int data_augment (data_t *dat, const datum_t *d) {
  * observations into a dataset.
  *
  * arguments:
- *  @dat: dataset structure pointer to access.
+ *  @dat: dataset structure pointer to modify.
  *  @p: output index of the augmenting grid.
  *  @grid: matrix of gridding information.
  *
@@ -208,5 +208,45 @@ fail:
   /* free all allocated memory and return. */
   grid_iterator_free(idx, sz, x);
   return status;
+}
+
+/* data_augment_from_data(): add the contents of one dataset into
+ * another dataset as new entries.
+ *
+ * arguments:
+ *  @dat: dataset structure pointer to modify.
+ *  @dsrc: source dataset to add into @dat.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int data_augment_from_data (data_t *dat, const data_t *dsrc) {
+  /* check the input pointers. */
+  if (!dat || !dsrc)
+    return 0;
+
+  /* initialize the new sizes. */
+  const unsigned int D = dsrc->D;
+  const unsigned int N = dsrc->N;
+  const unsigned int N0 = dat->N;
+
+  /* attempt to resize the dataset. */
+  if (!data_resize(dat, N0 + N, D))
+    return 0;
+
+  /* loop over every augmenting point. */
+  for (unsigned int i = 0; i < N; i++) {
+    /* get the source and destination data. */
+    datum_t *di_src = data_get(dsrc, i);
+    datum_t *di = data_get(dat, N0 + i);
+
+    /* copy from source to destination. */
+    vector_copy(di->x, di_src->x);
+    di->y = di_src->y;
+    di->p = di_src->p;
+  }
+
+  /* return the result of sorting the augmented dataset. */
+  return data_sort(dat);
 }
 

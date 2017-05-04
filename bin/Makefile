@@ -40,12 +40,12 @@ all: $(BIN)
 
 # binary linkage make target.
 $(BIN): $(OBJ)
-	@echo " LD $@"
+	@echo " LD   $@"
 	@$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ $(LIBS)
 
 # source compilation target.
 .c.o:
-	@echo " CC $^"
+	@echo " CC   $^"
 	@$(CC) $(CFLAGS) -c $^ -o $@
 
 # intermediate file cleanup target.
