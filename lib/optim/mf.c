@@ -62,6 +62,24 @@ OPTIM_EXECUTE (mf) {
   return (opt->bound > bound_prev);
 }
 
+/* --- */
+
+/* mf_properties: array of accessible mean field
+ * optimizer object properties.
+ */
+static object_property_t mf_properties[] = {
+  OPTIM_PROP_BASE,
+  { NULL, NULL, NULL }
+};
+
+/* mf_methods: array of callable mean field
+ * optimizer object methods.
+ */
+static object_method_t mf_methods[] = {
+  OPTIM_METHOD_BASE,
+  { NULL, NULL }
+};
+
 /* mf_type: optimizer type structure for mean-field training.
  */
 static optim_type_t mf_type = {
@@ -80,8 +98,8 @@ static optim_type_t mf_type = {
 
     NULL,                                        /* get       */
     NULL,                                        /* set       */
-    NULL,                                        /* props     */
-    NULL                                         /* methods */
+    mf_properties,                               /* props     */
+    mf_methods                                   /* methods */
   },
 
   NULL,                                          /* init    */

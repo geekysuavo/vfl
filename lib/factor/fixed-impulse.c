@@ -219,7 +219,7 @@ static object_method_t fixed_impulse_methods[] = {
  */
 static factor_type_t fixed_impulse_type = {
   { /* base: */
-    "fixed_impulse",                             /* name      */
+    "fixedImpulse",                              /* name      */
     sizeof(fixed_impulse_t),                     /* size      */
 
     (object_init_fn) factor_init,                /* init      */

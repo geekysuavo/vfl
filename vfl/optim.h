@@ -7,10 +7,42 @@
 #include <vfl/util/eigen.h>
 #include <vfl/model.h>
 
+/* OBJECT_IS_OPTIM(): check if an object is an optimizer.
+ */
+#define OBJECT_IS_OPTIM(obj) \
+  (OBJECT_TYPE(obj)->init == (object_init_fn) optim_init)
+
 /* OPTIM_TYPE(): macro function for casting optimizer structure pointers
  * to their associated type structures.
  */
 #define OPTIM_TYPE(s) ((optim_type_t*) (s)->type)
+
+/* OPTIM_PROP_BASE: base set of object properties
+ * available to all optimizers.
+ */
+#define OPTIM_PROP_BASE \
+  { "bound", (object_getprop_fn) optim_getprop_bound, NULL }, \
+  { "model", \
+    (object_getprop_fn) optim_getprop_model, \
+    (object_setprop_fn) optim_setprop_model }, \
+  { "maxIters", \
+    (object_getprop_fn) optim_getprop_maxiters, \
+    (object_setprop_fn) optim_setprop_maxiters }, \
+  { "maxSteps", \
+    (object_getprop_fn) optim_getprop_maxsteps, \
+    (object_setprop_fn) optim_setprop_maxsteps }, \
+  { "lipschitzInit", \
+    (object_getprop_fn) optim_getprop_l0, \
+    (object_setprop_fn) optim_setprop_l0 }, \
+  { "lipschitzStep", \
+    (object_getprop_fn) optim_getprop_dl, \
+    (object_setprop_fn) optim_setprop_dl }
+
+/* OPTIM_METHOD_BASE: base set of object methods available
+ * to all optimizers.
+ */
+#define OPTIM_METHOD_BASE \
+  { "execute", (object_method_fn) optim_method_execute }
 
 /* optim_t: defined type for the optimizer structure. */
 typedef struct optim optim_t;
@@ -124,7 +156,7 @@ struct optim {
   matrix_t *Fs;
 };
 
-/* function declarations (optim.c): */
+/* function declarations (optim-obj.c): */
 
 #define optim_alloc(T) \
   (optim_t*) obj_alloc((object_type_t*) T)
@@ -132,6 +164,32 @@ struct optim {
 int optim_init (optim_t *opt);
 
 void optim_free (optim_t *opt);
+
+object_t *optim_getprop_bound (const optim_t *opt);
+
+model_t *optim_getprop_model (const optim_t *opt);
+
+object_t *optim_getprop_maxiters (const optim_t *opt);
+
+object_t *optim_getprop_maxsteps (const optim_t *opt);
+
+object_t *optim_getprop_l0 (const optim_t *opt);
+
+object_t *optim_getprop_dl (const optim_t *opt);
+
+int optim_setprop_model (optim_t *opt, object_t *val);
+
+int optim_setprop_maxiters (optim_t *opt, object_t *val);
+
+int optim_setprop_maxsteps (optim_t *opt, object_t *val);
+
+int optim_setprop_l0 (optim_t *opt, object_t *val);
+
+int optim_setprop_dl (optim_t *opt, object_t *val);
+
+object_t *optim_method_execute (optim_t *opt, object_t *args);
+
+/* function declarations (optim.c): */
 
 int optim_set_model (optim_t *opt, model_t *mdl);
 

@@ -150,6 +150,24 @@ OPTIM_EXECUTE (fg) {
   return (opt->bound > bound_prev);
 }
 
+/* --- */
+
+/* fg_properties: array of accessible full gradient
+ * optimizer object properties.
+ */
+static object_property_t fg_properties[] = {
+  OPTIM_PROP_BASE,
+  { NULL, NULL, NULL }
+};
+
+/* fg_methods: array of callable full gradient
+ * optimizer object methods.
+ */
+static object_method_t fg_methods[] = {
+  OPTIM_METHOD_BASE,
+  { NULL, NULL }
+};
+
 /* fg_type: optimizer type structure for full-gradient training.
  */
 static optim_type_t fg_type = {
@@ -168,8 +186,8 @@ static optim_type_t fg_type = {
 
     NULL,                                        /* get       */
     NULL,                                        /* set       */
-    NULL,                                        /* props     */
-    NULL                                         /* methods */
+    fg_properties,                               /* props     */
+    fg_methods                                   /* methods */
   },
 
   NULL,                                          /* init    */

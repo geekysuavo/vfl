@@ -66,7 +66,7 @@ C+= $(addprefix lang/,$(C_LANG))
 C+= $(addprefix base/,$(C_BASE))
 C+= $(addprefix factor/,$(C_FACTOR)) factor-obj factor
 C+= $(addprefix model/,$(C_MODEL)) model-obj model
-C+= $(addprefix optim/,$(C_OPTIM)) optim
+C+= $(addprefix optim/,$(C_OPTIM)) optim-obj optim
 
 # basenames of core C source files.
 C+= data-alloc data-entries data-fileio data-sort data-obj vfl
