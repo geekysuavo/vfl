@@ -1,6 +1,6 @@
 
 /* include the search and gridding headers. */
-#include <vfl/util/search.h>
+#include <vfl/search.h>
 #include <vfl/util/grid.h>
 
 /* * * * documentation of opencl kernel code: * * * */
@@ -127,7 +127,86 @@
 "  var[gid] = sum;"                                                 "\n" \
 "}\n"
 
-/* * * * static function definitions: * * * */
+/* * * * private function definitions: * * * */
+
+/* set_kernel(): initialize the compute device kernel information
+ * used by a search structure.
+ *
+ * arguments:
+ *  @S: search structure pointer.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+static int set_kernel (search_t *S) {
+#ifdef __VFL_USE_OPENCL
+  /* generate the model kernel code. */
+  char *ksrc = model_kernel(S->mdl);
+  if (!ksrc)
+    return 0;
+
+  /* allocate memory for the complete program code. */
+  const unsigned int len = strlen(SEARCH_FORMAT) + strlen(ksrc) + 8;
+  S->src = malloc(len);
+  if (!S->src) {
+    free(ksrc);
+    return 0;
+  }
+
+  /* write the complete program code and free the model kernel code. */
+  sprintf(S->src, SEARCH_FORMAT, ksrc);
+  free(ksrc);
+
+  /* get the first available compute platform. */
+  int ret = clGetPlatformIDs(1, &S->plat, NULL);
+  if (ret != CL_SUCCESS)
+    return 0;
+
+  /* connect to the first available compute device. */
+  ret = clGetDeviceIDs(S->plat, CL_DEVICE_TYPE_GPU, 1, &S->dev, NULL);
+  if (ret != CL_SUCCESS)
+    return 0;
+
+  /* create a compute context. */
+  S->ctx = clCreateContext(NULL, 1, &S->dev, NULL, NULL, &ret);
+  if (!S->ctx)
+    return 0;
+
+  /* create a command queue. */
+  S->queue = clCreateCommandQueue(S->ctx, S->dev, 0, &ret);
+  if (!S->queue)
+    return 0;
+
+  /* create the compute program. */
+  S->prog = clCreateProgramWithSource(S->ctx, 1, (const char**) &S->src,
+                                      NULL, &ret);
+
+  /* check for program creation failure. */
+  if (!S->prog)
+    return 0;
+
+  /* build the program executable. */
+  ret = clBuildProgram(S->prog, 0, NULL, NULL, NULL, NULL);
+  if (ret != CL_SUCCESS)
+    return 0;
+
+  /* create the compute kernel. */
+  S->kern = clCreateKernel(S->prog, "vfl_variance", &ret);
+  if (!S->kern || ret != CL_SUCCESS)
+    return 0;
+
+  /* get the maximum work group size for the kernel. */
+  ret = clGetKernelWorkGroupInfo(S->kern, S->dev, CL_KERNEL_WORK_GROUP_SIZE,
+                                 sizeof(size_t), &S->wgsize, NULL);
+
+  /* check for query failure. */
+  if (ret != CL_SUCCESS)
+    return 0;
+#endif
+
+  /* return success. */
+  return 1;
+}
 
 /* set_arguments(): set the kernel arguments of a search structure.
  *
@@ -163,13 +242,38 @@ static int set_arguments (search_t *S) {
 #endif
 }
 
+/* free_kernel(): free all allocated compute platform information.
+ *
+ * arguments:
+ *  @S: search structure pointer.
+ */
+void free_kernel (search_t *S) {
+#ifdef __VFL_USE_OPENCL
+  /* release the opencl variables. */
+  clReleaseProgram(S->prog);
+  clReleaseKernel(S->kern);
+  clReleaseCommandQueue(S->queue);
+  clReleaseContext(S->ctx);
+
+  /* reset the opencl variables. */
+  S->prog = NULL;
+  S->kern = NULL;
+  S->queue = NULL;
+  S->ctx = NULL;
+
+  /* free the kernel source code string. */
+  free(S->src);
+  S->src = NULL;
+#endif
+}
+
 /* free_buffers(): free all allocated calculation-related buffers
  * within a search structure.
  *
  * arguments:
  *  @S: search structure pointer.
  */
-static void free_buffers (search_t *S) {
+void free_buffers (search_t *S) {
   /* free the dense covariance matrix. */
   matrix_free(S->cov);
   S->cov = NULL;
@@ -553,162 +657,75 @@ static int launch_kernel (search_t *S, size_t *Ntask) {
 
 /* * * * function definitions: * * * */
 
-/* search_alloc(): allocate a new structure for variance searches.
+/* search_set_model(): set the model emulated by a search structure.
  *
  * arguments:
- *  @mdl: model to use for constructing the search.
- *  @dat: dataset to pull observations from.
- *  @grid: matrix of gridding information.
+ *  @S: search structure pointer.
+ *  @mdl: new target model.
  *
  * returns:
- *  newly allocated and initialized search structure.
+ *  integer indicating success (1) or failure (0).
  */
-search_t *search_alloc (model_t *mdl, data_t *dat,
-                        const matrix_t *grid) {
-  /* check the input structure pointers. */
-  if (!mdl || !dat | !grid_validate(grid))
-    return NULL;
+int search_set_model (search_t *S, model_t *mdl) {
+  /* check the input pointers. */
+  if (!S || !mdl)
+    return 0;
 
-  /* allocate a new structure pointer. */
-  search_t *S = malloc(sizeof(search_t));
-  if (!S)
-    return NULL;
-
-  /* initialize the object type. */
-  S->type = (object_type_t*) vfl_object_search;
-
-  /* store the model and dataset. */
-  S->grid = grid;
-  S->mdl = mdl;
-  S->dat = dat;
-
-  /* initialize the buffer sizes. */
-  S->D = S->P = S->K = S->N = S->n = 0;
-
-#ifdef __VFL_USE_OPENCL
-  /* initialize the opencl variables. */
-  S->plat = NULL;
-  S->dev = NULL;
-  S->ctx = NULL;
-  S->queue = NULL;
-  S->prog = NULL;
-  S->kern = NULL;
-  S->src = NULL;
-
-  /* initialize the device-side pointers. */
-  S->dev_par = S->dev_var = S->dev_xgrid = NULL;
-  S->dev_xdat = S->dev_pdat = S->dev_C = NULL;
-  S->dev_cblk = NULL;
-
-  /* initialize the host-side pointers. */
-  S->par = S->var = S->xgrid = S->xmax = S->xdat = S->C = NULL;
-  S->pdat = NULL;
-#else
-  S->cs = NULL;
-#endif
-  S->cov = NULL;
-  S->vmax = 0.0;
-
-#ifdef __VFL_USE_OPENCL
-  /* generate the model kernel code. */
-  char *ksrc = model_kernel(S->mdl);
-  if (!ksrc)
-    goto fail;
-
-  /* allocate memory for the complete program code. */
-  const unsigned int len = strlen(SEARCH_FORMAT) + strlen(ksrc) + 8;
-  S->src = malloc(len);
-  if (!S->src) {
-    free(ksrc);
-    goto fail;
+  /* check if a model is already assigned to the search. */
+  if (S->mdl) {
+    /* release all variables tied to the model. */
+    free_buffers(S);
+    free_kernel(S);
+    S->mdl = NULL;
   }
 
-  /* write the complete program code and free the model kernel code. */
-  sprintf(S->src, SEARCH_FORMAT, ksrc);
-  free(ksrc);
+  /* store the new model. */
+  S->mdl = mdl;
 
-  /* get the first available compute platform. */
-  int ret = clGetPlatformIDs(1, &S->plat, NULL);
-  if (ret != CL_SUCCESS)
-    goto fail;
-
-  /* connect to the first available compute device. */
-  ret = clGetDeviceIDs(S->plat, CL_DEVICE_TYPE_GPU, 1, &S->dev, NULL);
-  if (ret != CL_SUCCESS)
-    goto fail;
-
-  /* create a compute context. */
-  S->ctx = clCreateContext(NULL, 1, &S->dev, NULL, NULL, &ret);
-  if (!S->ctx)
-    goto fail;
-
-  /* create a command queue. */
-  S->queue = clCreateCommandQueue(S->ctx, S->dev, 0, &ret);
-  if (!S->queue)
-    goto fail;
-
-  /* create the compute program. */
-  S->prog = clCreateProgramWithSource(S->ctx, 1, (const char**) &S->src,
-                                      NULL, &ret);
-
-  /* check for program creation failure. */
-  if (!S->prog)
-    goto fail;
-
-  /* build the program executable. */
-  ret = clBuildProgram(S->prog, 0, NULL, NULL, NULL, NULL);
-  if (ret != CL_SUCCESS)
-    goto fail;
-
-  /* create the compute kernel. */
-  S->kern = clCreateKernel(S->prog, "vfl_variance", &ret);
-  if (!S->kern || ret != CL_SUCCESS)
-    goto fail;
-
-  /* get the maximum work group size for the kernel. */
-  ret = clGetKernelWorkGroupInfo(S->kern, S->dev, CL_KERNEL_WORK_GROUP_SIZE,
-                                 sizeof(size_t), &S->wgsize, NULL);
-  if (ret != CL_SUCCESS)
-    goto fail;
-#endif
-
-  /* return the new structure pointer. */
-  return S;
-
-#ifdef __VFL_USE_OPENCL
-fail:
-  /* free the search structure pointer and return null. */
-  search_free(S);
-  return NULL;
-#endif
+  /* attempt to set the kernel information. */
+  return set_kernel(S);
 }
 
-/* search_free(): free a variance search structure.
+/* search_set_data(): set the dataset modeled by a search structure.
  *
  * arguments:
- *  @S: pointer to a search structure to free.
+ *  @S: search structure pointer.
+ *  @dat: new input dataset.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
  */
-void search_free (search_t *S) {
-  /* return if the structure pointer is null. */
-  if (!S)
-    return;
+int search_set_data (search_t *S, data_t *dat) {
+  /* check the input pointers. */
+  if (!S || !dat)
+    return 0;
 
-#ifdef __VFL_USE_OPENCL
-  /* release the opencl variables. */
-  clReleaseProgram(S->prog);
-  clReleaseKernel(S->kern);
-  clReleaseCommandQueue(S->queue);
-  clReleaseContext(S->ctx);
+  /* store the new dataset and return success. */
+  S->dat = dat;
+  return 1;
+}
 
-  /* free the kernel source code string. */
-  free(S->src);
-#endif
+/* search_set_grid(): set the gridding matrix used by a search structure.
+ *
+ * arguments:
+ *  @S: search structure pointer.
+ *  @grid: new gridding matrix.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int search_set_grid (search_t *S, matrix_t *grid) {
+  /* check the input pointers. */
+  if (!S || !grid)
+    return 0;
 
-  /* free the calculation buffers. */
-  free_buffers(S);
+  /* check that the matrix contains a valid grid. */
+  if (!grid_validate(grid))
+    return 0;
 
-  /* free the structure pointer. */
-  free(S);
+  /* store the new grid and return success. */
+  S->grid = grid;
+  return 1;
 }
 
 /* search_set_outputs(): set the number of function outputs
@@ -754,6 +771,10 @@ int search_execute (search_t *S, vector_t *x) {
 
   /* check the input structure pointers. */
   if (!S || !x)
+    return 0;
+
+  /* check that the search contains all required variables. */
+  if (!S->grid || !S->mdl || !S->dat)
     return 0;
 
   /* refresh the calculation buffers. */
@@ -879,30 +900,4 @@ int search_execute (search_t *S, vector_t *x) {
   /* return success. */
   return 1;
 }
-
-/* --- */
-
-/* search_type: active learning search type structure.
- */
-static object_type_t search_type = {
-  "search",                                      /* name      */
-  sizeof(search_t),                              /* size      */
-
-  NULL,                                          /* init      */
-  NULL,                                          /* copy      */
-  NULL,                                          /* free      */
-
-  NULL,                                          /* add       */
-  NULL,                                          /* sub       */
-  NULL,                                          /* mul       */
-  NULL,                                          /* div       */
-
-  NULL,                                          /* get       */
-  NULL,                                          /* set       */
-  NULL,                                          /* props     */
-  NULL                                           /* methods   */
-};
-
-/* vfl_object_search: address of the search_type structure. */
-const object_type_t *vfl_object_search = &search_type;
 

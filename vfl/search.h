@@ -4,6 +4,7 @@
 #define __VFL_SEARCH_H__
 
 /* include vfl headers. */
+#include <vfl/base/object.h>
 #include <vfl/model.h>
 
 /* if required, include the opencl header. */
@@ -31,7 +32,7 @@ typedef struct {
    *  @mdl: model used to build kernel code strings.
    *  @dat: dataset used for individual searches.
    */
-  const matrix_t *grid;
+  matrix_t *grid;
   model_t *mdl;
   data_t *dat;
 
@@ -121,12 +122,16 @@ typedef struct {
 }
 search_t;
 
-/* function declarations (util/search.c): */
+/* function declarations (search.c): */
 
-search_t *search_alloc (model_t *mdl, data_t *dat,
-                        const matrix_t *grid);
+#define search_alloc() \
+  (search_t*) obj_alloc(vfl_object_search);
 
-void search_free (search_t *S);
+int search_set_model (search_t *S, model_t *mdl);
+
+int search_set_data (search_t *S, data_t *dat);
+
+int search_set_grid (search_t *S, matrix_t *grid);
 
 int search_set_outputs (search_t *S, const unsigned int num);
 

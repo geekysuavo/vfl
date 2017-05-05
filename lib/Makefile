@@ -27,7 +27,7 @@ YFLAGS=-d
 LIB=libvfl.so
 
 # basenames of C utility source files.
-C_UTIL=specfun vector matrix grid blas chol eigen search
+C_UTIL=specfun vector matrix grid blas chol eigen
 
 # basenames of C base type source files.
 C_BASE=object list map int float string rng std
@@ -70,7 +70,7 @@ C+= $(addprefix optim/,$(C_OPTIM)) optim-obj optim
 
 # basenames of core C source files.
 C+= data-alloc data-entries data-fileio data-sort data-obj
-C+= datum-obj datum vfl
+C+= datum-obj datum search-obj search vfl
 
 # filenames of C sources.
 SRC=$(addsuffix .c,$(C))
