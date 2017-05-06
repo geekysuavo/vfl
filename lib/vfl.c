@@ -2,6 +2,10 @@
 /* include the vfl header. */
 #include <vfl/vfl.h>
 
+/* include the syntax tree and symbol table headers. */
+#include <vfl/lang/ast.h>
+#include <vfl/lang/symbols.h>
+
 /* vfl_nil: address of the vfl_nilstruct structure. */
 static object_t vfl_nilstruct;
 const object_t *vfl_nil = &vfl_nilstruct;
@@ -23,6 +27,15 @@ const object_type_t *vfl_object_nil = &nil_type;
 static object_type_t **object_types;
 static unsigned int n_object_types;
 
+/* tree, globals: currently stored program and global symbol table.
+ */
+static sym_table_t *globals;
+static ast_t *tree;
+
+/* scanner function declarations. */
+int vfl_parse_string (const char *str);
+int vfl_parse_file (FILE *fh);
+
 /* vfl_init(): initialize the central registries of object types,
  * and register the core set of models, optimizers, factors,
  * and utility types.
@@ -43,6 +56,25 @@ int vfl_init (void) {
   /* initialize the type registry. */
   object_types = NULL;
   n_object_types = 0;
+
+  /* initialize the current program. */
+  tree = NULL;
+
+  /* initialize the global symbol table. */
+  globals = symbols_alloc(NULL);
+  if (!globals)
+    return 0;
+
+  /* register the nil object with the table. */
+  res &= symbols_set(globals, "nil", (object_t*) vfl_nil);
+
+  /* register true and false with the table. */
+  res &= symbols_set(globals, "true", (object_t*) int_alloc_with_value(1));
+  res &= symbols_set(globals, "false", (object_t*) int_alloc_with_value(0));
+
+  /* register the standard method library with the table. */
+  object_t *stdobj = std_alloc();
+  res &= symbols_set(globals, "std", stdobj);
 
   /* register core model types. */
   res &= vfl_register_type((object_type_t*) vfl_model_vfc);
@@ -74,6 +106,24 @@ int vfl_init (void) {
 
   /* return the result. */
   return res;
+}
+
+/* vfl_cleanup(): free all memory associated with the central
+ * type registry, interpreter, and parser.
+ */
+void vfl_cleanup (void) {
+  /* free the object type array. */
+  free(object_types);
+  object_types = NULL;
+  n_object_types = 0;
+
+  /* free the syntax tree. */
+  ast_free(tree);
+  tree = NULL;
+
+  /* free the global symbol table. */
+  symbols_free(globals);
+  globals = NULL;
 }
 
 /* vfl_register_type(): store a new object type in the
@@ -125,5 +175,104 @@ object_type_t *vfl_lookup_type (const char *name) {
 
   /* no match, return null. */
   return NULL;
+}
+
+/* vfl_exec_file(): interpret the contents of a file handle.
+ *
+ * arguments:
+ *  @fh: file handle to interpret.
+ *
+ * returns:
+ *  integer indicating execution success (1) or failure (0).
+ */
+int vfl_exec_file (FILE *fh) {
+  /* check the input argument. */
+  if (!fh)
+    return 0;
+
+  /* parse the file. */
+  if (!vfl_parse_file(fh))
+    return 0;
+
+  /* evaluate the resulting syntax tree. */
+  if (!ast_eval(tree, globals))
+    return 0;
+
+  /* return success. */
+  return 1;
+}
+
+/* vfl_exec_path(): interpret the contents of a file, specified
+ * using a filename.
+ *
+ * arguments:
+ *  @path: path name of the file to interpret.
+ *
+ * returns:
+ *  integer indicating execution success (1) or failure (0).
+ */
+int vfl_exec_path (const char *fname) {
+  /* check the input argument. */
+  if (!fname)
+    return 0;
+
+  /* open the file. */
+  FILE *fh = fopen(fname, "r");
+  if (!fh)
+    return 0;
+
+  /* parse and close the file. */
+  const int ret = vfl_parse_file(fh);
+  fclose(fh);
+
+  /* check for parse failures. */
+  if (!ret)
+    return 0;
+
+  /* evaluate the resulting syntax tree. */
+  if (!ast_eval(tree, globals))
+    return 0;
+
+  /* return success. */
+  return 1;
+}
+
+/* vfl_exec_string(): interpret the contents of a string.
+ *
+ * arguments:
+ *  @str: string value to interpret.
+ *
+ * returns:
+ *  integer indicating execution success (1) or failure (0).
+ */
+int vfl_exec_string (const char *str) {
+  /* check the input argument. */
+  if (!str)
+    return 0;
+
+  /* parse the string. */
+  if (!vfl_parse_string(str))
+    return 0;
+
+  /* evaluate the resulting syntax tree. */
+  if (!ast_eval(tree, globals))
+    return 0;
+
+  /* return success. */
+  return 1;
+}
+
+/* vfl_set_tree(): set the abstract syntax tree to be parsed.
+ *
+ * arguments:
+ *  @node: new abstract syntax tree.
+ */
+void vfl_set_tree (ast_t *node) {
+  /* free the existing syntax tree. */
+  ast_free(tree);
+  tree = NULL;
+
+  /* set the current syntax tree to the specified node. */
+  tree = node;
 }
 

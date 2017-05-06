@@ -13,9 +13,6 @@
 #include <vfl/base/rng.h>
 #include <vfl/base/std.h>
 
-/* include vfl language headers. */
-#include <vfl/lang.h>
-
 /* include vfl inference object headers. */
 #include <vfl/datum.h>
 #include <vfl/data.h>
@@ -32,9 +29,17 @@
 
 int vfl_init (void);
 
+void vfl_cleanup (void);
+
 int vfl_register_type (const object_type_t *type);
 
 object_type_t *vfl_lookup_type (const char *name);
+
+int vfl_exec_file (FILE *fh);
+
+int vfl_exec_path (const char *fname);
+
+int vfl_exec_string (const char *str);
 
 #endif /* !__VFL_VFL_H__ */
 

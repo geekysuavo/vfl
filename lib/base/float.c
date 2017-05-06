@@ -140,6 +140,18 @@ flt_t *float_div (const object_t *a, const object_t *b) {
   return NULL;
 }
 
+/* float_pow(): exponentiation function for floats.
+ *  - see object_binary_fn() for details.
+ */
+flt_t *float_pow (const object_t *a, const object_t *b) {
+  /* if both arguments are scalar numbers, return a result. */
+  if (OBJECT_IS_NUM(a) && OBJECT_IS_NUM(b))
+    return float_alloc_with_value(pow(num_get(a), num_get(b)));
+
+  /* return no result. */
+  return NULL;
+}
+
 /* float_type: float type structure.
  */
 static object_type_t float_type = {
@@ -154,7 +166,7 @@ static object_type_t float_type = {
   (object_binary_fn) float_sub,                  /* sub       */
   (object_binary_fn) float_mul,                  /* mul       */
   (object_binary_fn) float_div,                  /* div       */
-  NULL,                                          /* pow       */
+  (object_binary_fn) float_pow,                  /* pow       */
 
   NULL,                                          /* get       */
   NULL,                                          /* set       */

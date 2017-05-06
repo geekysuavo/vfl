@@ -22,6 +22,7 @@ int optim_set_model (optim_t *opt, model_t *mdl) {
     return 0;
 
   /* drop the current model. */
+  obj_release((object_t*) opt->mdl);
   opt->mdl = NULL;
 
   /* free the iteration vectors. */
@@ -63,6 +64,7 @@ int optim_set_model (optim_t *opt, model_t *mdl) {
   opt->bound0 = opt->bound = model_bound(mdl);
 
   /* store the associated model. */
+  obj_retain(mdl);
   opt->mdl = mdl;
 
   /* return success. */

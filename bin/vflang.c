@@ -76,7 +76,8 @@ int main (int argc, char **argv) {
     }
   }
 
-  /* return success. */
+  /* cleanup and return success. */
+  vfl_cleanup();
   return 0;
 }
 

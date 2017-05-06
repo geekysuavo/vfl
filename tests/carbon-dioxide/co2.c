@@ -82,11 +82,9 @@ int main (int argc, char **argv) {
   data_fwrite(var, "var.dat");
 
   /* free the structures. */
-  obj_free((object_t*) opt);
-  obj_free((object_t*) mdl);
-  obj_free((object_t*) mean);
-  obj_free((object_t*) var);
-  obj_free((object_t*) dat);
+  obj_release((object_t*) mean);
+  obj_release((object_t*) var);
+  obj_release((object_t*) opt);
 
   /* return success. */
   return 0;

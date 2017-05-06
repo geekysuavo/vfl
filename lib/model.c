@@ -153,6 +153,7 @@ int model_set_data (model_t *mdl, data_t *dat) {
     return 0;
 
   /* drop the current dataset. */
+  obj_release((object_t*) mdl->dat);
   mdl->dat = NULL;
 
   /* free the logistic parameters and temporary coefficients. */
@@ -171,6 +172,7 @@ int model_set_data (model_t *mdl, data_t *dat) {
   vector_set_all(mdl->xi, 1.0);
 
   /* store the new dataset. */
+  obj_retain(dat);
   mdl->dat = dat;
 
   /* return succes. */
@@ -229,6 +231,10 @@ int model_add_factor (model_t *mdl, factor_t *f) {
   /* store the posterior factor and make a copy for the prior. */
   mdl->factors[M - 1] = f;
   mdl->priors[M - 1] = (factor_t*) obj_copy((object_t*) f);
+
+  /* retain references to the factor and copied prior. */
+  obj_retain(mdl->factors[M - 1]);
+  obj_retain(mdl->priors[M - 1]);
 
   /* check that factor duplication was successful. */
   if (!mdl->priors[M - 1])

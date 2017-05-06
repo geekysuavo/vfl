@@ -84,10 +84,13 @@ void model_free (model_t *mdl) {
   matrix_free(mdl->L);
   vector_free(mdl->h);
 
-  /* free the individual prior and posterior factors. */
+  /* release the associated dataset. */
+  obj_release((object_t*) mdl->dat);
+
+  /* release the individual prior and posterior factors. */
   for (unsigned int i = 0; i < mdl->M; i++) {
-    obj_free((object_t*) mdl->factors[i]);
-    obj_free((object_t*) mdl->priors[i]);
+    obj_release((object_t*) mdl->factors[i]);
+    obj_release((object_t*) mdl->priors[i]);
   }
 
   /* free the factor arrays. */

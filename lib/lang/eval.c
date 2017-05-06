@@ -62,7 +62,8 @@ static object_t *eval_ctor (ast_t *node, sym_table_t *tab,
     }
   }
 
-  /* FIXME: garbage-collect the constructor arguments. */
+  /* collect garbage (constructor arguments). */
+  obj_collect(args);
 
   /* return the new object. */
   return obj;
@@ -147,7 +148,9 @@ static object_t *eval_name (ast_t *node, sym_table_t *tab,
       object_t *idx = ast_eval(quals[i], tab);
       newval = obj_getelem(val, idx);
 
-      /* FIXME: garbage-collect @val, @idx */
+      /* collect garbage (value and element index). */
+      obj_collect(val);
+      obj_collect(idx);
     }
     else if (qtype == AST_NODE_IDENT) {
       /* check if the subsequent node (if any) is an argument list. */
@@ -158,7 +161,9 @@ static object_t *eval_name (ast_t *node, sym_table_t *tab,
         object_t *args = ast_eval(quals[j], tab);
         newval = obj_method(val, meth, args);
 
-        /* FIXME: garbage-collect @val, @args */
+        /* collect garbage (value and method arguments). */
+        obj_collect(val);
+        obj_collect(args);
 
         /* skip the argument list node. */
         i++;
@@ -168,7 +173,8 @@ static object_t *eval_name (ast_t *node, sym_table_t *tab,
         const char *prop = quals[i]->n_string.value;
         newval = obj_getprop(val, prop);
 
-        /* FIXME: garbage-collect @val */
+        /* collect garbage (value). */
+        obj_collect(val);
       }
     }
 
@@ -231,18 +237,19 @@ static object_t *eval_assign (ast_t *node, sym_table_t *tab) {
       object_t *idx = ast_eval(qend, tab);
       const int ret = obj_setelem(obj, idx, val);
 
-      /* FIXME: garbage-collect @idx */
+      /* collect garbage (element index). */
+      obj_collect(idx);
 
       /* if successful, return a non-null object. */
       if (ret) result = (object_t*) vfl_nil;
     }
 
-    /* FIXME: garbage-collect @obj */
+    /* collect garbage (target object). */
+    obj_collect(obj);
   }
 
-  /* FIXME: garbage-collect @val */
-
-  /* invalid assignment type. */
+  /* collect garbage (assigned value), and return. */
+  obj_collect(val);
   return result;
 }
 
@@ -273,7 +280,9 @@ static object_t *eval_arith (ast_t *node, sym_table_t *tab) {
   /* execute the function. */
   object_t *obj = fn(left, right);
 
-  /* FIXME: garbage-collect the operand values. */
+  /* collect garbage (input operands). */
+  obj_collect(left);
+  obj_collect(right);
 
   /* return the function result. */
   return obj;
@@ -312,7 +321,8 @@ static object_t *eval_for (ast_t *node, sym_table_t *tab) {
     if (!obj)
       goto fail;
 
-    /* FIXME: garbage-collect @obj */
+    /* collect garbage (statement block value). */
+    obj_collect(obj);
 
     /* unset the iteration symbol value. */
     if (!symbols_set(tab, var, NULL))
@@ -323,9 +333,8 @@ static object_t *eval_for (ast_t *node, sym_table_t *tab) {
   result = (object_t*) vfl_nil;
 
 fail:
-  /* FIXME: garbage-collect @loopexpr */
-
-  /* return. */
+  /* collect garbage (loop expression), and return. */
+  obj_collect(loopexpr);
   return result;
 }
 
@@ -364,7 +373,8 @@ static object_t *eval_block (ast_t *node, sym_table_t *tab) {
     if (!obj)
       return NULL;
 
-    /* FIXME: garbage-collect @obj */
+    /* collect garbage (statement value). */
+    obj_collect(obj);
   }
 
   /* return success. */

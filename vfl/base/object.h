@@ -236,7 +236,11 @@ object_t *obj_copy (const object_t *obj);
 
 void obj_release (object_t *obj);
 
-void obj_retain (object_t *obj);
+#define obj_retain(obj) \
+  if (obj) { ((object_t*) (obj))->refs++; }
+
+#define obj_collect(obj) \
+  if (obj && ((object_t*) (obj))->refs == 0) { obj_free((object_t*) obj); }
 
 void obj_free (object_t *obj);
 

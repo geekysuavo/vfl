@@ -462,6 +462,7 @@ FACTOR_COPY (product) {
   /* copy each factor into the duplicate factor array. */
   for (unsigned int i = 0; i < F; i++) {
     fdupx->factors[i] = (factor_t*) obj_copy((object_t*) fx->factors[i]);
+    obj_retain(fdupx->factors[i]);
     if (!fdupx->factors[i])
       return 0;
   }
@@ -477,9 +478,9 @@ FACTOR_FREE (product) {
   /* get the extended structure pointer. */
   product_t *fx = (product_t*) f;
 
-  /* free each factor in the array. */
+  /* release our reference to each sub-factor. */
   for (unsigned int i = 0; i < fx->F; i++)
-    factor_free(fx->factors[i]);
+    obj_release((object_t*) fx->factors[i]);
 
   /* free the array of factors. */
   free(fx->factors);
@@ -560,6 +561,7 @@ int product_add_factor (factor_t *f, const unsigned int d, factor_t *fd) {
 
   /* store the new factor and updated factor count. */
   fx->factors[F - 1] = fd;
+  obj_retain(fd);
   fx->F = F;
 
   /* set the argument dimension index. */

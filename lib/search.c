@@ -682,7 +682,7 @@ int search_set_model (search_t *S, model_t *mdl) {
   }
 
   /* store the new model. */
-  obj_retain((object_t*) mdl);
+  obj_retain(mdl);
   S->mdl = mdl;
 
   /* attempt to set the kernel information. */
@@ -708,7 +708,7 @@ int search_set_data (search_t *S, data_t *dat) {
     obj_release((object_t*) S->dat);
 
   /* store the new dataset and return success. */
-  obj_retain((object_t*) dat);
+  obj_retain(dat);
   S->dat = dat;
   return 1;
 }

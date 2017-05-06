@@ -250,7 +250,7 @@ void list_set (list_t *lst, const size_t idx, const object_t *obj) {
 
     /* set the list element. */
     lst->objs[idx] = (object_t*) obj;
-    obj_retain((object_t*) obj);
+    obj_retain(obj);
   }
 }
 

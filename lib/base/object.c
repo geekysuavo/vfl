@@ -2,8 +2,6 @@
 /* include the object header. */
 #include <vfl/base/object.h>
 
-/*FIXME*/
-#include <stdio.h>
 /* obj_alloc(): allocate a new object by its type structure pointer.
  *
  * arguments:
@@ -90,21 +88,10 @@ void obj_release (object_t *obj) {
 
   /* check if the reference count is zero. */
   if (obj->refs == 0) {
-/*FIXME*/fprintf(stderr,"free %s(0x%lx)\n",OBJECT_TYPE(obj)->name,(size_t)obj);fflush(stderr);
     /* free the object. */
     obj_free(obj);
     return;
   }
-}
-
-/* obj_retain(): increment the reference count of an object.
- *
- * arguments:
- *  @obj: pointer to the object structure.
- */
-void obj_retain (object_t *obj) {
-  /* increase the reference count. */
-  if (obj) obj->refs++;
 }
 
 /* obj_free(): free an allocated object.

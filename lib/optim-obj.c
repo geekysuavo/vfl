@@ -66,6 +66,9 @@ void optim_free (optim_t *opt) {
   if (free_fn)
     free_fn(opt);
 
+  /* release the associated model. */
+  obj_release((object_t*) opt->mdl);
+
   /* free the iteration vectors. */
   vector_free(opt->xa);
   vector_free(opt->xb);

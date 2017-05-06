@@ -8,27 +8,17 @@
 
 /* include vfl headers. */
 #include <vfl/base/object.h>
-#include <vfl/base/int.h>
-#include <vfl/base/std.h>
 #include <vfl/lang/ast.h>
 
 /* include the generated parser header. */
 #include "lib/lang/parser.h"
 
-/* scanner function declarations. */
-int vfl_parse_string (const char *str);
-int vfl_parse_file (FILE *fh);
-
 /* flex function declarations. */
 void yyerror (const char *msg);
 int yylex (void);
 
-/* parsing results:
- *  @globals: the topmost symbol table.
- *  @tree: the abstract syntax tree root.
- */
-static sym_table_t *globals = NULL;
-static ast_t *tree = NULL;
+/* vfl function declarations. */
+void vfl_set_tree (ast_t *node);
 %}
 
 /* define the yylval type union. */
@@ -63,7 +53,7 @@ static ast_t *tree = NULL;
 %%
 
 lang:        { /* empty. */ }
- | stmt_list { tree = $$ = $1; }
+ | stmt_list { $$ = $1; vfl_set_tree($1); }
  ;
 
 scope: T_BRACE_OPEN stmt_list T_BRACE_CLOSE { $$ = $2; };
@@ -162,127 +152,5 @@ void yyerror (const char *msg) {
   /* for now, output directly to standard error. */
   fprintf(stderr, "%s\n", msg);
   fflush(stderr);
-}
-
-/* vfl_prepare_parser(): prepare the global symbol table and
- * syntax tree for a new round of parsing.
- */
-static void vfl_prepare_parser (void) {
-  /* prepare the global symbol table. */
-  if (!globals) {
-    /* allocate a new table. */
-    globals = symbols_alloc(NULL);
-
-    /* register the nil object with the table. */
-    symbols_set(globals, "nil", (object_t*) vfl_nil);
-
-    /* register true and false with the table. */
-    symbols_set(globals, "true", (object_t*) int_alloc_with_value(1));
-    symbols_set(globals, "false", (object_t*) int_alloc_with_value(0));
-
-    /* register the standard method library with the table. */
-    object_t *stdobj = std_alloc();
-    symbols_set(globals, "std", stdobj);
-  }
-
-  /* initialize the abstract syntax tree. */
-  if (tree) {
-    ast_free(tree);
-    tree = NULL;
-  }
-}
-
-/* vfl_exec_file(): interpret the contents of a file handle.
- *
- * arguments:
- *  @fh: file handle to interpret.
- *
- * returns:
- *  integer indicating execution success (1) or failure (0).
- */
-int vfl_exec_file (FILE *fh) {
-  /* check the input argument. */
-  if (!fh)
-    return 0;
-
-  /* prepare the parser. */
-  vfl_prepare_parser();
-
-  /* parse the file. */
-  if (!vfl_parse_file(fh))
-    return 0;
-
-  /* evaluate the resulting syntax tree. */
-  if (!ast_eval(tree, globals))
-    return 0;
-
-  /* return success. */
-  return 1;
-}
-
-/* vfl_exec_path(): interpret the contents of a file, specified
- * using a filename.
- *
- * arguments:
- *  @path: path name of the file to interpret.
- *
- * returns:
- *  integer indicating execution success (1) or failure (0).
- */
-int vfl_exec_path (const char *fname) {
-  /* check the input argument. */
-  if (!fname)
-    return 0;
-
-  /* prepare the parser. */
-  vfl_prepare_parser();
-
-  /* open the file. */
-  FILE *fh = fopen(fname, "r");
-  if (!fh)
-    return 0;
-
-  /* parse and close the file. */
-  const int ret = vfl_parse_file(fh);
-  fclose(fh);
-
-  /* check for parse failures. */
-  if (!ret)
-    return 0;
-
-  /* evaluate the resulting syntax tree. */
-  if (!ast_eval(tree, globals))
-    return 0;
-
-  /* return success. */
-  return 1;
-}
-
-/* vfl_exec_string(): interpret the contents of a string.
- *
- * arguments:
- *  @str: string value to interpret.
- *
- * returns:
- *  integer indicating execution success (1) or failure (0).
- */
-int vfl_exec_string (const char *str) {
-  /* check the input argument. */
-  if (!str)
-    return 0;
-
-  /* prepare the parser. */
-  vfl_prepare_parser();
-
-  /* parse the string. */
-  if (!vfl_parse_string(str))
-    return 0;
-
-  /* evaluate the resulting syntax tree. */
-  if (!ast_eval(tree, globals))
-    return 0;
-
-  /* return success. */
-  return 1;
 }
 
