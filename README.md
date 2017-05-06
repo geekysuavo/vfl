@@ -50,6 +50,22 @@ At present two optimizers ship with VFL:
  * **fg**: full-gradient optimization.
  * **mf**: mean-field optimization.
 
+### Miscellaneous types
+
+The VFL framework also implements the following base types:
+
+ * **int**: signed long integers.
+ * **float**: double-precision floats.
+ * **string**: simple character strings.
+ * **list**: ordered lists of objects.
+ * **map**: associative arrays of objects, keyed by strings.
+
+As well as the following types that prove useful for inference
+and active learning:
+
+ * **rng**: pseudorandom number generator (LCG).
+ * **search**: gaussian process posterior variance search.
+
 ## Programming
 
 The VFL framework may be used in one of two ways:

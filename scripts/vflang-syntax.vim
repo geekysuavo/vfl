@@ -16,7 +16,8 @@ syn keyword vflTodo contained TODO FIXME XXX
 syn match vflComment "^#.*" contains=vflTodo
 syn match vflComment "\s#.*"ms=s+1 contains=vflTodo
 syn match vflNum "[-+]\?\(\d\+\|\d*\.\d\+\|\d\+\.\d*\)\([eE][-+]\?\d\+\)\?"
-syn match vflType "[a-zA-Z0-9]\+:"
+syn match vflIdent "[a-zA-Z][a-zA-Z0-9_]*" contains=vflType
+syn match vflType "[a-zA-Z0-9]\+:" display contained
 
 " Regions
 syn region vflString start=+'+ skip=+\\\\\|\\'+ end=+'+ oneline
