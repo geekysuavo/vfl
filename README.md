@@ -50,9 +50,65 @@ At present two optimizers ship with VFL:
  * **fg**: full-gradient optimization.
  * **mf**: mean-field optimization.
 
+## Programming
+
+The VFL framework may be used in one of two ways:
+
+ * [C99](http://en.wikipedia.org/wiki/C99) API
+ * **vflang**
+
+Using **vfl** through the C application programming interface enables
+tight integration with any existing compiled programs or libraries,
+but requires a strong knowledge of C programming principles.
+
+Alternatively, **vfl** contains a lightweight interpreter that can
+recognize a simple object-oriented language (_"vflang"_), which
+enables direct access to the inference framework. Examples of
+both C and **vflang** programs are provided in [tests](tests/).
+
 ## Installation
 
-FIXME.
+The **vfl** library and **vflang** interpreter are both written
+in C99-compliant source code (with GNU extensions). Compiling
+them requires **gcc**, **flex**, and **bison**.
+
+Installation using the default options may be done as follows:
+
+```bash
+git clone git://github.com/geekysuavo/vfl.git
+cd vfl
+make
+sudo make install
+```
+
+By default, **vfl** requires the
+[ATLAS](http://math-atlas.sourceforge.net) library (with
+[CLAPACK](http://netlib.org/clapack/) support compiled in)
+for its linear algebra routines. This feature may be disabled
+as follows:
+
+```bash
+sed -e 's,^\(USE_ATLAS\)=.*,\1=n,' -i lib/Makefile
+make again
+```
+
+In addition, the **search** object defaults to using
+[OpenCL](https://en.wikipedia.org/wiki/OpenCL), so
+compilation will require suitable headers, libraries,
+and drivers. Support for OpenCL may be disabled as follows:
+
+```bash
+sed -e 's,^\(USE_OPENCL\)=.*,\1=n,' -i lib/Makefile
+make again
+```
+
+Finally, the default installation directory may be modified using
+the usual suspects, _DESTDIR_ and _PREFIX_. By default, **vfl**
+will install into the **/usr/local** prefix. For example:
+
+```bash
+sudo make PREFIX=/opt/vfl install
+```
 
 ## Licensing
 

@@ -2,8 +2,8 @@
 # whether or not to use:
 #  USE_ATLAS: atlas for blas/lapack.
 #  USE_OPENCL: gpu-accelerated searches.
-USE_ATLAS=n  #FIXME
-USE_OPENCL=n #FIXME
+USE_ATLAS=y
+USE_OPENCL=y
 
 # executable filenames.
 CC=gcc
