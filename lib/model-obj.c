@@ -463,7 +463,7 @@ object_t *model_method_predict (model_t *mdl, object_t *args) {
 
   /* handle allocation failures. */
   if (!y0 || !y1) {
-    list_deepfree(ylst);
+    obj_release((object_t*) ylst);
     return NULL;
   }
 

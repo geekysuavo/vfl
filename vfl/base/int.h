@@ -18,10 +18,11 @@
 /* int_t: structure for holding an integer.
  */
 typedef struct {
-  /* @type: basic object type information.
-   * @val: integer value.
+  /* base structure members. */
+  OBJECT_BASE;
+
+  /* @val: integer value.
    */
-  object_type_t *type;
   long val;
 }
 int_t;

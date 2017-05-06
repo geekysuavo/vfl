@@ -441,6 +441,7 @@ static model_type_t vfr_type = {
     NULL,                                        /* sub       */
     NULL,                                        /* mul       */
     NULL,                                        /* div       */
+    NULL,                                        /* pow       */
 
     NULL,                                        /* get       */
     NULL,                                        /* set       */

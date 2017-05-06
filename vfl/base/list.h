@@ -18,8 +18,8 @@
 /* list_t: structure for holding a list of objects.
  */
 typedef struct {
-  /* @type: basic object type information. */
-  object_type_t *type;
+  /* base structure members. */
+  OBJECT_BASE;
 
   /* list contents:
    *  @objs: array of objects in the list.
@@ -34,8 +34,6 @@ list_t;
 
 #define list_alloc() \
   (list_t*) obj_alloc(vfl_object_list)
-
-void list_deepfree (list_t *lst);
 
 list_t *list_alloc_with_length (const size_t len);
 

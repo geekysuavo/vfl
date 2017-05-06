@@ -24,8 +24,8 @@
 /* search_t: structure for holding the state of a variance search.
  */
 typedef struct {
-  /* @type: basic object type information. */
-  object_type_t *type;
+  /* base structure members. */
+  OBJECT_BASE;
 
   /* associated core structures:
    *  @grid: matrix of gridding information.

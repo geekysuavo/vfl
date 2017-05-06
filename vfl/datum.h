@@ -15,8 +15,8 @@
 /* datum_t: structure for holding a single observation.
  */
 typedef struct {
-  /* @type: basic object type information. */
-  object_type_t *type;
+  /* base structure members. */
+  OBJECT_BASE;
 
   /* properties of each observation:
    *  @p: observation output index.

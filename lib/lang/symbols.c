@@ -37,9 +37,14 @@ void symbols_free (sym_table_t *tab) {
   if (!tab)
     return;
 
-  /* free each name in the symbol array. */
-  for (size_t i = 0; i < tab->n; i++)
+  /* loop over each symbol in the array. */
+  for (size_t i = 0; i < tab->n; i++) {
+    /* free the symbol name. */
     free(tab->syms[i].name);
+
+    /* release the symbol value. */
+    obj_release(tab->syms[i].val);
+  }
 
   /* free the symbol array and the structure. */
   free(tab->syms);
@@ -98,8 +103,14 @@ int symbols_set (sym_table_t *tab, const char *name, object_t *obj) {
   /* search for the symbol in the table. */
   for (size_t i = 0; i < tab->n; i++) {
     /* on match, set the symbol value. */
-    if (strcmp(tab->syms[i].name, name) == 0) {
+    if (strcmp(tab->syms[i].name, name) == 0 &&
+        tab->syms[i].val != obj) {
+      /* release the current symbol value. */
+      obj_release(tab->syms[i].val);
+
+      /* set the new symbol value. */
       tab->syms[i].val = obj;
+      obj_retain(obj);
       return 1;
     }
   }
@@ -120,6 +131,7 @@ int symbols_set (sym_table_t *tab, const char *name, object_t *obj) {
   strcpy(dupname, name);
   syms[n].name = dupname;
   syms[n].val = obj;
+  obj_retain(obj);
 
   /* store the new symbols array. */
   tab->n = n + 1;

@@ -391,6 +391,7 @@ static model_type_t vfc_type = {
     NULL,                                        /* sub       */
     NULL,                                        /* mul       */
     NULL,                                        /* div       */
+    NULL,                                        /* pow       */
 
     NULL,                                        /* get       */
     NULL,                                        /* set       */

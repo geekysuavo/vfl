@@ -316,6 +316,7 @@ static object_type_t data_type = {
   NULL,                                          /* sub       */
   NULL,                                          /* mul       */
   NULL,                                          /* div       */
+  NULL,                                          /* pow       */
 
   (object_getelem_fn) data_getelem,              /* get       */
   (object_setelem_fn) data_setelem,              /* set       */

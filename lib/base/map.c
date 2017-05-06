@@ -23,9 +23,14 @@ int map_init (map_t *map) {
  *  @map: mapping structure pointer to free.
  */
 void map_free (map_t *map) {
-  /* free the key strings. */
-  for (size_t i = 0; i < map->len; i++)
+  /* loop over the key-value pairs. */
+  for (size_t i = 0; i < map->len; i++) {
+    /* free the key string. */
     free(map->pairs[i].key);
+
+    /* release our reference to the value. */
+    obj_release(map->pairs[i].val);
+  }
 
   /* free the key-value pair array. */
   free(map->pairs);
@@ -112,8 +117,14 @@ int map_set (map_t *map, const char *key, object_t *val) {
   /* search for the key string. */
   for (size_t i = 0; i < map->len; i++) {
     /* on match, store the new mapped value. */
-    if (strcmp(map->pairs[i].key, key) == 0) {
+    if (strcmp(map->pairs[i].key, key) == 0 &&
+        map->pairs[i].val != val) {
+      /* release the currently mapped value. */
+      obj_release(map->pairs[i].val);
+
+      /* store the new mapped value. */
       map->pairs[i].val = val;
+      obj_retain(val);
       return 1;
     }
   }
@@ -134,6 +145,7 @@ int map_set (map_t *map, const char *key, object_t *val) {
   strcpy(dupkey, key);
   pairs[n].key = dupkey;
   pairs[n].val = val;
+  obj_retain(val);
 
   /* store the new pairs array. */
   map->len = n + 1;
@@ -157,6 +169,7 @@ static object_type_t map_type = {
   NULL,                                          /* sub       */
   NULL,                                          /* mul       */
   NULL,                                          /* div       */
+  NULL,                                          /* pow       */
 
   NULL,                                          /* get       */
   NULL,                                          /* set       */

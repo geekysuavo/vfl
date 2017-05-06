@@ -183,10 +183,11 @@ static optim_type_t fg_type = {
     NULL,                                        /* sub     */
     NULL,                                        /* mul     */
     NULL,                                        /* div     */
+    NULL,                                        /* pow     */
 
-    NULL,                                        /* get       */
-    NULL,                                        /* set       */
-    fg_properties,                               /* props     */
+    NULL,                                        /* get     */
+    NULL,                                        /* set     */
+    fg_properties,                               /* props   */
     fg_methods                                   /* methods */
   },
 

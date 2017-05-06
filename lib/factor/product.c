@@ -749,6 +749,7 @@ static factor_type_t product_type = {
     NULL,                                        /* sub       */
     (object_binary_fn) factor_mul,               /* mul       */
     NULL,                                        /* div       */
+    NULL,                                        /* pow       */
 
     (object_getelem_fn) product_getelem,         /* get       */
     NULL,                                        /* set       */

@@ -6,22 +6,16 @@
 /* include vfl headers. */
 #include <vfl/lang/symbols.h>
 
-/* ast_node_*(): macro for accessing the base members of
- * any abstract syntax tree node structure pointer.
+/* ast_node_type(): macro for accessing the type of an
+ * abstract syntax tree node structure pointer.
  */
 #define ast_node_type(T)   (T)->base.type
-#define ast_node_table(T)  (T)->base.tab
-#define ast_node_value(T)  (T)->base.obj
-#define ast_node_scope(T)  (T)->base.scope
 
 /* AST_BASE: macro defining the base structure members of all
  * abstract syntax tree nodes.
  */
 #define AST_BASE \
-  ast_node_type_t type;  /* @type: syntax tree node type.       */  \
-  sym_table_t *tab;      /* @tab: current scope symbol table.   */  \
-  object_t *obj;         /* @obj: object value of the node.     */  \
-  int scope;             /* @scope: if the node owns its table. */
+  ast_node_type_t type;  /* @type: syntax tree node type. */
 
 /* ast_t: defined type for abstract syntax trees. */
 typedef union ast ast_t;
@@ -44,6 +38,7 @@ typedef enum {
   AST_NODE_SUB,
   AST_NODE_MUL,
   AST_NODE_DIV,
+  AST_NODE_POW,
   AST_NODE_ARG,
   AST_NODE_NAME,
 
@@ -174,7 +169,7 @@ void ast_free (ast_t *node);
 
 /* function declarations, evaluation (lang/eval.c): */
 
-int ast_eval (ast_t *node, sym_table_t *symbols);
+object_t *ast_eval (ast_t *node, sym_table_t *symbols);
 
 #endif /* !__VFL_AST_H__ */
 

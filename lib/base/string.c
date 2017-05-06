@@ -84,7 +84,7 @@ void string_free (string_t *str) {
  */
 string_t *string_alloc_with_value (const char *val) {
   /* allocate a new string. */
-  string_t *str = (string_t*) obj_alloc(vfl_object_string);
+  string_t *str = string_alloc();
   if (!str)
     return NULL;
 
@@ -222,6 +222,7 @@ static object_type_t string_type = {
   NULL,                                          /* sub       */
   (object_binary_fn) string_mul,                 /* mul       */
   NULL,                                          /* div       */
+  NULL,                                          /* pow       */
 
   NULL,                                          /* get       */
   NULL,                                          /* set       */

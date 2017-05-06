@@ -4,8 +4,7 @@
 #include <vfl/base/float.h>
 
 /* list_set_length(): set the number of available elements
- * of an object list. this function does not manage the
- * values of the object array; it merely resizes it.
+ * of an object list.
  *
  * arguments:
  *  @lst: list object structure pointer.
@@ -18,6 +17,17 @@ static int list_set_length (list_t *lst, const size_t len) {
   /* check the input pointer. */
   if (!lst)
     return 0;
+
+  /* check if the list already has the requested length. */
+  if (len == lst->len)
+    return 1;
+
+  /* check if the list is decreasing in length. */
+  if (len < lst->len) {
+    /* release references to the lost objects. */
+    for (size_t i = len; i < lst->len; i++)
+      obj_release(lst->objs[i]);
+  }
 
   /* act based on the new size. */
   if (len > 0) {
@@ -34,6 +44,13 @@ static int list_set_length (list_t *lst, const size_t len) {
     /* free the current list. */
     free(lst->objs);
     lst->objs = NULL;
+  }
+
+  /* check if the list has increased in length. */
+  if (len > lst->len) {
+    /* initialize the new elements to null. */
+    for (size_t i = lst->len; i < len; i++)
+      lst->objs[i] = NULL;
   }
 
   /* store the new length and return success. */
@@ -74,7 +91,7 @@ int list_copy (const list_t *l, list_t *ldup) {
 
   /* perform a shallow copy. */
   for (size_t i = 0; i < l->len; i++)
-    ldup->objs[i] = l->objs[i];
+    list_set(ldup, i, list_get(l, i));
 
   /* return success. */
   return 1;
@@ -88,25 +105,6 @@ int list_copy (const list_t *l, list_t *ldup) {
 void list_free (list_t *lst) {
   /* free the object array. */
   list_set_length(lst, 0);
-}
-
-/* list_deepfree(): free the contents of an object list, including
- * the list elements themselves.
- *
- * arguments:
- *  @lst: list structure pointer to free.
- */
-void list_deepfree (list_t *lst) {
-  /* return if the list is null. */
-  if (!lst)
-    return;
-
-  /* free the list elements. */
-  for (size_t i = 0; i < lst->len; i++)
-    obj_free(lst->objs[i]);
-
-  /* free the list object. */
-  obj_free((object_t*) lst);
 }
 
 /* list_alloc_with_length(): allocate an object list
@@ -129,10 +127,6 @@ list_t *list_alloc_with_length (const size_t len) {
     obj_free((object_t*) lst);
     return NULL;
   }
-
-  /* initialize the list elements. */
-  for (size_t i = 0; i < lst->len; i++)
-    lst->objs[i] = NULL;
 
   /* return the new list. */
   return lst;
@@ -161,20 +155,22 @@ object_t *list_alloc_from_vector (const vector_t *v) {
   if (!lst)
     return NULL;
 
-  /* allocate the list elements. */
+  /* initialize the list elements. */
   for (size_t i = 0; i < lst->len; i++) {
-    /* allocate and store the element. */
-    lst->objs[i] = (object_t*) float_alloc_with_value(vector_get(v, i));
-    if (!lst->objs[i])
-      goto fail;
+    /* allocate the element. */
+    flt_t *li = float_alloc_with_value(vector_get(v, i));
+    if (!li) goto fail;
+
+    /* store the element. */
+    list_set(lst, i, (object_t*) li);
   }
 
   /* return the new list. */
   return (object_t*) lst;
 
 fail:
-  /* free all allocated objects and return null. */
-  list_deepfree(lst);
+  /* release the list and return null. */
+  obj_release((object_t*) lst);
   return NULL;
 }
 
@@ -201,25 +197,23 @@ object_t *list_alloc_from_matrix (const matrix_t *A) {
   if (!rows)
     return NULL;
 
-  /* allocate each row. */
+  /* initialize each row of elements. */
   for (size_t i = 0; i < rows->len; i++) {
     /* build a list of the current row elements. */
     vector_view_t Arow = matrix_row(A, i);
-    rows->objs[i] = list_alloc_from_vector(&Arow);
-    if (!rows->objs[i])
-      goto fail;
+    object_t *li = list_alloc_from_vector(&Arow);
+    if (!li) goto fail;
+
+    /* store the current row. */
+    list_set(rows, i, li);
   }
 
   /* return the new list. */
   return (object_t*) rows;
 
 fail:
-  /* free all row lists. */
-  for (size_t i = 0; i < rows->len; i++)
-    list_deepfree((list_t*) rows->objs[i]);
-
-  /* free all the row and return null. */
-  list_deepfree(rows);
+  /* release the list and return null. */
+  obj_release((object_t*) rows);
   return NULL;
 }
 
@@ -245,9 +239,19 @@ object_t *list_get (const list_t *lst, const size_t idx) {
  *  @obj: new element value.
  */
 void list_set (list_t *lst, const size_t idx, const object_t *obj) {
-  /* if possible, set the list element. */
-  if (lst && idx < lst->len)
+  /* return if setting the element is not possible. */
+  if (!lst || idx >= lst->len)
+    return;
+
+  /* don't bother if the current element is the new value. */
+  if (lst->objs[idx] != obj) {
+    /* release the reference to the current element. */
+    obj_release(lst->objs[idx]);
+
+    /* set the list element. */
     lst->objs[idx] = (object_t*) obj;
+    obj_retain((object_t*) obj);
+  }
 }
 
 /* list_append(): add an object to the end of a list.
@@ -265,7 +269,7 @@ int list_append (list_t *lst, object_t *obj) {
     return 0;
 
   /* store the new element and return success. */
-  lst->objs[lst->len - 1] = obj;
+  list_set(lst, lst->len - 1, obj);
   return 1;
 }
 
@@ -288,7 +292,7 @@ int list_prepend (list_t *lst, object_t *obj) {
     lst->objs[i] = lst->objs[i - 1];
 
   /* store the new element and return success. */
-  lst->objs[0] = obj;
+  list_set(lst, 0, obj);
   return 1;
 }
 
@@ -420,11 +424,11 @@ list_t *list_add (const object_t *a, const object_t *b) {
     /* shallow copy the first list elements. */
     size_t idx = 0;
     for (size_t i = 0; i < la->len; i++, idx++)
-      lst->objs[idx] = la->objs[i];
+      list_set(lst, idx, list_get(la, i));
 
     /* shallow copy the second list elements. */
     for (size_t i = 0; i < lb->len; i++, idx++)
-      lst->objs[idx] = lb->objs[i];
+      list_set(lst, idx, list_get(lb, i));
 
     /* return the new list. */
     return lst;
@@ -486,7 +490,7 @@ list_t *list_mul (const object_t *a, const object_t *b) {
   /* create copies of the list elements in the proper pattern. */
   for (size_t i = 0, idx = 0; i < (size_t) ival; i++)
     for (size_t j = 0; j < len; j++, idx++)
-      lst->objs[idx] = obj_copy(lobj->objs[j]);
+      list_set(lst, idx, obj_copy(list_get(lobj, j)));
 
   /* return the new list. */
   return lst;
@@ -572,6 +576,7 @@ static object_type_t list_type = {
   NULL,                                          /* sub       */
   (object_binary_fn) list_mul,                   /* mul       */
   NULL,                                          /* div       */
+  NULL,                                          /* pow       */
 
   (object_getelem_fn) list_getelem,              /* get       */
   (object_setelem_fn) list_setelem,              /* set       */

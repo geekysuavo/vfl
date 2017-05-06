@@ -12,6 +12,11 @@
  */
 #define OBJECT_TYPE(s) ((object_type_t*) (s)->type)
 
+/* OBJECT_IS_NIL(): macro function to check if an object is empty.
+ */
+#define OBJECT_IS_NIL(obj) \
+  (OBJECT_TYPE(obj) == vfl_object_nil)
+
 /* object_t: defined type for the base object structure. */
 typedef struct object object_t;
 
@@ -175,11 +180,13 @@ typedef struct {
    *  @sub: subtraction hook.
    *  @mul: multiplication hook.
    *  @div: division hook.
+   *  @pow: exponentiation hook.
    */
   object_binary_fn add;
   object_binary_fn sub;
   object_binary_fn mul;
   object_binary_fn div;
+  object_binary_fn pow;
 
   /* element access functions:
    *  @get: element getter hook.
@@ -197,11 +204,17 @@ typedef struct {
 }
 object_type_t;
 
+/* OBJECT_BASE: base set of struct members that begin all objects.
+ */
+#define OBJECT_BASE \
+  object_type_t *type; /* object type information.  */ \
+  unsigned int refs;   /* instance reference count. */
+
 /* struct object: structure for holding a vfl object.
  */
 struct object {
-  /* @type: object type information. */
-  object_type_t *type;
+  /* base structure members. */
+  OBJECT_BASE;
 
   /* object members are placed here. */
 };
@@ -221,6 +234,10 @@ object_t *obj_alloc (const object_type_t *type);
 
 object_t *obj_copy (const object_t *obj);
 
+void obj_release (object_t *obj);
+
+void obj_retain (object_t *obj);
+
 void obj_free (object_t *obj);
 
 object_t *obj_add (const object_t *a, const object_t *b);
@@ -230,6 +247,8 @@ object_t *obj_sub (const object_t *a, const object_t *b);
 object_t *obj_mul (const object_t *a, const object_t *b);
 
 object_t *obj_div (const object_t *a, const object_t *b);
+
+object_t *obj_pow (const object_t *a, const object_t *b);
 
 object_t *obj_getprop (const object_t *obj, const char *name);
 
@@ -241,6 +260,10 @@ int obj_setelem (object_t *obj, const object_t *idx,
                  object_t *val);
 
 object_t *obj_method (object_t *obj, const char *name, object_t *args);
+
+/* available object types: */
+
+extern const object_type_t *vfl_object_nil;
 
 #endif /* !__VFL_OBJECT_H__ */
 

@@ -238,6 +238,7 @@ static object_type_t datum_type = {
   NULL,                                          /* sub       */
   NULL,                                          /* mul       */
   NULL,                                          /* div       */
+  NULL,                                          /* pow       */
 
   (object_getelem_fn) datum_getelem,             /* get       */
   (object_setelem_fn) datum_setelem,             /* set       */

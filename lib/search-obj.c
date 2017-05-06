@@ -239,6 +239,7 @@ static object_type_t search_type = {
   NULL,                                          /* sub       */
   NULL,                                          /* mul       */
   NULL,                                          /* div       */
+  NULL,                                          /* pow       */
 
   NULL,                                          /* get       */
   NULL,                                          /* set       */

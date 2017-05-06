@@ -95,10 +95,11 @@ static optim_type_t mf_type = {
     NULL,                                        /* sub     */
     NULL,                                        /* mul     */
     NULL,                                        /* div     */
+    NULL,                                        /* pow     */
 
-    NULL,                                        /* get       */
-    NULL,                                        /* set       */
-    mf_properties,                               /* props     */
+    NULL,                                        /* get     */
+    NULL,                                        /* set     */
+    mf_properties,                               /* props   */
     mf_methods                                   /* methods */
   },
 

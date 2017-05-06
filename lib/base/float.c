@@ -12,9 +12,8 @@
  */
 double num_get (const object_t *num) {
   /* return the value. */
-  return (OBJECT_IS_INT(num)
-           ? (double) int_get((int_t*) num)
-           :          float_get((flt_t*) num));
+  return (OBJECT_IS_INT(num) ? (double) int_get((int_t*) num)
+                             : float_get((flt_t*) num));
 }
 
 /* float_get(): get the value of a float object.
@@ -83,8 +82,8 @@ int float_copy (const flt_t *f, flt_t *fdup) {
  *  newly allocated and initialized float object.
  */
 flt_t *float_alloc_with_value (const double val) {
-  /* allocate a new integer. */
-  flt_t *f = (flt_t*) obj_alloc(vfl_object_float);
+  /* allocate a new float. */
+  flt_t *f = float_alloc();
   if (!f)
     return NULL;
 
@@ -155,6 +154,7 @@ static object_type_t float_type = {
   (object_binary_fn) float_sub,                  /* sub       */
   (object_binary_fn) float_mul,                  /* mul       */
   (object_binary_fn) float_div,                  /* div       */
+  NULL,                                          /* pow       */
 
   NULL,                                          /* get       */
   NULL,                                          /* set       */

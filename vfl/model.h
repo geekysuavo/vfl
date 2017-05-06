@@ -267,8 +267,8 @@ model_type_t;
 /* struct model: structure for holding a variational feature model.
  */
 struct model {
-  /* @type: model type information. */
-  model_type_t *type;
+  /* base structure members. */
+  OBJECT_BASE;
 
   /* model sizes:
    *  @D: number of dimensions.

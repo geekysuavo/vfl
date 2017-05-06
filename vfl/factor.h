@@ -458,8 +458,8 @@ factor_type_t;
  * parameters, given by @P.
  */
 struct factor {
-  /* @type: factor type information. */
-  factor_type_t *type;
+  /* base structure members. */
+  OBJECT_BASE;
 
   /* factor sizes:
    *  @D: number of dimensions.

@@ -126,6 +126,7 @@ static object_type_t std_type = {
   NULL,                                          /* sub       */
   NULL,                                          /* mul       */
   NULL,                                          /* div       */
+  NULL,                                          /* pow       */
 
   NULL,                                          /* get       */
   NULL,                                          /* set       */

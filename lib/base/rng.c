@@ -1,6 +1,8 @@
 
 /* include the pseudorandom number generator header. */
 #include <vfl/base/rng.h>
+
+/* include the required object headers. */
 #include <vfl/base/map.h>
 #include <vfl/base/int.h>
 #include <vfl/base/float.h>
@@ -192,10 +194,8 @@ static flt_t *rngobj_uniform (rng_t *gen, map_t *args) {
   /* get the lower bound value. */
   object_t *arg = map_get(args, "lower");
   if (arg) {
-    if (OBJECT_IS_INT(arg))
-      lower = int_get((int_t*) arg);
-    else if (OBJECT_IS_FLOAT(arg))
-      lower = float_get((flt_t*) arg);
+    if (OBJECT_IS_NUM(arg))
+      lower = num_get(arg);
     else
       return NULL;
   }
@@ -203,10 +203,8 @@ static flt_t *rngobj_uniform (rng_t *gen, map_t *args) {
   /* get the upper bound value. */
   arg = map_get(args, "upper");
   if (arg) {
-    if (OBJECT_IS_INT(arg))
-      upper = int_get((int_t*) arg);
-    else if (OBJECT_IS_FLOAT(arg))
-      upper = float_get((flt_t*) arg);
+    if (OBJECT_IS_NUM(arg))
+      upper = num_get(arg);
     else
       return NULL;
   }
@@ -235,10 +233,8 @@ static flt_t *rngobj_normal (rng_t *gen, map_t *args) {
   /* get the shift value. */
   object_t *arg = map_get(args, "mu");
   if (arg) {
-    if (OBJECT_IS_INT(arg))
-      mu = int_get((int_t*) arg);
-    else if (OBJECT_IS_FLOAT(arg))
-      mu = float_get((flt_t*) arg);
+    if (OBJECT_IS_NUM(arg))
+      mu = num_get(arg);
     else
       return NULL;
   }
@@ -246,10 +242,8 @@ static flt_t *rngobj_normal (rng_t *gen, map_t *args) {
   /* get the scale value, as standard deviation. */
   arg = map_get(args, "sigma");
   if (arg) {
-    if (OBJECT_IS_INT(arg))
-      sigma = int_get((int_t*) arg);
-    else if (OBJECT_IS_FLOAT(arg))
-      sigma = float_get((flt_t*) arg);
+    if (OBJECT_IS_NUM(arg))
+      sigma = num_get(arg);
     else
       return NULL;
   }
@@ -257,10 +251,8 @@ static flt_t *rngobj_normal (rng_t *gen, map_t *args) {
   /* get the scale value, as precision. */
   arg = map_get(args, "tau");
   if (arg) {
-    if (OBJECT_IS_INT(arg))
-      sigma = 1.0 / sqrt((double) int_get((int_t*) arg));
-    else if (OBJECT_IS_FLOAT(arg))
-      sigma = 1.0 / sqrt(float_get((flt_t*) arg));
+    if (OBJECT_IS_NUM(arg))
+      sigma = 1.0 / sqrt(num_get(arg));
     else
       return NULL;
   }
@@ -293,6 +285,7 @@ static object_type_t rng_type = {
   NULL,                                          /* sub       */
   NULL,                                          /* mul       */
   NULL,                                          /* div       */
+  NULL,                                          /* pow       */
 
   NULL,                                          /* get       */
   NULL,                                          /* set       */

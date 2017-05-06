@@ -14,13 +14,8 @@ static ast_t *ast_alloc (void) {
   if (!node)
     return NULL;
 
-  /* initialize the node type, table, value and scope. */
+  /* initialize the node type and return. */
   ast_node_type(node) = AST_NODE_EMPTY;
-  ast_node_table(node) = NULL;
-  ast_node_value(node) = NULL;
-  ast_node_scope(node) = 0;
-
-  /* return the new node. */
   return node;
 }
 
@@ -272,10 +267,6 @@ void ast_free (ast_t *node) {
     default:
       break;
   }
-
-  /* if the node owns its symbol table, free it. */
-  if (ast_node_scope(node))
-    symbols_free(ast_node_table(node));
 
   /* free the node structure. */
   free(node);

@@ -23,10 +23,11 @@
 /* flt_t: structure for holding a float.
  */
 typedef struct {
-  /* @type: basic object type information.
-   * @val: float value.
+  /* base structure members. */
+  OBJECT_BASE;
+
+  /* @val: float value.
    */
-  object_type_t *type;
   double val;
 }
 flt_t;

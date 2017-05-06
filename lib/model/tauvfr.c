@@ -430,6 +430,7 @@ static model_type_t tauvfr_type = {
     NULL,                                        /* sub       */
     NULL,                                        /* mul       */
     NULL,                                        /* div       */
+    NULL,                                        /* pow       */
 
     NULL,                                        /* get       */
     NULL,                                        /* set       */

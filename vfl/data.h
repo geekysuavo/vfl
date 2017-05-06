@@ -21,8 +21,8 @@
 /* data_t: structure for holding observations.
  */
 typedef struct {
-  /* @type: basic object type information. */
-  object_type_t *type;
+  /* base structure members. */
+  OBJECT_BASE;
 
   /* dataset size parameters:
    *  @N: number of observations.

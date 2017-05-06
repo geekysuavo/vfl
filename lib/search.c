@@ -676,10 +676,13 @@ int search_set_model (search_t *S, model_t *mdl) {
     /* release all variables tied to the model. */
     free_buffers(S);
     free_kernel(S);
-    S->mdl = NULL;
+
+    /* release the assigned model. */
+    obj_release((object_t*) S->mdl);
   }
 
   /* store the new model. */
+  obj_retain((object_t*) mdl);
   S->mdl = mdl;
 
   /* attempt to set the kernel information. */
@@ -700,7 +703,12 @@ int search_set_data (search_t *S, data_t *dat) {
   if (!S || !dat)
     return 0;
 
+  /* release the assigned dataset. */
+  if (S->dat)
+    obj_release((object_t*) S->dat);
+
   /* store the new dataset and return success. */
+  obj_retain((object_t*) dat);
   S->dat = dat;
   return 1;
 }
@@ -722,6 +730,10 @@ int search_set_grid (search_t *S, matrix_t *grid) {
   /* check that the matrix contains a valid grid. */
   if (!grid_validate(grid))
     return 0;
+
+  /* release the existing grid. */
+  if (S->grid)
+    matrix_free(S->grid);
 
   /* store the new grid and return success. */
   S->grid = grid;

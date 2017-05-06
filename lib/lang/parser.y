@@ -47,7 +47,7 @@ static ast_t *tree = NULL;
 %token T_PAREN_OPEN T_PAREN_CLOSE
 %token T_BRACK_OPEN T_BRACK_CLOSE
 %token T_BRACE_OPEN T_BRACE_CLOSE
-%token T_EQUALS T_PLUS T_MINUS T_MUL T_DIV
+%token T_EQUALS T_PLUS T_MINUS T_MUL T_DIV T_POW
 %token T_POINT T_COMMA T_COLON T_SEMI
 %token T_FOR T_IN
 %token T_UNKNOWN
@@ -57,7 +57,7 @@ static ast_t *tree = NULL;
 %type <v_flt> T_FLOAT
 %type <v_str> T_IDENT T_STRING
 %type <v_ast> lang scope stmt_list stmt for
-%type <v_ast> expr factor value name list int float string ident
+%type <v_ast> expr power factor value name list int float string ident
 %type <v_ast> expr_list arg_list qual_list arguments arg qual
 
 %%
@@ -80,9 +80,14 @@ stmt
  ;
 
 expr
+ : power
+ | expr T_POW power { $$ = ast_binary(AST_NODE_POW, $1, $3); }
+ ;
+
+power
  : factor
- | expr T_PLUS factor  { $$ = ast_binary(AST_NODE_ADD, $1, $3); }
- | expr T_MINUS factor { $$ = ast_binary(AST_NODE_SUB, $1, $3); }
+ | power T_PLUS factor  { $$ = ast_binary(AST_NODE_ADD, $1, $3); }
+ | power T_MINUS factor { $$ = ast_binary(AST_NODE_SUB, $1, $3); }
  ;
 
 factor

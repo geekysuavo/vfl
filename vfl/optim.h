@@ -125,8 +125,8 @@ optim_type_t;
  * learn the variational parameters of a model.
  */
 struct optim {
-  /* @type: optimizer type information. */
-  optim_type_t *type;
+  /* base structure members. */
+  OBJECT_BASE;
 
   /* @mdl: associated variational feature model. */
   model_t *mdl;

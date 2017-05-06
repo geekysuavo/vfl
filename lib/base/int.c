@@ -42,7 +42,7 @@ int int_copy (const int_t *i, int_t *idup) {
  */
 int_t *int_alloc_with_value (const long val) {
   /* allocate a new integer. */
-  int_t *i = (int_t*) obj_alloc(vfl_object_int);
+  int_t *i = int_alloc();
   if (!i)
     return NULL;
 
@@ -138,6 +138,7 @@ static object_type_t int_type = {
   (object_binary_fn) int_sub,                    /* sub       */
   (object_binary_fn) int_mul,                    /* mul       */
   (object_binary_fn) int_div,                    /* div       */
+  NULL,                                          /* pow       */
 
   NULL,                                          /* get       */
   NULL,                                          /* set       */

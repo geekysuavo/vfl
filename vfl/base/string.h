@@ -18,11 +18,12 @@
 /* string_t: structure for holding a string.
  */
 typedef struct {
-  /* @type: basic object type information.
-   * @len: string length.
+  /* base structure members. */
+  OBJECT_BASE;
+
+  /* @len: string length.
    * @val: string value.
    */
-  object_type_t *type;
   size_t len;
   char *val;
 }

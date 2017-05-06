@@ -9,11 +9,14 @@ const object_t *vfl_nil = &vfl_nilstruct;
 /* nil_type: empty object type structure.
  */
 static object_type_t nil_type = {
-  "nil", sizeof(object_t),   /* name, size               */
-  NULL, NULL, NULL,          /* init, copy, free         */
-  NULL, NULL, NULL, NULL,    /* add, sub, mul, div       */
-  NULL, NULL, NULL, NULL     /* get, set, props, methods */
+  "nil", sizeof(object_t),       /* name, size               */
+  NULL, NULL, NULL,              /* init, copy, free         */
+  NULL, NULL, NULL, NULL, NULL,  /* add, sub, mul, div, pow  */
+  NULL, NULL, NULL, NULL         /* get, set, props, methods */
 };
+
+/* vfl_object_nil: address of the nil_type structure. */
+const object_type_t *vfl_object_nil = &nil_type;
 
 /* object_types: global registry of all recognized object types.
  */
@@ -35,6 +38,7 @@ int vfl_init (void) {
 
   /* initialize the nil object type. */
   vfl_nilstruct.type = &nil_type;
+  vfl_nilstruct.refs = 0;
 
   /* initialize the type registry. */
   object_types = NULL;

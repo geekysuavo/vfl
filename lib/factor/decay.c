@@ -252,6 +252,7 @@ static factor_type_t decay_type = {
     NULL,                                        /* sub       */
     (object_binary_fn) factor_mul,               /* mul       */
     NULL,                                        /* div       */
+    NULL,                                        /* pow       */
 
     NULL,                                        /* get       */
     NULL,                                        /* set       */

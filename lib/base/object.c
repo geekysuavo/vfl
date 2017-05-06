@@ -2,6 +2,8 @@
 /* include the object header. */
 #include <vfl/base/object.h>
 
+/*FIXME*/
+#include <stdio.h>
 /* obj_alloc(): allocate a new object by its type structure pointer.
  *
  * arguments:
@@ -22,6 +24,12 @@ object_t *obj_alloc (const object_type_t *type) {
 
   /* store the object type. */
   obj->type = (object_type_t*) type;
+
+  /* initialize the reference count to zero. this means that an
+   * object must have its reference count incremented in order
+   * for it to persist.
+   */
+  obj->refs = 0;
 
   /* call the object initialization function. */
   object_init_fn init_fn = type->init;
@@ -66,6 +74,39 @@ object_t *obj_copy (const object_t *obj) {
   return objdup;
 }
 
+/* obj_release(): release a reference to an object.
+ *
+ * arguments:
+ *  @obj: pointer to the object structure.
+ */
+void obj_release (object_t *obj) {
+  /* return if the object is null. */
+  if (!obj)
+    return;
+
+  /* decrement the reference count. */
+  if (obj->refs)
+    obj->refs--;
+
+  /* check if the reference count is zero. */
+  if (obj->refs == 0) {
+/*FIXME*/fprintf(stderr,"free %s(0x%lx)\n",OBJECT_TYPE(obj)->name,(size_t)obj);fflush(stderr);
+    /* free the object. */
+    obj_free(obj);
+    return;
+  }
+}
+
+/* obj_retain(): increment the reference count of an object.
+ *
+ * arguments:
+ *  @obj: pointer to the object structure.
+ */
+void obj_retain (object_t *obj) {
+  /* increase the reference count. */
+  if (obj) obj->refs++;
+}
+
 /* obj_free(): free an allocated object.
  *
  * arguments:
@@ -73,7 +114,7 @@ object_t *obj_copy (const object_t *obj) {
  */
 void obj_free (object_t *obj) {
   /* return if the object pointer is null. */
-  if (!obj)
+  if (!obj || OBJECT_IS_NIL(obj))
     return;
 
   /* call the object destruction function. */
@@ -86,7 +127,7 @@ void obj_free (object_t *obj) {
 }
 
 /* obj_add(): perform object addition.
- *  - see object_binary_fn() for more information.
+ *  - see object_binary_fn() for details.
  */
 object_t *obj_add (const object_t *a, const object_t *b) {
   /* check the input arguments. */
@@ -111,7 +152,7 @@ object_t *obj_add (const object_t *a, const object_t *b) {
 }
 
 /* obj_sub(): perform object subtraction.
- *  - see object_binary_fn() for more information.
+ *  - see object_binary_fn() for details.
  */
 object_t *obj_sub (const object_t *a, const object_t *b) {
   /* check the input arguments. */
@@ -136,7 +177,7 @@ object_t *obj_sub (const object_t *a, const object_t *b) {
 }
 
 /* obj_mul(): perform object multiplication.
- *  - see object_binary_fn() for more information.
+ *  - see object_binary_fn() for details.
  */
 object_t *obj_mul (const object_t *a, const object_t *b) {
   /* check the input arguments. */
@@ -161,7 +202,7 @@ object_t *obj_mul (const object_t *a, const object_t *b) {
 }
 
 /* obj_div(): perform object division.
- *  - see object_binary_fn() for more information.
+ *  - see object_binary_fn() for details.
  */
 object_t *obj_div (const object_t *a, const object_t *b) {
   /* check the input arguments. */
@@ -180,6 +221,31 @@ object_t *obj_div (const object_t *a, const object_t *b) {
   /* if unsuccessful, try the second type function. */
   if (!c && tb->div)
     c = tb->div(a, b);
+
+  /* return the result. */
+  return c;
+}
+
+/* obj_pow(): perform object exponentiation.
+ *  - see object_binary_fn() for details.
+ */
+object_t *obj_pow (const object_t *a, const object_t *b) {
+  /* check the input arguments. */
+  if (!a || !b)
+    return NULL;
+
+  /* get the argument object types. */
+  const object_type_t *ta = OBJECT_TYPE(a);
+  const object_type_t *tb = OBJECT_TYPE(b);
+
+  /* try the first type function. */
+  object_t *c = NULL;
+  if (ta->pow)
+    c = ta->pow(a, b);
+
+  /* if unsuccessful, try the second type function. */
+  if (!c && tb->pow)
+    c = tb->pow(a, b);
 
   /* return the result. */
   return c;

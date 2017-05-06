@@ -18,8 +18,8 @@
 /* rng_t: structure for holding a pseudorandom number generator.
  */
 typedef struct {
-  /* @type: basic object type information. */
-  object_type_t *type;
+  /* base structure members. */
+  OBJECT_BASE;
 
   /* current generator state:
    *  @u, @v, @w: core generator variables.

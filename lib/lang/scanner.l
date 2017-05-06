@@ -76,6 +76,7 @@ in  { return T_IN; }
 "-" { return T_MINUS; }
 "*" { return T_MUL; }
 "/" { return T_DIV; }
+"^" { return T_POW; }
 
 "." { return T_POINT; }
 "," { return T_COMMA; }
