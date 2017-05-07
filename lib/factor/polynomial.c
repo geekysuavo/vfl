@@ -105,7 +105,7 @@ static int polynomial_setprop_order (factor_t *f, object_t *val) {
   if (ord < 0)
     return 0;
 
-  /* set the order and return success. */
+  /* set the order and return. */
   return polynomial_set_order(f, ord);
 }
 

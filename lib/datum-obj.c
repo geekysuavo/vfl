@@ -203,22 +203,28 @@ static object_property_t datum_properties[] = {
   { "D", (object_getprop_fn) datum_getprop_dims, NULL },
   { "p",
     (object_getprop_fn) datum_getprop_output,
-    (object_setprop_fn) datum_setprop_output },
+    (object_setprop_fn) datum_setprop_output
+  },
   { "output",
     (object_getprop_fn) datum_getprop_output,
-    (object_setprop_fn) datum_setprop_output },
+    (object_setprop_fn) datum_setprop_output
+  },
   { "x",
     (object_getprop_fn) datum_getprop_input,
-    (object_setprop_fn) datum_setprop_input },
+    (object_setprop_fn) datum_setprop_input
+  },
   { "input",
     (object_getprop_fn) datum_getprop_input,
-    (object_setprop_fn) datum_setprop_input },
+    (object_setprop_fn) datum_setprop_input
+  },
   { "y",
     (object_getprop_fn) datum_getprop_value,
-    (object_setprop_fn) datum_setprop_value },
+    (object_setprop_fn) datum_setprop_value
+  },
   { "value",
     (object_getprop_fn) datum_getprop_value,
-    (object_setprop_fn) datum_setprop_value },
+    (object_setprop_fn) datum_setprop_value
+  },
   { NULL, NULL, NULL }
 };
 

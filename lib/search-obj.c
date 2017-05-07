@@ -176,16 +176,20 @@ static int search_setprop_outputs (search_t *S, object_t *val) {
 static object_property_t search_properties[] = {
   { "model",
     (object_getprop_fn) search_getprop_model,
-    (object_setprop_fn) search_setprop_model },
+    (object_setprop_fn) search_setprop_model
+  },
   { "data",
     (object_getprop_fn) search_getprop_data,
-    (object_setprop_fn) search_setprop_data },
+    (object_setprop_fn) search_setprop_data
+  },
   { "grid",
     (object_getprop_fn) search_getprop_grid,
-    (object_setprop_fn) search_setprop_grid },
+    (object_setprop_fn) search_setprop_grid
+  },
   { "outputs",
     (object_getprop_fn) search_getprop_outputs,
-    (object_setprop_fn) search_setprop_outputs },
+    (object_setprop_fn) search_setprop_outputs
+  },
   { NULL, NULL, NULL }
 };
 
