@@ -131,7 +131,7 @@ arg: ident T_COLON expr {
   $$ = ast_binary(AST_NODE_ARG, $1, $3);
 };
 
-list: T_BRACK_OPEN expr_list T_BRACK_CLOSE { $$ = $2 };
+list: T_BRACK_OPEN expr_list T_BRACK_CLOSE { $$ = $2; };
 
 expr_list
  : expr_list T_COMMA expr { $$ = ast_list_append($1, $3); }
