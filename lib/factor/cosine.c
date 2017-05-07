@@ -162,7 +162,7 @@ cov = exp(-0.5 * xd * xd / tau) * cos(mu * xd + zd);\n\
 ";
 
   /* allocate the kernel code string. */
-  char *kstr = malloc(strlen(fmt) + 8);
+  char *kstr = malloc(strlen(fmt) + 24);
   if (!kstr)
     return NULL;
 
