@@ -6,6 +6,9 @@
 #include <vfl/lang/ast.h>
 #include <vfl/lang/symbols.h>
 
+/* include the dynamic library functions header. */
+#include <dlfcn.h>
+
 /* vfl_nil: address of the vfl_nilstruct structure. */
 static object_t vfl_nilstruct;
 const object_t *vfl_nil = &vfl_nilstruct;
@@ -260,6 +263,75 @@ int vfl_exec_string (const char *str) {
 
   /* return success. */
   return 1;
+}
+
+/* vfl_import(): dynamically import a vfl module at runtime.
+ *
+ * modules are simply shared libraries with an extra function
+ * for registering new types with the central registry. for
+ * example, the "foo" module would be a library in the search
+ * path with a "int foo_init (void)" function.
+ *
+ * arguments:
+ *  @modname: module name to load.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int vfl_import (const char *modname) {
+  /* declare required variables:
+   *  @libname: shared library filename string.
+   *  @symname: initialization function string.
+   *  @res: resulting status code.
+   */
+  char *libname, *symname;
+  int (*initfunc) (void);
+  void *lib, *sym;
+  int res = 0;
+
+  /* check the input string. */
+  if (!modname)
+    return 0;
+
+  /* allocate the shared object filename string. */
+  libname = malloc(strlen(modname) + 7);
+  if (!libname)
+    return 0;
+
+  /* allocate the initialization function string. */
+  symname = malloc(strlen(modname) + 6);
+  if (!symname) {
+    free(libname);
+    return 0;
+  }
+
+  /* build the shared object filename. */
+  strcpy(libname, "lib");
+  strcat(libname, modname);
+  strcat(libname, ".so");
+
+  /* build the initialization function string. */
+  strcpy(symname, modname);
+  strcat(symname, "_init");
+
+  /* attempt to load the library into memory. */
+  lib = dlopen(libname, RTLD_LAZY);
+  if (lib) {
+    /* attempt to resolve the initialization function. */
+    sym = dlsym(lib, symname);
+    if (sym) {
+      /* execute the initialization function. */
+      initfunc = sym;
+      res = initfunc();
+    }
+  }
+
+  /* free the allocated strings. */
+  free(libname);
+  free(symname);
+
+  /* return the result. */
+  return res;
 }
 
 /* vfl_set_tree(): set the abstract syntax tree to be parsed.

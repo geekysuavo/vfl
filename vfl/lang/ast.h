@@ -30,6 +30,7 @@ typedef enum {
   AST_NODE_INT = 100,
   AST_NODE_FLOAT,
   AST_NODE_STRING,
+  AST_NODE_IMPORT,
   AST_NODE_IDENT,
 
   /* binary nodes. */

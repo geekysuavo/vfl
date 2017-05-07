@@ -224,6 +224,7 @@ void ast_free (ast_t *node) {
   switch (ast_node_type(node)) {
     /* string nodes. */
     case AST_NODE_STRING:
+    case AST_NODE_IMPORT:
     case AST_NODE_IDENT:
       /* free the string value. */
       free(node->n_string.value);

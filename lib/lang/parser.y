@@ -39,14 +39,14 @@ void vfl_set_tree (ast_t *node);
 %token T_BRACE_OPEN T_BRACE_CLOSE
 %token T_EQUALS T_PLUS T_MINUS T_MUL T_DIV T_POW
 %token T_POINT T_COMMA T_COLON T_SEMI
-%token T_FOR T_IN
+%token T_IMPORT T_FOR T_IN
 %token T_UNKNOWN
 
 /* declare the types of all tokens and symbols. */
 %type <v_int> T_INT
 %type <v_flt> T_FLOAT
 %type <v_str> T_IDENT T_STRING
-%type <v_ast> lang scope stmt_list stmt for
+%type <v_ast> lang scope stmt_list stmt for import
 %type <v_ast> expr power factor value name list int float string ident
 %type <v_ast> expr_list arg_list qual_list arguments arg qual
 
@@ -65,6 +65,7 @@ stmt_list
 
 stmt
  : for
+ | import T_SEMI
  | name T_SEMI
  | name T_EQUALS expr T_SEMI { $$ = ast_binary(AST_NODE_ASSIGN, $1, $3); }
  ;
@@ -139,6 +140,11 @@ expr_list
 
 for: T_FOR ident T_IN value scope {
   $$ = ast_ternary(AST_NODE_FOR, $2, $4, $5);
+};
+
+import: T_IMPORT ident {
+  ast_node_type($2) = AST_NODE_IMPORT;
+  $$ = $2;
 };
 
 %%

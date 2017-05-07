@@ -24,6 +24,17 @@ static object_t *eval_string (ast_t *node) {
   return (object_t*) string_alloc_with_value(node->n_string.value);
 }
 
+/* eval_import(): evaluate an import node.
+ */
+static object_t *eval_import (ast_t *node) {
+  /* import the module into the vfl runtime. */
+  if (!vfl_import(node->n_string.value))
+    return NULL;
+
+  /* return an empty object. */
+  VFL_RETURN_NIL;
+}
+
 /* eval_ident(): evaluate an identifier node.
  */
 static object_t *eval_ident (ast_t *node, sym_table_t *tab) {
@@ -423,6 +434,7 @@ object_t *ast_eval (ast_t *node, sym_table_t *symbols) {
     case AST_NODE_INT:    val = eval_int(node);    break;
     case AST_NODE_FLOAT:  val = eval_float(node);  break;
     case AST_NODE_STRING: val = eval_string(node); break;
+    case AST_NODE_IMPORT: val = eval_import(node); break;
 
     /* identifier, qualified name, and arguments nodes. */
     case AST_NODE_IDENT: val = eval_ident(node, tab);   break;

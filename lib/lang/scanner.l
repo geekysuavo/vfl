@@ -43,8 +43,9 @@ extern int yyparse (void);
   return T_FLOAT;
 }
 
-for { return T_FOR; }
-in  { return T_IN; }
+import { return T_IMPORT; }
+for    { return T_FOR; }
+in     { return T_IN; }
 
 [a-zA-Z][a-zA-Z0-9_]* {
   /* allocate memory for the identifier value. */

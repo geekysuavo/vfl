@@ -41,5 +41,7 @@ int vfl_exec_path (const char *fname);
 
 int vfl_exec_string (const char *str);
 
+int vfl_import (const char *modname);
+
 #endif /* !__VFL_VFL_H__ */
 
