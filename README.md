@@ -63,6 +63,8 @@ The VFL framework also implements the following base types:
 As well as the following types that prove useful for inference
 and active learning:
 
+ * **data**: datasets for organizing inputs and outputs.
+ * **datum**: individual entries of dataset objects.
  * **rng**: pseudorandom number generator (LCG).
  * **search**: gaussian process posterior variance search.
 
