@@ -2,6 +2,19 @@
 /* include the float header. */
 #include <vfl/base/float.h>
 
+/* float_get(): get the value of a float object.
+ *
+ * arguments:
+ *  @f: float structure pointer.
+ *
+ * returns:
+ *  value of the float object.
+ */
+inline double float_get (const flt_t *f) {
+  /* return the float value. */
+  return (f ? f->val : 0.0);
+}
+
 /* num_get(): get the value of a scalar numeric object.
  *
  * arguments:
@@ -14,19 +27,6 @@ double num_get (const object_t *num) {
   /* return the value. */
   return (OBJECT_IS_INT(num) ? (double) int_get((int_t*) num)
                              : float_get((flt_t*) num));
-}
-
-/* float_get(): get the value of a float object.
- *
- * arguments:
- *  @f: float structure pointer.
- *
- * returns:
- *  value of the float object.
- */
-inline double float_get (const flt_t *f) {
-  /* return the float value. */
-  return (f ? f->val : 0.0);
 }
 
 /* float_set(): set the value of a float object.

@@ -10,7 +10,7 @@ CFLAGS+= -ggdb -O3 -std=gnu99 -I.. -Wall -Wextra
 LDFLAGS+= -L../lib
 
 # required libraries.
-LIBS=-lvfl -lreadline
+LIBS=-lvfl -lreadline -lncurses
 
 # output binary filename.
 BIN=vflang

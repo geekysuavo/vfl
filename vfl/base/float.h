@@ -39,9 +39,9 @@ flt_t;
 
 flt_t *float_alloc_with_value (const double val);
 
-double num_get (const object_t *num);
-
 double float_get (const flt_t *f);
+
+double num_get (const object_t *num);
 
 void float_set (flt_t *f, const double val);
 
