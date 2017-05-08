@@ -30,7 +30,7 @@ LIB=libvfl.so
 C_UTIL=specfun vector matrix grid blas chol eigen
 
 # basenames of C base type source files.
-C_BASE=object list map int float string rng std
+C_BASE=object list map int float string rng math std
 
 # basenames of C, flex, and bison source files.
 C_LANG=symbols ast eval

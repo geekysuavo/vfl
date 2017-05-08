@@ -86,9 +86,9 @@ int vfl_init (void) {
   res &= symbols_set(globals, "true", (object_t*) int_alloc_with_value(1));
   res &= symbols_set(globals, "false", (object_t*) int_alloc_with_value(0));
 
-  /* register the standard method library with the table. */
-  object_t *stdobj = std_alloc();
-  res &= symbols_set(globals, "std", stdobj);
+  /* register the math and standard method libraries with the table. */
+  res &= symbols_set(globals, "math", math_alloc());
+  res &= symbols_set(globals, "std", std_alloc());
 
   /* register core model types. */
   res &= vfl_register_type((object_type_t*) vfl_model_vfc);

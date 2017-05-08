@@ -11,7 +11,10 @@
 #include <vfl/base/float.h>
 #include <vfl/base/string.h>
 #include <vfl/base/rng.h>
+
+/* include vfl base library headers. */
 #include <vfl/base/std.h>
+#include <vfl/base/math.h>
 
 /* include vfl inference object headers. */
 #include <vfl/datum.h>
