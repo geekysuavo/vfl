@@ -159,6 +159,10 @@ static object_t *eval_name (ast_t *node, sym_table_t *tab,
       object_t *idx = ast_eval(quals[i], tab);
       newval = obj_getelem(val, idx);
 
+      /* retain elements of transient lists by creating a copy. */
+      if (newval->refs == 1)
+        newval = obj_copy(newval);
+
       /* collect garbage (value and element index). */
       obj_collect(val);
       obj_collect(idx);

@@ -25,6 +25,13 @@ static object_type_t nil_type = {
 /* vfl_object_nil: address of the nil_type structure. */
 const object_type_t *vfl_object_nil = &nil_type;
 
+/* --- */
+
+/* modules: global array of dynamically loaded module handles.
+ */
+static void **modules;
+static unsigned int n_modules;
+
 /* object_types: global registry of all recognized object types.
  */
 static object_type_t **object_types;
@@ -55,6 +62,10 @@ int vfl_init (void) {
   /* initialize the nil object type. */
   vfl_nilstruct.type = &nil_type;
   vfl_nilstruct.refs = 0;
+
+  /* initialize the module array. */
+  modules = NULL;
+  n_modules = 0;
 
   /* initialize the type registry. */
   object_types = NULL;
@@ -115,6 +126,15 @@ int vfl_init (void) {
  * type registry, interpreter, and parser.
  */
 void vfl_cleanup (void) {
+  /* close all dynamically loaded modules. */
+  for (unsigned int i = 0; i < n_modules; i++)
+    dlclose(modules[i]);
+
+  /* free the modules array. */
+  free(modules);
+  modules = NULL;
+  n_modules = 0;
+
   /* free the object type array. */
   free(object_types);
   object_types = NULL;
@@ -317,6 +337,17 @@ int vfl_import (const char *modname) {
   /* attempt to load the library into memory. */
   lib = dlopen(libname, RTLD_LAZY);
   if (lib) {
+    /* reallocate the module array. */
+    const size_t szmod = (n_modules + 1) * sizeof(void*);
+    void **remod = realloc(modules, szmod);
+
+    /* if reallocation worked, store the new handle. */
+    if (remod) {
+      n_modules++;
+      modules = remod;
+      modules[n_modules - 1] = lib;
+    }
+
     /* attempt to resolve the initialization function. */
     sym = dlsym(lib, symname);
     if (sym) {
