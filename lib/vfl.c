@@ -126,6 +126,14 @@ int vfl_init (void) {
  * type registry, interpreter, and parser.
  */
 void vfl_cleanup (void) {
+  /* free the syntax tree. */
+  ast_free(tree);
+  tree = NULL;
+
+  /* free the global symbol table. */
+  symbols_free(globals);
+  globals = NULL;
+
   /* close all dynamically loaded modules. */
   for (unsigned int i = 0; i < n_modules; i++)
     dlclose(modules[i]);
@@ -139,14 +147,6 @@ void vfl_cleanup (void) {
   free(object_types);
   object_types = NULL;
   n_object_types = 0;
-
-  /* free the syntax tree. */
-  ast_free(tree);
-  tree = NULL;
-
-  /* free the global symbol table. */
-  symbols_free(globals);
-  globals = NULL;
 }
 
 /* vfl_register_type(): store a new object type in the
