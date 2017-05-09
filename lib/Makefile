@@ -17,7 +17,7 @@ GREP=grep -RHni --color
 CFLAGS+= -fPIC -ggdb -O3 -std=gnu99 -I..
 CFLAGS+= -Wall -Wextra -Wno-unused-parameter
 LDFLAGS+= -shared
-LIBS=-lm -ll -ldl
+LIBS=-lm -ldl
 
 # flex/bison generation flags.
 LFLAGS=
