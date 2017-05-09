@@ -89,7 +89,7 @@ PREFIX=$(DESTDIR)/usr/local
 LIBDIR=$(PREFIX)/lib
 
 # non-file targets and accepted filename extensions.
-.PHONY: all clean again lines fixme
+.PHONY: all clean again install lines fixme
 .SUFFIXES: .c .l .y .o
 .PRECIOUS: %.c %.l %.y %.o
 

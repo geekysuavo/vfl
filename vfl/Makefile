@@ -1,10 +1,18 @@
 
 # basenames and filenames of headers in vfl
-H_BASE=data factor model optim vfl
-HDR_BASE=$(addsuffix .h,$(H_BASE))
+H=data datum factor model optim search vfl
+HDR=$(addsuffix .h,$(H))
+
+# basenames and filenames of headers in vfl/base
+H_BASE=object int float string list map rng math std
+HDR_BASE=$(addsuffix .h,$(addprefix base/,$(H_BASE)))
+
+# basenames and filenames of headers in vfl/lang
+H_LANG=ast symbols
+HDR_LANG=$(addsuffix .h,$(addprefix lang/,$(H_LANG)))
 
 # basenames and filenames of headers in vfl/util
-H_UTIL=rng specfun vector matrix blas chol eigen
+H_UTIL=blas chol eigen grid vector matrix specfun
 HDR_UTIL=$(addsuffix .h,$(addprefix util/,$(H_UTIL)))
 
 # installation directories.
@@ -23,7 +31,11 @@ all:
 install:
 	@echo " INSTALL vfl"
 	@install -d $(INCDIR)
+	@install -d $(INCDIR)/base
+	@install -d $(INCDIR)/lang
 	@install -d $(INCDIR)/util
-	@install $(HDR_BASE) $(INCDIR)
+	@install $(HDR) $(INCDIR)
+	@install $(HDR_BASE) $(INCDIR)/base
+	@install $(HDR_LANG) $(INCDIR)/lang
 	@install $(HDR_UTIL) $(INCDIR)/util
 

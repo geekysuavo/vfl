@@ -11,7 +11,7 @@ DIR=vfl
 DATE=$(shell date +%Y%m%d)
 
 # non-file targets.
-.PHONY: all clean again lines fixme dist
+.PHONY: all clean again install lines fixme dist
 
 # global, default make target.
 all:
