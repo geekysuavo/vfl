@@ -88,7 +88,9 @@ both C and **vflang** programs are provided in [tests](tests/).
 
 The **vfl** library and **vflang** interpreter are both written
 in C99-compliant source code (with GNU extensions). Compiling
-them requires **gcc**, **flex**, and **bison**.
+them requires [GCC](http://gcc.gnu.org),
+[flex](http://github.com/westes/flex), and
+[bison](http://www.gnu.org/software/bison).
 
 Installation using the default options may be done as follows:
 
