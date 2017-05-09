@@ -29,6 +29,12 @@
   { "P", (object_getprop_fn) model_getprop_pars, NULL }, \
   { "M", (object_getprop_fn) model_getprop_cmps, NULL }, \
   { "K", (object_getprop_fn) model_getprop_wgts, NULL }, \
+  { "wbar", \
+    (object_getprop_fn) model_getprop_wmean, \
+    (object_setprop_fn) model_setprop_wmean }, \
+  { "Sigma", \
+    (object_getprop_fn) model_getprop_wcov, \
+    (object_setprop_fn) model_setprop_wcov }, \
   { "data", \
     (object_getprop_fn) model_getprop_data, \
     (object_setprop_fn) model_setprop_data }, \
@@ -351,6 +357,10 @@ object_t *model_getprop_cmps (const model_t *mdl);
 
 object_t *model_getprop_wgts (const model_t *mdl);
 
+object_t *model_getprop_wmean (const model_t *mdl);
+
+object_t *model_getprop_wcov (const model_t *mdl);
+
 data_t *model_getprop_data (const model_t *mdl);
 
 object_t *model_getprop_factors (const model_t *mdl);
@@ -366,6 +376,10 @@ object_t *model_getprop_beta (const model_t *mdl);
 object_t *model_getprop_tau (const model_t *mdl);
 
 object_t *model_getprop_nu (const model_t *mdl);
+
+int model_setprop_wmean (model_t *mdl, object_t *val);
+
+int model_setprop_wcov (model_t *mdl, object_t *val);
 
 int model_setprop_data (model_t *mdl, object_t *val);
 

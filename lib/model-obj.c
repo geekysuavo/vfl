@@ -135,6 +135,22 @@ object_t *model_getprop_wgts (const model_t *mdl) {
   return (object_t*) int_alloc_with_value(mdl->K);
 }
 
+/* model_getprop_wmean(): method for getting model weight means.
+ *  - see object_getprop_fn() for details.
+ */
+object_t *model_getprop_wmean (const model_t *mdl) {
+  /* return the weight means as a new vector. */
+  return list_alloc_from_vector(mdl->wbar);
+}
+
+/* model_getprop_wcov(): method for getting model weight covariances.
+ *  - see object_getprop_fn() for details.
+ */
+object_t *model_getprop_wcov (const model_t *mdl) {
+  /* return the weight covariances as a new matrix. */
+  return list_alloc_from_matrix(mdl->Sigma);
+}
+
 /* model_getprop_data(): method for getting model datasets.
  *  - see object_getprop_fn() for details.
  */
@@ -213,6 +229,57 @@ object_t *model_getprop_nu (const model_t *mdl) {
 }
 
 /* --- */
+
+/* model_setprop_wmean(): method for setting model weight means.
+ *  - see object_setprop_fn() for details.
+ */
+int model_setprop_wmean (model_t *mdl, object_t *val) {
+  /* admit only list values. */
+  if (!OBJECT_IS_LIST(val))
+    return 0;
+
+  /* cast the list to a vector. */
+  vector_t *wmean = list_to_vector((list_t*) val);
+  if (!wmean)
+    return 0;
+
+  /* attempt to copy the vector elements. */
+  if (wmean->len == mdl->K) {
+    vector_copy(mdl->wbar, wmean);
+    vector_free(wmean);
+    return 1;
+  }
+
+  /* free the vector and return failure. */
+  vector_free(wmean);
+  return 0;
+}
+
+/* model_setprop_wcov(): method for setting model weight covariances.
+ *  - see object_setprop_fn() for details.
+ */
+int model_setprop_wcov (model_t *mdl, object_t *val) {
+  /* admit only list values. */
+  if (!OBJECT_IS_LIST(val))
+    return 0;
+
+  /* cast the list to a matrix. */
+  matrix_t *wcov = list_to_matrix((list_t*) val);
+  if (!wcov)
+    return 0;
+
+  /* attempt to copy the matrix elements. */
+  if (wcov->rows == mdl->K &&
+      wcov->cols == mdl->K) {
+    matrix_copy(mdl->Sigma, wcov);
+    matrix_free(wcov);
+    return 1;
+  }
+
+  /* free the matrix and return failure. */
+  matrix_free(wcov);
+  return 0;
+}
 
 /* model_setprop_data(): method for setting model datasets.
  *  - see object_setprop_fn() for details.

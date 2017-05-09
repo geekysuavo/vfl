@@ -10,7 +10,7 @@ endif
 " Keywords
 syn keyword vflImport import
 syn keyword vflKeyword for in
-syn keyword vflConstant true false nil
+syn keyword vflConstant true false nil e pi
 syn keyword vflTodo contained TODO FIXME XXX
 
 " Matches

@@ -82,6 +82,10 @@ int vfl_init (void) {
   /* register the nil object with the table. */
   res &= symbols_set(globals, "nil", (object_t*) vfl_nil);
 
+  /* register e and pi with the table. */
+  res &= symbols_set(globals, "e", (object_t*) float_alloc_with_value(M_E));
+  res &= symbols_set(globals, "pi", (object_t*) float_alloc_with_value(M_PI));
+
   /* register true and false with the table. */
   res &= symbols_set(globals, "true", (object_t*) int_alloc_with_value(1));
   res &= symbols_set(globals, "false", (object_t*) int_alloc_with_value(0));
