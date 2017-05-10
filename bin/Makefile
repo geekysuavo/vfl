@@ -1,4 +1,8 @@
 
+# whether or not to use:
+#  USE_LIBUV: libuv for tcp communication.
+USE_LIBUV=y
+
 # executable filenames.
 CC=gcc
 RM=rm -f
@@ -17,6 +21,13 @@ BIN=vflang
 
 # basenames of C source files.
 C=
+
+# extra flags for using libuv.
+ifeq ($(USE_LIBUV),y)
+CFLAGS+= -D__VFL_USE_LIBUV
+C+= comm-client comm-server
+LIBS+= -luv
+endif
 
 # filenames of C sources.
 C+= $(BIN)
