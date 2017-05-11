@@ -3,24 +3,106 @@
 #include "vflang.h"
 
 /* application execution flags:
- *  @shall_persist: whether to become interactive after evaluations.
+ *  @shall_persist: whether or not to force interactivity.
  *  @evals: string to evaluate after option parsing.
  */
 static int shall_persist = 0;
 static char *evals = NULL;
 
-/* structures used for client/server communication:
- *  @is_daemon: whether to become a daemon. implies server.
- *  @hostname: hostname string for client/server modes.
+#ifdef __VFL_USE_LIBUV
+/* variables used for client/server communication:
+ *  @is_server: whether or not the hostname is used for a server.
+ *  @is_daemon: whether or not to disappear into the background.
  *  @client: client communication structure pointer.
  *  @server: server communication structure pointer.
+ *  @hostname: hostname string for client/server modes.
+ *  @pipefd: file descriptors for buffering stdout.
  */
-#ifdef __VFL_USE_LIBUV
-static int is_daemon = 0;
-static char *hostname = NULL;
+static int is_server = 0, is_daemon = 0;
 static comm_client_t *client = NULL;
 static comm_server_t *server = NULL;
+static char *hostname = NULL;
+static int pipefd[2];
+
+/* N_BLK: number of bytes per block to read from the pipe. */
+#define N_BLK 256
+
+/* cb_server(): callback function for returning
+ * interpreter outputs back to clients.
+ *  - see comm_server_cb() for details.
+ */
+static int cb_server (const char *msg, uv_buf_t *buf) {
+  /* send the message string to the interpreter. */
+  if (!vfl_exec_string(msg))
+    fprintf(stderr, "error:\n\n>>  %s\n", msg);
+  else
+    comm_reply_set_status(buf, 1);
+
+  /* flush standard output to the pipe. */
+  printf("\n");
+  fflush(stdout);
+
+  /* collect the interpreter output from the pipe. */
+  char blk[N_BLK + 1];
+  ssize_t n = 0;
+  do {
+    /* initialize the data block to ensure nul-termination. */
+    memset(blk, 0, N_BLK + 1);
+
+    /* read a block of data from the pipe. */
+    n = read(pipefd[0], &blk, N_BLK);
+    if (n <= 0)
+      break;
+
+    /* append the data to the response buffer. */
+    comm_reply_append_str(buf, blk);
+  }
+  while (n == N_BLK);
+
+  /* do not halt the server. */
+  return 0;
+}
 #endif
+
+/* do_string(): execute a string, either locally or through the network.
+ *
+ * arguments:
+ *  @str: string to execute.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+static int do_string (const char *str) {
+#ifdef __VFL_USE_LIBUV
+  /* when a network client is available, use it. */
+  if (client)
+    return comm_client_send(client, str);
+#endif
+
+  /* attempt to locally execute the string. */
+  return vfl_exec_string(str);
+}
+
+/* do_file(): execute a file, either locally or through the network.
+ *
+ * arguments:
+ *  @fname: filename to execute.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+static int do_file (const char *fname) {
+#ifdef __VFL_USE_LIBUV
+  /* when a network client is available, use it. */
+  if (client)
+    return comm_client_send_file(client, fname);
+#endif
+
+  /* attempt to locally execute the file. */
+  return vfl_exec_path(fname);
+}
+
+/* --- */
 
 /* main(): application entry point.
  *
@@ -36,11 +118,13 @@ int main (int argc, char **argv) {
    *  @opts: array of options recognized by getopt.
    *  @optcode: option value returned from getopt.
    *  @optidx: option array index from getopt.
+   *  @status: status code to return on exit.
    */
-  int optcode, optidx;
+  int optcode, optidx, status = EXIT_FAILURE;
   struct option opts[] = {
     /* argument-free options. */
     { "daemon",  no_argument, NULL, 'd' },
+    { "server",  no_argument, NULL, 's' },
     { "persist", no_argument, NULL, 'p' },
 
     /* argument-associated options. */
@@ -55,20 +139,31 @@ int main (int argc, char **argv) {
   while (1) {
     /* parse the next available option, or break. */
     optidx = 0;
-    optcode = getopt_long(argc, argv, "dpe:h:", opts, &optidx);
+    optcode = getopt_long(argc, argv, "dspe:h:", opts, &optidx);
     if (optcode == -1)
       break;
 
     /* handle the returned option code. */
     switch (optcode) {
-      /* daemon flag. */
-      case 'd':
 #ifdef __VFL_USE_LIBUV
-        is_daemon = 1;
-        break;
+      /* daemon and server flags. */
+      case 'd': is_daemon = 1;
+      case 's': is_server = 1; break;
+
+      /* host argument. */
+      case 'h':
+        /* attempt to set the hostname string. */
+        hostname = strdup(optarg);
+        if (hostname) break;
+        fprintf(stderr, "%s: failed to set hostname\n", argv[0]);
+        goto fail;
 #else
-        fprintf(stderr, "%s: daemonization unsupported\n", argv[0]);
-        return 1;
+      /* daemon, server, and hostname flags. */
+      case 'd':
+      case 's':
+      case 'h':
+        fprintf(stderr, "%s: network operation is unsupported\n", argv[0]);
+        goto fail;
 #endif
 
       /* persist flag. */
@@ -92,23 +187,6 @@ int main (int argc, char **argv) {
         strcat(evals, optarg);
         break;
 
-      /* host argument. */
-      case 'h':
-#ifdef __VFL_USE_LIBUV
-        /* attempt to set the hostname string. */
-        hostname = strdup(optarg);
-        if (!hostname) {
-          fprintf(stderr, "%s: failed to set hostname\n", argv[0]);
-          return 1;
-        }
-
-        /* break the case. */
-        break;
-#else
-        fprintf(stderr, "%s: client/server mode unsupported\n", argv[0]);
-        return 1;
-#endif
-
       /* other. */
       case '?':
       default:
@@ -117,16 +195,64 @@ int main (int argc, char **argv) {
   }
 
 #ifdef __VFL_USE_LIBUV
-  /* check if a hostname was supplied. */
+  /* handle mutually exclusive flags. */
+  if (is_server && (shall_persist || !hostname)) {
+    fprintf(stderr, "%s: arguments are mutually exclusive\n", argv[0]);
+    goto fail;
+  }
+
+  /* handle server output redirection. */
+  if (is_server) {
+    /* create a pipe for redirecting standard output. */
+    if (pipe(pipefd) != 0) {
+      fprintf(stderr, "%s: failed to redirect server output\n", argv[0]);
+      goto fail;
+    }
+
+    /* redirect stdout to the pipe. */
+    close(STDOUT_FILENO);
+    dup(pipefd[1]);
+  }
+
+  /* handle daemonization. */
+  if (is_daemon) {
+    /* fork a child process. */
+    pid_t newpid = fork();
+    if (newpid < 0) {
+      fprintf(stderr, "%s: failed to fork for daemon\n", argv[0]);
+      goto fail;
+    }
+
+    /* kill the parent process. */
+    if (newpid > 0)
+      exit(EXIT_SUCCESS);
+
+    /* reset the file mask and change directory to the root. */
+    umask(0);
+    chdir("/");
+
+    /* create a new session. */
+    pid_t sess = setsid();
+    if (sess < 0)
+      goto fail;
+
+    /* close down standard input. */
+    close(STDIN_FILENO);
+
+    /* wait a bit before running the server. */
+    sleep(1);
+  }
+
+  /* check if a hostname was supplied for network operation. */
   if (hostname) {
-    /* check if daemonization was requested. */
-    if (is_daemon) {
+    /* check if a client or server is required. */
+    if (is_server) {
       /* construct a server on that hostname. */
-      server = comm_server_alloc(hostname);
+      server = comm_server_alloc(hostname, cb_server);
       if (!server) {
-        fprintf(stderr, "%s: failed to serve on %s\n",
+        fprintf(stderr, "%s: failed to start server on %s\n",
                 argv[0], hostname);
-        return 1;
+        goto fail;
       }
     }
     else {
@@ -135,23 +261,9 @@ int main (int argc, char **argv) {
       if (!client) {
         fprintf(stderr, "%s: failed to connect to %s\n",
                 argv[0], hostname);
-        return 1;
+        goto fail;
       }
     }
-
-    /* free the hostname string. */
-    free(hostname);
-  }
-  else if (is_daemon) {
-    /* invalid configuration. */
-    fprintf(stderr, "%s: cannot daemonize without hostname\n", argv[0]);
-    return 1;
-  }
-
-  /* handle mutually exclusive flags. */
-  if (server && shall_persist) {
-    fprintf(stderr, "%s: cannot be an interactive daemon\n", argv[0]);
-    return 1;
   }
 #endif
 
@@ -161,53 +273,31 @@ int main (int argc, char **argv) {
 #endif
     if (!vfl_init()) {
       fprintf(stderr, "%s: failed to initialize interpreter\n", argv[0]);
-      return 1;
+      goto fail;
     }
 #ifdef __VFL_USE_LIBUV
   }
 #endif
 
   /* handle the evaluation string. */
-  if (evals) {
-#ifdef __VFL_USE_LIBUV
-    if (client && !comm_client_send(client, evals)) {
-      fprintf(stderr, "%s: failed to execute string:\n"
-              "  '%s'\n", argv[0], evals);
-      return 1;
-    }
-    else
-#endif
-    if (!vfl_exec_string(evals)) {
-      fprintf(stderr, "%s: failed to execute string:\n"
-              "  '%s'\n", argv[0], evals);
-      return 1;
-    }
+  if (evals && !do_string(evals)) {
+    fprintf(stderr, "%s: failed to execute:\n>> %s\n", argv[0], evals);
+    goto fail;
   }
 
   /* loop over any remaining (non-option) arguments. */
   for (int i = optind; i < argc; i++) {
-#ifdef __VFL_USE_LIBUV
-    /* attempt to execute the argument as a filename. */
-    if (client && !comm_client_send_file(client, argv[i])) {
+    if (!do_file(argv[i])) {
       fprintf(stderr, "%s: failed to execute '%s'\n", argv[0], argv[i]);
-      return 1;
-    }
-    else
-#endif
-    if (!vfl_exec_path(argv[i])) {
-      fprintf(stderr, "%s: failed to execute '%s'\n", argv[0], argv[i]);
-      return 1;
+      goto fail;
     }
   }
 
   /* enter server or interactive mode. */
 #ifdef __VFL_USE_LIBUV
   if (server) {
-    /* FIXME: set up i/o and daemonize. */
-
-    /* start running the server. */
     if (!comm_server_run(server))
-      fprintf(stderr, "%s: unable to maintain server\n", argv[0]);
+      fprintf(stderr, "%s: shutting down...\n", argv[0]);
   }
   else
 #endif
@@ -232,16 +322,9 @@ int main (int argc, char **argv) {
 
       /* execute the string. */
       add_history(pbuf);
-#ifdef __VFL_USE_LIBUV
-      if (client && !comm_client_send(client, pbuf)) {
-        fprintf(stderr, "%s: failed to execute string\n", argv[0]);
-        return 1;
-      }
-      else
-#endif
-      if (!vfl_exec_string(pbuf)) {
-        fprintf(stderr, "%s: failed to execute string\n", argv[0]);
-        return 1;
+      if (!do_string(pbuf)) {
+        fprintf(stderr, "%s: failed to execute:\n>> %s\n", argv[0], pbuf);
+        goto fail;
       }
 
       /* increment the command counter. */
@@ -250,13 +333,21 @@ int main (int argc, char **argv) {
     }
   }
 
+  /* indicate successful exit. */
+  status = EXIT_SUCCESS;
+
+fail:
+  /* free the evaluation string, if allocated. */
+  free(evals);
+
   /* free the client or server, if either is allocated. */
 #ifdef __VFL_USE_LIBUV
   comm_client_free(client);
   comm_server_free(server);
+  free(hostname);
 #endif
 
-  /* return success. */
-  return 0;
+  /* return the current status code. */
+  return status;
 }
 

@@ -25,7 +25,7 @@ C=
 # extra flags for using libuv.
 ifeq ($(USE_LIBUV),y)
 CFLAGS+= -D__VFL_USE_LIBUV
-C+= comm-client comm-server
+C+= comm-reply comm-client comm-server
 LIBS+= -luv
 endif
 
@@ -81,5 +81,5 @@ lines: clean
 # fixme statement reporting target.
 fixme:
 	@echo " FIXME"
-	@$(GREP) fixme $(shell find * -name '*.c') || echo " None found"
+	@$(GREP) fixme $(shell find * -name '*.[ch]') || echo " None found"
 
