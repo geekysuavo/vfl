@@ -16,12 +16,14 @@ static char *evals = NULL;
  *  @client: client communication structure pointer.
  *  @server: server communication structure pointer.
  *  @hostname: hostname string for client/server modes.
+ *  @logfile: log filename string for server output.
  *  @pipefd: file descriptors for buffering stdout.
  */
 static int is_server = 0, is_daemon = 0;
 static comm_client_t *client = NULL;
 static comm_server_t *server = NULL;
 static char *hostname = NULL;
+static char *logfile = NULL;
 static int pipefd[2];
 
 /* N_BLK: number of bytes per block to read from the pipe. */
@@ -128,6 +130,7 @@ int main (int argc, char **argv) {
     { "persist", no_argument, NULL, 'p' },
 
     /* argument-associated options. */
+    { "log",  required_argument, NULL, 'l' },
     { "eval", required_argument, NULL, 'e' },
     { "host", required_argument, NULL, 'h' },
 
@@ -139,7 +142,7 @@ int main (int argc, char **argv) {
   while (1) {
     /* parse the next available option, or break. */
     optidx = 0;
-    optcode = getopt_long(argc, argv, "dspe:h:", opts, &optidx);
+    optcode = getopt_long(argc, argv, "dspl:e:h:", opts, &optidx);
     if (optcode == -1)
       break;
 
@@ -149,6 +152,14 @@ int main (int argc, char **argv) {
       /* daemon and server flags. */
       case 'd': is_daemon = 1;
       case 's': is_server = 1; break;
+
+      /* logfile argument. */
+      case 'l':
+        /* attempt to set the log filename string. */
+        logfile = strdup(optarg);
+        if (logfile) break;
+        fprintf(stderr, "%s: failed to set log file\n", argv[0]);
+        goto fail;
 
       /* host argument. */
       case 'h':
@@ -161,6 +172,7 @@ int main (int argc, char **argv) {
       /* daemon, server, and hostname flags. */
       case 'd':
       case 's':
+      case 'l':
       case 'h':
         fprintf(stderr, "%s: network operation is unsupported\n", argv[0]);
         goto fail;
@@ -196,7 +208,8 @@ int main (int argc, char **argv) {
 
 #ifdef __VFL_USE_LIBUV
   /* handle mutually exclusive flags. */
-  if (is_server && (shall_persist || !hostname)) {
+  if ((is_server && (shall_persist || !hostname)) ||
+      (!is_server && logfile)) {
     fprintf(stderr, "%s: arguments are mutually exclusive\n", argv[0]);
     goto fail;
   }
@@ -212,6 +225,16 @@ int main (int argc, char **argv) {
     /* redirect stdout to the pipe. */
     close(STDOUT_FILENO);
     dup(pipefd[1]);
+
+    /* check if a log filename was supplied. */
+    if (logfile) {
+      /* redirect standard error to the file. */
+      freopen(logfile, "a+", stderr);
+    }
+    else if (is_daemon) {
+      /* no log file and hell-bound. close down standard error. */
+      close(STDERR_FILENO);
+    }
   }
 
   /* handle daemonization. */
@@ -345,6 +368,7 @@ fail:
   comm_client_free(client);
   comm_server_free(server);
   free(hostname);
+  free(logfile);
 #endif
 
   /* return the current status code. */
