@@ -112,6 +112,16 @@ sed -e 's,^\(USE_ATLAS\)=.*,\1=n,' -i lib/Makefile
 make again
 ```
 
+Also by default, **vflang** requires [libuv](http://libuv.org) for
+handling tcp/ip-based connections between interpreter servers and
+the clients that connect to them. To disable support for networked
+interpretation in **vflang**, do the following:
+
+```bash
+sed -e 's,^\(USE_LIBUV\)=.*,\1=n,' -i bin/Makefile
+make again
+```
+
 In addition, the **search** object defaults to using
 [OpenCL](https://en.wikipedia.org/wiki/OpenCL), so
 compilation will require suitable headers, libraries,
