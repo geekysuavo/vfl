@@ -9,7 +9,7 @@
  *  @size: requested size of the allocation.
  *  @buf: pointer to the buffer to manipulate.
  */
-void cl_bufalloc (uv_handle_t *handle, size_t size, uv_buf_t *buf) {
+static void cl_bufalloc (uv_handle_t *handle, size_t size, uv_buf_t *buf) {
   /* return without allocating if the handle is null. */
   if (!handle)
     return;
@@ -27,7 +27,8 @@ void cl_bufalloc (uv_handle_t *handle, size_t size, uv_buf_t *buf) {
  *  @nread: number of bytes read, or negative for errors.
  *  @buf: buffer containing the read data from the server.
  */
-void cl_onread (uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) {
+static void cl_onread (uv_stream_t *stream, ssize_t nread,
+                       const uv_buf_t *buf) {
   /* check for read errors and end-of-file. */
   if (nread < 0) {
     /* if the error was not end-of-file related, output a message. */
@@ -68,7 +69,7 @@ void cl_onread (uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) {
  *  @req: write request handle.
  *  @status: write status flag.
  */
-void cl_onwrite (uv_write_t *req, int status) {
+static void cl_onwrite (uv_write_t *req, int status) {
   /* check for write errors. */
   if (status < 0) {
     fprintf(stderr, "cl_write: %s\n", uv_strerror(status));
@@ -88,7 +89,7 @@ void cl_onwrite (uv_write_t *req, int status) {
  *  @conn: connection handle.
  *  @status: connection status flag.
  */
-void cl_connect (uv_connect_t *conn, int status) {
+static void cl_connect (uv_connect_t *conn, int status) {
   /* check for connection handshaking errors. */
   if (status < 0) {
     fprintf(stderr, "cl_connect: %s\n", uv_strerror(status));

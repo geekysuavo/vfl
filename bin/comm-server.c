@@ -9,7 +9,7 @@
  *  @size: requested size of the allocation.
  *  @buf: pointer to the buffer to manipulate.
  */
-void sv_bufalloc (uv_handle_t *handle, size_t size, uv_buf_t *buf) {
+static void sv_bufalloc (uv_handle_t *handle, size_t size, uv_buf_t *buf) {
   /* return without allocating if the handle is null. */
   if (!handle)
     return;
@@ -30,7 +30,8 @@ void sv_bufalloc (uv_handle_t *handle, size_t size, uv_buf_t *buf) {
  *  @nread: number of bytes read, or negative for errors.
  *  @buf: buffer containing the read data from the client.
  */
-void sv_onread (uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) {
+static void sv_onread (uv_stream_t *stream, ssize_t nread,
+                       const uv_buf_t *buf) {
   /* check for read errors and end-of-file. */
   if (nread < 0) {
     /* if the error was not end-of-file related, output a mesage. */
