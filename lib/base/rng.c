@@ -141,18 +141,18 @@ double rng_normal (rng_t *gen) {
 
 /* --- */
 
-/* rngobj_get_seed(): get the seed value of a random number generator.
+/* rng_getprop_seed(): get the seed value of a random number generator.
  *  - see object_getprop_fn() for details.
  */
-static int_t *rngobj_get_seed (const rng_t *gen) {
+static int_t *rng_getprop_seed (const rng_t *gen) {
   /* return the seed value as an integer. */
   return int_alloc_with_value(gen->seed);
 }
 
-/* rngobj_set_seed(): set the seed value of a random number generator.
+/* rng_setprop_seed(): set the seed value of a random number generator.
  *  - see object_setprop_fn() for details.
  */
-static int rngobj_set_seed (rng_t *gen, object_t *val) {
+static int rng_setprop_seed (rng_t *gen, object_t *val) {
   /* admit only integer arguments. */
   if (!OBJECT_IS_INT(val))
     return 0;
@@ -166,19 +166,19 @@ static int rngobj_set_seed (rng_t *gen, object_t *val) {
  */
 static object_property_t rng_properties[] = {
   { "seed",
-    (object_getprop_fn) rngobj_get_seed,
-    (object_setprop_fn) rngobj_set_seed
+    (object_getprop_fn) rng_getprop_seed,
+    (object_setprop_fn) rng_setprop_seed
   },
   { NULL, NULL, NULL }
 };
 
 /* --- */
 
-/* rngobj_uniform(): sample a uniform random deviate from
+/* rng_method_uniform(): sample a uniform random deviate from
  * a random number generator.
  *  - see object_method_fn() for details.
  */
-static flt_t *rngobj_uniform (rng_t *gen, map_t *args) {
+static flt_t *rng_method_uniform (rng_t *gen, map_t *args) {
   /* declare required variables:
    *  @dev: standard uniform random deviate.
    *  @lower: transformation lower bound.
@@ -213,11 +213,11 @@ static flt_t *rngobj_uniform (rng_t *gen, map_t *args) {
   return float_alloc_with_value(dev * (upper - lower) + lower);
 }
 
-/* rngobj_normal(): sample a normal random deviate from
+/* rng_method_normal(): sample a normal random deviate from
  * a random number generator.
  *  - see object_method_fn() for details.
  */
-static flt_t *rngobj_normal (rng_t *gen, map_t *args) {
+static flt_t *rng_method_normal (rng_t *gen, map_t *args) {
   /* declare required variables:
    *  @dev: standard normal random deviate.
    *  @sigma: transformation scaling.
@@ -264,8 +264,8 @@ static flt_t *rngobj_normal (rng_t *gen, map_t *args) {
 /* rng_methods: array of callable object methods.
  */
 static object_method_t rng_methods[] = {
-  { "uniform", (object_method_fn) rngobj_uniform },
-  { "normal",  (object_method_fn) rngobj_normal },
+  { "uniform", (object_method_fn) rng_method_uniform },
+  { "normal",  (object_method_fn) rng_method_normal },
   { NULL, NULL }
 };
 
