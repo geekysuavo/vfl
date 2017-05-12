@@ -135,6 +135,14 @@ object_t *model_getprop_wgts (const model_t *mdl) {
   return (object_t*) int_alloc_with_value(mdl->K);
 }
 
+/* model_getprop_bound(): method for getting model lower bound values.
+ *  - see object_getprop_fn() for details.
+ */
+object_t *model_getprop_bound (const model_t *mdl) {
+  /* return the lower bound as a new float. */
+  return (object_t*) float_alloc_with_value(model_bound(mdl));
+}
+
 /* model_getprop_wmean(): method for getting model weight means.
  *  - see object_getprop_fn() for details.
  */

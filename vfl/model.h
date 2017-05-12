@@ -29,6 +29,7 @@
   { "P", (object_getprop_fn) model_getprop_pars, NULL }, \
   { "M", (object_getprop_fn) model_getprop_cmps, NULL }, \
   { "K", (object_getprop_fn) model_getprop_wgts, NULL }, \
+  { "bound", (object_getprop_fn) model_getprop_bound, NULL }, \
   { "wbar", \
     (object_getprop_fn) model_getprop_wmean, \
     (object_setprop_fn) model_setprop_wmean }, \
@@ -356,6 +357,8 @@ object_t *model_getprop_pars (const model_t *mdl);
 object_t *model_getprop_cmps (const model_t *mdl);
 
 object_t *model_getprop_wgts (const model_t *mdl);
+
+object_t *model_getprop_bound (const model_t *mdl);
 
 object_t *model_getprop_wmean (const model_t *mdl);
 
