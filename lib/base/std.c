@@ -36,6 +36,49 @@ static object_t *stdobj_disp (object_t *std, map_t *args) {
   VFL_RETURN_NIL;
 }
 
+/* func std.println (f: str)
+                    (f: str, v: list);
+ */
+static object_t *stdobj_println (object_t *std, map_t *args) {
+  /* get the format argument. */
+  object_t *fmt = map_get(args, "format");
+  if (!fmt) fmt = map_get(args, "fmt");
+  if (!fmt) fmt = map_get(args, "f");
+  if (!fmt || !OBJECT_IS_STRING(fmt))
+    return NULL;
+
+  /* get the values argument. */
+  object_t *vals = map_get(args, "values");
+  if (!vals) vals = map_get(args, "vals");
+  if (!vals) vals = map_get(args, "v");
+
+  /* determine the print mode. */
+  if (vals) {
+    /* formatted output. allocate the output string. */
+    string_t *str = string_alloc();
+    if (!str)
+      return NULL;
+
+    /* build the output string. */
+    if (!string_append_list(str, (const string_t*) fmt, vals)) {
+      obj_release((object_t*) str);
+      return NULL;
+    }
+
+    /* print the string value. */
+    printf("%s", string_get(str));
+    obj_release((object_t*) str);
+  }
+  else {
+    /* unformatted output. print the string value. */
+    printf("%s", string_get((string_t*) fmt));
+  }
+
+  /* print a newline and return nothing. */
+  printf("\n");
+  VFL_RETURN_NIL;
+}
+
 /* func std.range (n: int);
  *                (start: int, end: int, step: 1);
  */
@@ -107,8 +150,9 @@ static object_t *stdobj_range (object_t *std, map_t *args) {
 /* std_methods: array of callable standard library methods.
  */
 static object_method_t std_methods[] = {
-  { "disp", (object_method_fn) stdobj_disp },
-  { "range", (object_method_fn) stdobj_range },
+  { "disp",    (object_method_fn) stdobj_disp },
+  { "println", (object_method_fn) stdobj_println },
+  { "range",   (object_method_fn) stdobj_range },
   { NULL, NULL }
 };
 

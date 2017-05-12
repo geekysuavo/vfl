@@ -40,6 +40,11 @@ char *string_get (const string_t *str);
 
 int string_set (string_t *str, const char *val);
 
+int string_append (string_t *str, const char *val);
+
+int string_append_list (string_t *str, const string_t *fmt,
+                        object_t *vals);
+
 /* available object types: */
 
 extern const object_type_t *vfl_object_string;

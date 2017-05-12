@@ -169,6 +169,101 @@ int string_append (string_t *str, const char *val) {
   return 1;
 }
 
+/* string_append_list(): append a formatted list of objects to a string.
+ *
+ * arguments:
+ *  @str: string structure pointer.
+ *  @fmt: format string object.
+ *  @vals: object list to append.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int string_append_list (string_t *str, const string_t *fmt,
+                        object_t *vals) {
+  /* admit only list arguments. */
+  if (!OBJECT_IS_LIST(vals))
+    return 0;
+
+  /* initialize variables for format string scanning. */
+  char *pa = fmt->val;
+  char *pb = pa;
+  size_t i = 0;
+
+  /* loop over the format string. */
+  do {
+    /* find the next format specifier. */
+    pb = strchr(pa, '%');
+
+    /* check if no specifier was found. */
+    if (!pb) {
+      string_append(str, pa);
+      break;
+    }
+
+    /* append the substring preceding the format specifier. */
+    *pb = '\0';
+    string_append(str, pa);
+    *pb = '%';
+    pb++;
+
+    /* break on early termination. */
+    if (*pb == '\0')
+      break;
+
+    /* handle escaped percent characters. */
+    if (*pb == '%') {
+      string_append(str, "%");
+      pa = pb + 1;
+      continue;
+    }
+
+    /* loop until a type specifier is located. */
+    pa = pb - 1;
+    while (*pb && !(*pb == 'd' || *pb == 'u' ||
+                    *pb == 'f' || *pb == 'e' ||
+                    *pb == 'E' || *pb == 'g' ||
+                    *pb == 'G' || *pb == 's')) pb++;
+
+    /* get the current object from the values list. */
+    object_t *val = list_get((list_t*) vals, i);
+    i++;
+
+    /* temporarily terminate the format specifier. */
+    char tmp = pb[1];
+    pb[1] = '\0';
+
+    /* append based on the format specifier. */
+    char buf[1024];
+    if (*pb == 'd' || *pb == 'u') {
+      if (!OBJECT_IS_INT(val)) return 0;
+      snprintf(buf, 1024, pa, int_get((int_t*) val));
+      if (!string_append(str, buf))
+        return 0;
+    }
+    else if (*pb == 'f' || *pb == 'e' || *pb == 'E' ||
+             *pb == 'g' || *pb == 'G') {
+      if (!OBJECT_IS_NUM(val)) return 0;
+      snprintf(buf, 1024, pa, num_get(val));
+      if (!string_append(str, buf))
+        return 0;
+    }
+    else if (*pb == 's') {
+      if (!OBJECT_IS_STRING(val) ||
+          !string_append(str, string_get((string_t*) val)))
+        return 0;
+    }
+
+    /* reverse the temporary termination and pass the format specifier. */
+    pb[1] = tmp;
+    pa = pb + 1;
+  }
+  while (1);
+
+  /* return success. */
+  return 1;
+}
+
 /* --- */
 
 /* string_add(): addition function for strings.
@@ -273,97 +368,19 @@ static string_t *string_method_format (string_t *fmtstr, map_t *args) {
   if (!vals)
     return NULL;
 
-  /* admit only list arguments. */
-  if (!OBJECT_IS_LIST(vals))
-    return NULL;
-
   /* allocate a new string for output. */
   string_t *str = string_alloc();
   if (!str)
     return NULL;
 
-  /* initialize variables for format string scanning. */
-  char *pa = fmtstr->val;
-  char *pb = pa;
-  size_t i = 0;
-
-  /* loop over the format string. */
-  do {
-    /* find the next format specifier. */
-    pb = strchr(pa, '%');
-
-    /* check if no specifier was found. */
-    if (!pb) {
-      string_append(str, pa);
-      break;
-    }
-
-    /* append the substring preceding the format specifier. */
-    *pb = '\0';
-    string_append(str, pa);
-    *pb = '%';
-    pb++;
-
-    /* break on early termination. */
-    if (*pb == '\0')
-      break;
-
-    /* handle escaped percent characters. */
-    if (*pb == '%') {
-      string_append(str, "%");
-      pa = pb + 1;
-      continue;
-    }
-
-    /* loop until a type specifier is located. */
-    pa = pb - 1;
-    while (*pb && !(*pb == 'd' || *pb == 'u' ||
-                    *pb == 'f' || *pb == 'e' ||
-                    *pb == 'E' || *pb == 'g' ||
-                    *pb == 'G' || *pb == 's')) pb++;
-
-    /* get the current object from the values list. */
-    object_t *val = list_get((list_t*) vals, i);
-    i++;
-
-    /* temporarily terminate the format specifier. */
-    char tmp = pb[1];
-    pb[1] = '\0';
-
-    /* append based on the format specifier. */
-    char buf[1024];
-    if (*pb == 'd' || *pb == 'u') {
-      if (!OBJECT_IS_INT(val)) goto fail;
-      snprintf(buf, 1024, pa, int_get((int_t*) val));
-      if (!string_append(str, buf))
-        goto fail;
-    }
-    else if (*pb == 'f' || *pb == 'e' || *pb == 'E' ||
-             *pb == 'g' || *pb == 'G') {
-      if (!OBJECT_IS_NUM(val)) goto fail;
-      snprintf(buf, 1024, pa, num_get(val));
-      if (!string_append(str, buf))
-        goto fail;
-    }
-    else if (*pb == 's') {
-      if (!OBJECT_IS_STRING(val) ||
-          !string_append(str, string_get((string_t*) val)))
-        goto fail;
-    }
-
-    /* reverse the temporary termination and pass the format specifier. */
-    pb[1] = tmp;
-    pa = pb + 1;
+  /* append the object list to the string. */
+  if (!string_append_list(str, fmtstr, vals)) {
+    obj_release((object_t*) str);
+    return NULL;
   }
-  while (1);
 
-  /* return the newly allocated string. */
+  /* return the newly constructed string. */
   return str;
-
-fail:
-  /* free the output string and return failure. */
-  obj_release((object_t*) str);
-  return NULL;
 }
 
 /* string_methods: array of callable object methods.
