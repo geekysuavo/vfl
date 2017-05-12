@@ -2,6 +2,35 @@
 /* include the main application header. */
 #include "vflang.h"
 
+/* VFLANG_HELP_STR: short string containing a quick help statement.
+ */
+#define VFLANG_HELP_STR \
+" vflang: the Variational Feature LANGuage interpretation utility.\n" \
+" Copyright (C) 2016-2017 Institut Pasteur. All rights reserved.\n" \
+"\n" \
+" Usage:\n" \
+"  vflang [options] [file [file2 ...]]\n" \
+"\n" \
+" General options:\n" \
+"  -h, --help             Display this help message\n" \
+"  -e, --eval CODE        Statement(s) to execute prior to files\n" \
+"  -p, --persist          Force interactive mode after execution\n" \
+"  file, file2, ...       Input script file(s) to execute\n" \
+"\n" \
+" Networking options:\n" \
+"  -H, --host NAME        Hostname of the interpretation server\n" \
+"\n" \
+" Server options:\n" \
+"  -s, --server           Run a new interpretation server\n" \
+"  -d, --daemon           Run as a daemon; implies --server\n" \
+"  -l, --log FILE         Output errors and warnings to a log file\n" \
+"\n" \
+" The vflang utility provides a simple interface to running code\n" \
+" written in the Variational Feature Language (VFL), a simple\n" \
+" object-oriented probabilistic programming language supporting\n" \
+" fixed-form variational Bayesian inference techniques.\n" \
+"\n"
+
 /* application execution flags:
  *  @shall_persist: whether or not to force interactivity.
  *  @evals: string to evaluate after option parsing.
@@ -125,6 +154,7 @@ int main (int argc, char **argv) {
   int optcode, optidx, status = EXIT_FAILURE;
   struct option opts[] = {
     /* argument-free options. */
+    { "help",    no_argument, NULL, 'h' },
     { "daemon",  no_argument, NULL, 'd' },
     { "server",  no_argument, NULL, 's' },
     { "persist", no_argument, NULL, 'p' },
@@ -132,7 +162,7 @@ int main (int argc, char **argv) {
     /* argument-associated options. */
     { "log",  required_argument, NULL, 'l' },
     { "eval", required_argument, NULL, 'e' },
-    { "host", required_argument, NULL, 'h' },
+    { "host", required_argument, NULL, 'H' },
 
     /* end marker. */
     { NULL, 0, NULL, 0 }
@@ -142,7 +172,7 @@ int main (int argc, char **argv) {
   while (1) {
     /* parse the next available option, or break. */
     optidx = 0;
-    optcode = getopt_long(argc, argv, "dspl:e:h:", opts, &optidx);
+    optcode = getopt_long(argc, argv, "hdspl:e:H:", opts, &optidx);
     if (optcode == -1)
       break;
 
@@ -162,7 +192,7 @@ int main (int argc, char **argv) {
         goto fail;
 
       /* host argument. */
-      case 'h':
+      case 'H':
         /* attempt to set the hostname string. */
         hostname = strdup(optarg);
         if (hostname) break;
@@ -173,10 +203,15 @@ int main (int argc, char **argv) {
       case 'd':
       case 's':
       case 'l':
-      case 'h':
+      case 'H':
         fprintf(stderr, "%s: network operation is unsupported\n", argv[0]);
         goto fail;
 #endif
+
+      /* help message. */
+      case 'h':
+        fprintf(stdout, "%s", VFLANG_HELP_STR);
+        goto wrap;
 
       /* persist flag. */
       case 'p':
@@ -356,6 +391,7 @@ int main (int argc, char **argv) {
     }
   }
 
+wrap:
   /* indicate successful exit. */
   status = EXIT_SUCCESS;
 
