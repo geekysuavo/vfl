@@ -22,7 +22,6 @@ for j in std.range(n: mdl.M) {
 # create a full-gradient optimizer.
 opt = fg(
   model: mdl,
-  maxIters: 50,
   lipschitzInit: 0.001
 );
 

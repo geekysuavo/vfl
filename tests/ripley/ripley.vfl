@@ -22,13 +22,8 @@ for j in std.range(n: mdl.M) {
   mdl.factors[j].update();
 }
 
-# create a full-gradient optimizer.
-opt = fg(
-  model: mdl,
-  maxIters: 50
-);
-
-# optimize.
+# optimize using natural gradients.
+opt = fg(model: mdl);
 opt.execute();
 
 # build gridded datasets for prediction.
