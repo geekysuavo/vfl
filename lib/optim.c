@@ -81,13 +81,13 @@ int optim_set_model (optim_t *opt, model_t *mdl) {
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-int optim_set_max_steps (optim_t *opt, const unsigned int n) {
+int optim_set_max_steps (optim_t *opt, const int n) {
   /* check the input arguments. */
-  if (!opt || n == 0)
+  if (!opt || n <= 0)
     return 0;
 
   /* set the parameter and return success. */
-  opt->max_steps = n;
+  opt->max_steps = (unsigned int) n;
   return 1;
 }
 
@@ -101,13 +101,13 @@ int optim_set_max_steps (optim_t *opt, const unsigned int n) {
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-int optim_set_max_iters (optim_t *opt, const unsigned int n) {
+int optim_set_max_iters (optim_t *opt, const int n) {
   /* check the input arguments. */
-  if (!opt || n == 0)
+  if (!opt || n <= 0)
     return 0;
 
   /* set the parameter and return success. */
-  opt->max_iters = n;
+  opt->max_iters = (unsigned int) n;
   return 1;
 }
 
@@ -151,6 +151,80 @@ int optim_set_lipschitz_step (optim_t *opt, const double dl) {
   return 1;
 }
 
+/* optim_set_log_iters(): set the iteration frequency of logging
+ * optimizer outputs.
+ *
+ * arguments:
+ *  @opt: optimizer structure pointer.
+ *  @n: iteration frequency value.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int optim_set_log_iters (optim_t *opt, const int n) {
+  /* check the input arguments. */
+  if (!opt || n <= 0)
+    return 0;
+
+  /* set the parameter and return success. */
+  opt->log_iters = (unsigned int) n;
+  return 1;
+}
+
+/* optim_set_log_parms(): set the flag that enables or disables
+ * logging of optimized parameters.
+ *
+ * arguments:
+ *  @opt: optimizer structure pointer.
+ *  @b: parameter logging flag.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int optim_set_log_parms (optim_t *opt, const int b) {
+  /* check the input arguments. */
+  if (!opt)
+    return 0;
+
+  /* set the parameter and return success. */
+  opt->log_parms = (b ? 1 : 0);
+  return 1;
+}
+
+/* optim_set_log_file(): set the filename string for logging
+ * optimizer outputs.
+ *
+ * arguments:
+ *  @opt: optimizer structure pointer.
+ *  @fname: log filename string.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int optim_set_log_file (optim_t *opt, const char *fname) {
+  /* check the input arguments. */
+  if (!opt)
+    return 0;
+
+  /* close any open file handles. */
+  if (opt->log_fh) {
+    fclose(opt->log_fh);
+    opt->log_fh = NULL;
+  }
+
+  /* return if the filename is null. */
+  if (!fname)
+    return 1;
+
+  /* open a new file handle. */
+  opt->log_fh = fopen(fname, "w");
+  if (!opt->log_fh)
+    return 0;
+
+  /* return success. */
+  return 1;
+}
+
 /* optim_iterate(): perform a single optimization iteration.
  *  - see optim_iterate_fn() for more information.
  */
@@ -165,7 +239,36 @@ int optim_iterate (optim_t *opt) {
     return 0;
 
   /* run the iteration function. */
-  return iterate_fn(opt);
+  const int ret = iterate_fn(opt);
+  opt->iters++;
+
+  /* check if a log file handle is open. */
+  if (opt->log_fh) {
+    /* check if the current iteration should be logged. */
+    if (opt->log_iters <= 1 || opt->iters % (opt->log_iters - 1) == 0) {
+      /* print the basic log information. */
+      fprintf(opt->log_fh, "%6u %16.9le", opt->iters, opt->bound);
+
+      /* check if the parameters should be logged. */
+      if (opt->log_parms) {
+        /* loop over the model factors. */
+        for (unsigned int j = 0; j < opt->mdl->M; j++) {
+          /* get the current factor structure pointer. */
+          const factor_t *fj = opt->mdl->factors[j];
+
+          /* print each of the factor parameters. */
+          for (unsigned int p = 0; p < fj->P; p++)
+            fprintf(opt->log_fh, " %16.9le", factor_get(fj, p));
+        }
+      }
+
+      /* print a newline. */
+      fprintf(opt->log_fh, "\n");
+    }
+  }
+
+  /* return the iteration result. */
+  return ret;
 }
 
 /* optim_execute(): perform multiple free-run optimization iterations.
@@ -182,6 +285,10 @@ int optim_execute (optim_t *opt) {
     return 0;
 
   /* run the execution function. */
-  return execute_fn(opt);
+  opt->iters = 0;
+  const int ret = execute_fn(opt);
+
+  /* return the execution result. */
+  return ret;
 }
 

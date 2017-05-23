@@ -5,6 +5,7 @@
 /* include the required object headers. */
 #include <vfl/base/map.h>
 #include <vfl/base/float.h>
+#include <vfl/base/string.h>
 
 /* optim_init(): initialize an optimizer.
  *
@@ -43,6 +44,11 @@ int optim_init (optim_t *opt) {
   opt->l0 = 1.0;
   opt->dl = 0.1;
 
+  /* initialize the logging parameters. */
+  opt->log_iters = 1;
+  opt->log_parms = 0;
+  opt->log_fh = NULL;
+
   /* initialize the lower bound. */
   opt->bound0 = opt->bound = -INFINITY;
 
@@ -68,6 +74,10 @@ void optim_free (optim_t *opt) {
 
   /* release the associated model. */
   obj_release((object_t*) opt->mdl);
+
+  /* close any open file handles. */
+  if (opt->log_fh)
+    fclose(opt->log_fh);
 
   /* free the iteration vectors. */
   vector_free(opt->xa);
@@ -129,6 +139,23 @@ object_t *optim_getprop_dl (const optim_t *opt) {
   return (object_t*) float_alloc_with_value(opt->dl);
 }
 
+/* optim_getprop_logiters(): method for getting optimizer log iterations.
+ *  - see object_getprop_fn() for details.
+ */
+object_t *optim_getprop_logiters (const optim_t *opt) {
+  /* return the property as an integer. */
+  return (object_t*) int_alloc_with_value(opt->log_iters);
+}
+
+/* optim_getprop_logparms(): method for getting optimizer
+ * parameter logging flags.
+ *  - see object_getprop_fn() for details.
+ */
+object_t *optim_getprop_logparms (const optim_t *opt) {
+  /* return the property as an integer. */
+  return (object_t*) int_alloc_with_value(opt->log_parms);
+}
+
 /* --- */
 
 /* optim_setprop_model(): method for setting optimizer models.
@@ -151,14 +178,8 @@ int optim_setprop_maxiters (optim_t *opt, object_t *val) {
   if (!OBJECT_IS_INT(val))
     return 0;
 
-  /* admit only positive values. */
-  const long intval = int_get((int_t*) val);
-  if (intval <= 0)
-    return 0;
-
-  /* set the value and return success. */
-  opt->max_iters = intval;
-  return 1;
+  /* set the value and return. */
+  return optim_set_max_iters(opt, int_get((int_t*) val));
 }
 
 /* optim_setprop_maxsteps(): method for setting optimizer step limits.
@@ -169,14 +190,8 @@ int optim_setprop_maxsteps (optim_t *opt, object_t *val) {
   if (!OBJECT_IS_INT(val))
     return 0;
 
-  /* admit only positive values. */
-  const long intval = int_get((int_t*) val);
-  if (intval <= 0)
-    return 0;
-
-  /* set the value and return success. */
-  opt->max_steps = intval;
-  return 1;
+  /* set the value and return. */
+  return optim_set_max_steps(opt, int_get((int_t*) val));
 }
 
 /* optim_setprop_l0(): method for setting optimizer initial curvatures.
@@ -187,14 +202,8 @@ int optim_setprop_l0 (optim_t *opt, object_t *val) {
   if (!OBJECT_IS_NUM(val))
     return 0;
 
-  /* admit only positive values. */
-  const double fltval = num_get(val);
-  if (fltval <= 0.0)
-    return 0;
-
-  /* set the value and return success. */
-  opt->l0 = fltval;
-  return 1;
+  /* set the value and return. */
+  return optim_set_lipschitz_init(opt, num_get(val));
 }
 
 /* optim_setprop_dl(): method for setting optimizer curvature step ratios.
@@ -205,14 +214,49 @@ int optim_setprop_dl (optim_t *opt, object_t *val) {
   if (!OBJECT_IS_NUM(val))
     return 0;
 
-  /* admit only positive values. */
-  const double fltval = num_get(val);
-  if (fltval <= 0.0)
+  /* set the value and return. */
+  return optim_set_lipschitz_step(opt, num_get(val));
+}
+
+/* optim_setprop_logiters(): method for setting optimizer log iterations.
+ *  - see object_setprop_fn() for details.
+ */
+int optim_setprop_logiters (optim_t *opt, object_t *val) {
+  /* admit only integer values. */
+  if (!OBJECT_IS_INT(val))
     return 0;
 
-  /* set the value and return success. */
-  opt->dl = fltval;
-  return 1;
+  /* set the value and return. */
+  return optim_set_log_iters(opt, int_get((int_t*) val));
+}
+
+/* optim_setprop_logparms(): method for setting optimizer
+ * parameter logging flags.
+ *  - see object_setprop_fn() for details.
+ */
+int optim_setprop_logparms (optim_t *opt, object_t *val) {
+  /* admit only integer values. */
+  if (!OBJECT_IS_INT(val))
+    return 0;
+
+  /* set the value and return. */
+  return optim_set_log_parms(opt, int_get((int_t*) val));
+}
+
+/* optim_setprop_logfile(): method for setting optimizer log filenames.
+ *  - see object_setprop_fn() for details.
+ */
+int optim_setprop_logfile (optim_t *opt, object_t *val) {
+  /* handle the special case of setting the log file to nil. */
+  if (OBJECT_IS_NIL(val))
+    return optim_set_log_file(opt, NULL);
+
+  /* admit only string values. */
+  if (!OBJECT_IS_STRING(val))
+    return 0;
+
+  /* set the value and return. */
+  return optim_set_log_file(opt, string_get((string_t*) val));
 }
 
 /* --- */
