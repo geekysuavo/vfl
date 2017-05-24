@@ -7,13 +7,10 @@
 static const struct {
   double mu, tau;
 } cosines[] = {
-  {  0.0,    1.0e5 },
-  {  0.01, 100.0   },
-  {  0.1,   10.0   },
-  {  1.0,   10.0   },
-  {  2.0,   10.0   },
-  {  3.0,   10.0   },
-  {  4.0,   10.0   },
+  {  0.0,     1.0e5 },
+  {  0.001,   1.0e4 },
+  {  0.01,  100.0   },
+  {  0.1,   100.0   },
   {  5.0,    0.1   },
   { 10.0,    0.1   },
   {  0.0,    0.0   } /* end marker. */
@@ -43,7 +40,7 @@ int main (int argc, char **argv) {
   /* set up a regression model. */
   model_t *mdl = model_alloc(vfl_model_vfr);
   model_set_alpha0(mdl, 100.0);
-  model_set_beta0(mdl, 100.0);
+  model_set_beta0(mdl, 1.0);
   model_set_nu(mdl, 1.0e-6);
   model_set_data(mdl, dat);
 
@@ -58,8 +55,8 @@ int main (int argc, char **argv) {
   /* optimize. */
   optim_t *opt = optim_alloc(vfl_optim_fg);
   optim_set_model(opt, mdl);
-  optim_set_max_iters(opt, 2000);
-  optim_set_lipschitz_init(opt, 0.0001);
+  optim_set_max_iters(opt, 200);
+  optim_set_lipschitz_init(opt, 1.0e-4);
   optim_execute(opt);
 
   /* allocate datasets for prediction. */

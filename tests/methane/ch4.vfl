@@ -1,50 +1,80 @@
 
-# create a model.
-mdl = vfr(
+# load the input dataset.
+dat = data(file: 'ch4.dat');
+
+# shift the data locations for easier inference.
+for i in std.range(n: dat.N) {
+  dat[i][0] = dat[i][0] - 2000;
+}
+
+# create a model without an explicit linear trend.
+mdlA = vfr(
   alpha0: 100,
   beta0: 100,
   nu: 1e-6,
-  data: data(file: 'ch4.dat'),
+  data: dat,
   factors: [cosine(mu: 0.0,  tau: 1e5),
-            cosine(mu: 0.01, tau: 100),
-            cosine(mu: 0.1,  tau: 10),
-            cosine(mu: 1.0,  tau: 10),
+            cosine(mu: 1e-2, tau: 100),
+            cosine(mu: 1e-1, tau: 100),
             cosine(mu: 0.5,  tau: 1),
+            cosine(mu: 1,    tau: 1),
             cosine(mu: 6,    tau: 1),
             cosine(mu: 12,   tau: 1),
             cosine(mu: 18,   tau: 0.1)]
 );
 
-# shift the data locations for easier inference.
-for i in std.range(n: mdl.data.N) {
-  mdl.data[i][0] = mdl.data[i][0] - 2000;
-}
+# create a model with an explicit linear trend.
+mdlB = vfr(
+  alpha0: 100,
+  beta0: 100,
+  nu: 1e-6,
+  data: dat,
+  factors: [polynomial(order: 1),
+            cosine(mu: 1e-2, tau: 100),
+            cosine(mu: 1e-1, tau: 100),
+            cosine(mu: 0.5,  tau: 1),
+            cosine(mu: 1,    tau: 1),
+            cosine(mu: 6,    tau: 1),
+            cosine(mu: 12,   tau: 1),
+            cosine(mu: 18,   tau: 0.1)]
+);
 
 # create a full-gradient optimizer.
 opt = fg(
-  model: mdl,
-  maxIters: 2000,
-  lipschitzInit: 0.00001
+  maxIters: 200,
+  lipschitzInit: 1e-6
 );
 
-# optimize.
+# optimize the first model.
+opt.model = mdlA;
+opt.execute();
+
+# optimize the second model.
+opt.model = mdlB;
 opt.execute();
 
 # build gridded datasets for prediction.
 G = [[-20, 1e-2, 70]];
-mean = data(grid: G);
-var = data(grid: G);
+meanA = data(grid: G);
+meanB = data(grid: G);
+varA = data(grid: G);
+varB = data(grid: G);
 
-# compute the model prediction.
-mdl.predict(mean: mean, var: var);
+# compute the model predictions.
+mdlA.predict(mean: meanA, var: varA);
+mdlB.predict(mean: meanB, var: varB);
 
 # shift the predictions back to the original data locations.
-for i in std.range(n: mean.N) {
-  mean[i][0] = mean[i][0] + 2000;
-  var[i][0] = var[i][0] + 2000;
+for i in std.range(n: meanA.N) {
+  meanA[i][0] = meanA[i][0] + 2000;
+  meanB[i][0] = meanB[i][0] + 2000;
+  varA[i][0] = varA[i][0] + 2000;
+  varB[i][0] = varB[i][0] + 2000;
 }
 
 # write the prediction results.
-mean.write(file: 'mean.dat');
-var.write(file: 'var.dat');
+meanA.write(file: 'mean-a.dat');
+meanB.write(file: 'mean-b.dat');
+varA.write(file: 'var-a.dat');
+varB.write(file: 'var-b.dat');
 

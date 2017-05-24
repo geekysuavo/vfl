@@ -35,7 +35,7 @@ OPTIM_ITERATE (fg) {
 
     /* gain a reference to the current factor parameter count. */
     const unsigned int P = factors[j]->P;
-    if (P == 0)
+    if (P == 0 || factors[j]->fixed)
       continue;
 
     /* configure the parameter and gradient vector views. */

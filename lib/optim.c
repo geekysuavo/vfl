@@ -264,6 +264,7 @@ int optim_iterate (optim_t *opt) {
 
       /* print a newline. */
       fprintf(opt->log_fh, "\n");
+      fflush(opt->log_fh);
     }
   }
 

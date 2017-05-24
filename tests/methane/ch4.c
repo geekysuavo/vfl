@@ -10,8 +10,8 @@ static const struct {
   {  0.0,    1.0e5 },
   {  0.01, 100.0   },
   {  0.1,   10.0   },
-  {  1.0,   10.0   },
   {  0.5,    1.0   },
+  {  1.0,    1.0   },
   {  6.0,    1.0   },
   { 12.0,    1.0   },
   { 18.0,    0.1   },
@@ -57,8 +57,8 @@ int main (int argc, char **argv) {
   /* optimize. */
   optim_t *opt = optim_alloc(vfl_optim_fg);
   optim_set_model(opt, mdl);
-  optim_set_max_iters(opt, 2000);
-  optim_set_lipschitz_init(opt, 0.00001);
+  optim_set_max_iters(opt, 200);
+  optim_set_lipschitz_init(opt, 1.0e-6);
   optim_execute(opt);
 
   /* allocate datasets for prediction. */
