@@ -10,8 +10,10 @@ GREP=grep -RHni --color
 CFLAGS+= -ggdb -O3 -std=gnu99 -Wall -Wextra
 LIBS=-lvfl
 
+# environment for executing compiled tests.
 ENV=env $(TESTFLAGS)
 
+# filenames of compiled objects.
 OBJ=$(SRC:.c=.o)
 
 # global, default make target.
