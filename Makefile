@@ -19,9 +19,12 @@ all:
 	@$(MAKE) -sC bin
 
 # intermediate file cleanup target.
-clean:
+clean: clean-tests clean-figs
 	@$(MAKE) -sC lib clean
 	@$(MAKE) -sC bin clean
+
+# test result cleanup target.
+clean-tests:
 	@$(MAKE) -sC tests/carbon-dioxide clean
 	@$(MAKE) -sC tests/cosines clean
 	@$(MAKE) -sC tests/gauss clean
@@ -33,6 +36,13 @@ clean:
 	@$(MAKE) -sC tests/ripley-fixed clean
 	@$(MAKE) -sC tests/sinc clean
 	@$(MAKE) -sC tests/sinc-fixed clean
+
+# figure cleanup target.
+clean-figs:
+	@$(MAKE) -sC figs/decays clean
+	@$(MAKE) -sC figs/environ clean
+	@$(MAKE) -sC figs/ping clean
+	@$(MAKE) -sC figs/ripley clean
 
 # full recompilation target.
 again: clean all
