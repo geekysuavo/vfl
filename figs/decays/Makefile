@@ -1,36 +1,29 @@
 
+# figure filename.
+PLT=decays.eps
+
+# input directories.
 DIR_PING=../../tests/ping
 DIR_MEXP=../../tests/multexp
 
-DAT_PING=ping.dat ping.p0.dat
-DAT_MEXP=multexp.dat multexp.p0.dat
-DAT=$(DAT_MEXP) $(DAT_PING) decays.eps
+# intermediate filenames.
+DAT=  ping.dat multexp.dat
+DAT+= ping.mdl multexp.mdl
 
-all: decays.eps
+# include the base figure makefile.
+include ../figs.mk
 
-decays.eps: $(DAT_PING) $(DAT_MEXP)
-	@echo " PLT  $@"
-	@gnuplot decays.gp
+# intermediate file rules:
 
 ping.dat: $(DIR_PING)/ping.dat
-	@echo " PROC $@"
-	@../../scripts/dat.py $^ > $@
+	@$(call mkdat, $^, $@)
 
-ping.p0.dat: $(DIR_PING)/mean.dat $(DIR_PING)/var.dat
-	@echo " PROC $@"
-	@../../scripts/stitch.py $^ ping
+ping.mdl: $(DIR_PING)/mean.dat $(DIR_PING)/var.dat
+	@$(call mkmdl, $^, $@)
 
 multexp.dat: $(DIR_MEXP)/multexp.dat
-	@echo " PROC $@"
-	@../../scripts/dat.py $^ > $@
+	@$(call mkdat, $^, $@)
 
-multexp.p0.dat: $(DIR_MEXP)/mean.dat $(DIR_MEXP)/var.dat
-	@echo " PROC $@"
-	@../../scripts/stitch.py $^ multexp
-
-clean:
-	@echo " CLEAN"
-	@rm -f $(DAT)
-
-again: clean all
+multexp.mdl: $(DIR_MEXP)/mean.dat $(DIR_MEXP)/var.dat
+	@$(call mkmdl, $^, $@)
 

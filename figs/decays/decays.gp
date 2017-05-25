@@ -19,8 +19,8 @@ set label 1 '(a)' at graph lx, ly font 'Times Bold, 11pt'
 
 set xrange [0 : 10]
 set yrange [-10 : 12]
-p 'ping.p0.dat' u 1:3:4 w filledcu lt rgb ltblue, \
-  'ping.p0.dat' u 1:2 w l lw 2 lt rgb dkblue, \
+p 'ping.mdl' u 1:3:4 w filledcu lt rgb ltblue, \
+  'ping.mdl' u 1:2 w l lw 2 lt rgb dkblue, \
   'ping.dat' u 1:2 w p pt 7 ps 0.1 lt rgb dkgrey
 
 unset label 1
@@ -28,8 +28,8 @@ set label 2 '(b)' at graph lx, ly font 'Times Bold, 11pt'
 
 set xrange [0 : 110]
 unset yrange
-p 'multexp.p0.dat' u 1:3:4 w filledcu lt rgb ltblue, \
-  'multexp.p0.dat' u 1:2 w l lw 2 lt rgb dkblue, \
+p 'multexp.mdl' u 1:3:4 w filledcu lt rgb ltblue, \
+  'multexp.mdl' u 1:2 w l lw 2 lt rgb dkblue, \
   'multexp.dat' u 1:2 w p pt 7 ps 0.1 lt rgb dkgrey
 
 unset multiplot

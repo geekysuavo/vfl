@@ -1,16 +1,16 @@
 
-# BIN: test executable filename.
+# test executable filename.
 BIN=ripley
 
-# SRC: source filenames.
+# source filenames.
 SRC=ripley.c
 
-# DAT: output data filenames.
+# output data filenames.
 DAT=mean.dat var.dat model.p0.dat
 
-# TESTFLAGS: environment variables to set during testing.
+# environment variables to set during testing.
 TESTFLAGS=RNG_SEED=7321
 
-# include the testing base makefile.
+# include the base testing makefile.
 include ../tests.mk
 

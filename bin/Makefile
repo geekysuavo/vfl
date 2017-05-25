@@ -49,7 +49,7 @@ BINDIR=$(PREFIX)/bin
 # global, default make target.
 all: $(BIN)
 
-# binary linkage make target.
+# binary linkage target.
 $(BIN): $(OBJ)
 	@echo " LD   $@"
 	@$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ $(LIBS)

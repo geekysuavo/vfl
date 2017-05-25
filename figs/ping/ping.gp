@@ -12,7 +12,7 @@ dkgrey = '#222222'
 ltblue = '#aaaaff'
 dkblue = '#0000cc'
 
-p 'ping.p0.dat' u 1:3:4 w filledcu lt rgb ltblue, \
-  'ping.p0.dat' u 1:2 w l lw 2 lt rgb dkblue, \
+p 'ping.mdl' u 1:3:4 w filledcu lt rgb ltblue, \
+  'ping.mdl' u 1:2 w l lw 2 lt rgb dkblue, \
   'ping.dat' u 1:2 w p pt 7 ps 0.1 lt rgb dkgrey
 

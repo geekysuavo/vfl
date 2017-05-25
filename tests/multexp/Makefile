@@ -1,13 +1,13 @@
 
-# BIN: test executable filename.
+# test executable filename.
 BIN=multexp
 
-# SRC: source filenames.
+# source filenames.
 SRC=multexp.c
 
-# DAT: output data filenames.
+# output data filenames.
 DAT=mean.dat var.dat model.p0.dat
 
-# include the testing base makefile.
+# include the base testing makefile.
 include ../tests.mk
 
