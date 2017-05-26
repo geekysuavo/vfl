@@ -164,6 +164,8 @@ static object_type_t map_type = {
   (object_init_fn) map_init,                     /* init      */
   NULL,                                          /* copy      */
   (object_free_fn) map_free,                     /* free      */
+  NULL,                                          /* test      */
+  NULL,                                          /* cmp       */
 
   NULL,                                          /* add       */
   NULL,                                          /* sub       */

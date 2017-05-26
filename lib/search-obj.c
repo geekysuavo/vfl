@@ -238,6 +238,8 @@ static object_type_t search_type = {
   (object_init_fn) search_init,                  /* init      */
   NULL,                                          /* copy      */
   (object_free_fn) search_free,                  /* free      */
+  NULL,                                          /* test      */
+  NULL,                                          /* cmp       */
 
   NULL,                                          /* add       */
   NULL,                                          /* sub       */

@@ -16,10 +16,10 @@ const object_t *vfl_nil = &vfl_nilstruct;
 /* nil_type: empty object type structure.
  */
 static object_type_t nil_type = {
-  "nil", sizeof(object_t),       /* name, size               */
-  NULL, NULL, NULL,              /* init, copy, free         */
-  NULL, NULL, NULL, NULL, NULL,  /* add, sub, mul, div, pow  */
-  NULL, NULL, NULL, NULL         /* get, set, props, methods */
+  "nil", sizeof(object_t),       /* name, size                  */
+  NULL, NULL, NULL, NULL, NULL,  /* init, copy, free, test, cmp */
+  NULL, NULL, NULL, NULL, NULL,  /* add, sub, mul, div, pow     */
+  NULL, NULL, NULL, NULL         /* get, set, props, methods    */
 };
 
 /* vfl_object_nil: address of the nil_type structure. */

@@ -92,6 +92,29 @@ flt_t *float_alloc_with_value (const double val) {
   return f;
 }
 
+/* float_test(): assertion function for floats.
+ *  - see object_test_fn() for details.
+ */
+int float_test (const flt_t *obj) {
+  /* return true for nonzero floats. */
+  return (obj->val ? 1 : 0);
+}
+
+/* float_cmp(): comparison function for floats.
+ *  - see object_comp_fn() for details.
+ */
+int float_cmp (const object_t *a, const object_t *b) {
+  /* if both arguments are scalar numbers, return a result. */
+  if (OBJECT_IS_NUM(a) && OBJECT_IS_NUM(b)) {
+    const double aval = num_get(a);
+    const double bval = num_get(b);
+    return (aval < bval ? -1 : aval > bval ? 1 : 0);
+  }
+
+  /* return no result. */
+  return OBJECT_CMP_ERR;
+}
+
 /* float_add(): addition function for floats.
  *  - see object_binary_fn() for details.
  */
@@ -161,6 +184,8 @@ static object_type_t float_type = {
   (object_init_fn) float_init,                   /* init      */
   (object_copy_fn) float_copy,                   /* copy      */
   NULL,                                          /* free      */
+  (object_test_fn) float_test,                   /* test      */
+  (object_comp_fn) float_cmp,                    /* cmp       */
 
   (object_binary_fn) float_add,                  /* add       */
   (object_binary_fn) float_sub,                  /* sub       */

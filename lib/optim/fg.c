@@ -178,6 +178,8 @@ static optim_type_t fg_type = {
     (object_init_fn) optim_init,                 /* init    */
     NULL,                                        /* copy    */
     (object_free_fn) optim_free,                 /* free    */
+    NULL,                                        /* test    */
+    NULL,                                        /* cmp     */
 
     NULL,                                        /* add     */
     NULL,                                        /* sub     */

@@ -40,6 +40,14 @@ typedef enum {
   AST_NODE_MUL,
   AST_NODE_DIV,
   AST_NODE_POW,
+  AST_NODE_EQ,
+  AST_NODE_NE,
+  AST_NODE_LT,
+  AST_NODE_GT,
+  AST_NODE_LE,
+  AST_NODE_GE,
+  AST_NODE_IF,
+  AST_NODE_WHILE,
   AST_NODE_ARG,
   AST_NODE_NAME,
 
@@ -50,7 +58,8 @@ typedef enum {
   AST_NODE_LIST = 400,
   AST_NODE_ARGS,
   AST_NODE_BLOCK,
-  AST_NODE_QUALS
+  AST_NODE_QUALS,
+  AST_NODE_IFS
 }
 ast_node_type_t;
 

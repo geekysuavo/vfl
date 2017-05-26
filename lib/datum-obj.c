@@ -239,6 +239,8 @@ static object_type_t datum_type = {
   (object_init_fn) datum_init,                   /* init      */
   NULL,                                          /* copy      */
   (object_free_fn) datum_free,                   /* free      */
+  NULL,                                          /* test      */
+  NULL,                                          /* cmp       */
 
   NULL,                                          /* add       */
   NULL,                                          /* sub       */

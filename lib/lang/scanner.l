@@ -44,8 +44,12 @@ extern int yyparse (void);
 }
 
 import { return T_IMPORT; }
+if     { return T_IF; }
+elif   { return T_ELIF; }
+else   { return T_ELSE; }
 for    { return T_FOR; }
 in     { return T_IN; }
+while  { return T_WHILE; }
 
 [a-zA-Z][a-zA-Z0-9_]* {
   /* allocate memory for the identifier value. */
@@ -71,6 +75,13 @@ in     { return T_IN; }
 "]" { return T_BRACK_CLOSE; }
 "{" { return T_BRACE_OPEN; }
 "}" { return T_BRACE_CLOSE; }
+
+"==" { return T_EQ; }
+"!=" { return T_NE; }
+"<"  { return T_LT; }
+">"  { return T_GT; }
+"<=" { return T_LE; }
+">=" { return T_GE; }
 
 "=" { return T_EQUALS; }
 "+" { return T_PLUS; }

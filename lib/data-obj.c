@@ -311,6 +311,8 @@ static object_type_t data_type = {
   (object_init_fn) data_init,                    /* init      */
   NULL,                                          /* copy      */
   (object_free_fn) data_free,                    /* free      */
+  NULL,                                          /* test      */
+  NULL,                                          /* cmp       */
 
   NULL,                                          /* add       */
   NULL,                                          /* sub       */

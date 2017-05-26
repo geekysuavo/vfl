@@ -266,6 +266,18 @@ int string_append_list (string_t *str, const string_t *fmt,
 
 /* --- */
 
+/* string_cmp(): comparison function for strings.
+ *  - see object_comp_fn() for details.
+ */
+int string_cmp (const string_t *a, const string_t *b) {
+  /* if both arguments are strings, return a result. */
+  if (OBJECT_IS_STRING(a) && OBJECT_IS_STRING(b))
+    return strcmp(a->val, b->val);
+
+  /* return no result. */
+  return OBJECT_CMP_ERR;
+}
+
 /* string_add(): addition function for strings.
  */
 string_t *string_add (const object_t *a, const object_t *b) {
@@ -401,6 +413,8 @@ static object_type_t string_type = {
   (object_init_fn) string_init,                  /* init      */
   (object_copy_fn) string_copy,                  /* copy      */
   (object_free_fn) string_free,                  /* free      */
+  NULL,                                          /* test      */
+  (object_comp_fn) string_cmp,                   /* cmp       */
 
   (object_binary_fn) string_add,                 /* add       */
   NULL,                                          /* sub       */

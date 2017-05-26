@@ -76,6 +76,26 @@ void int_set (int_t *i, const long val) {
     i->val = val;
 }
 
+/* int_test(): assertion function for integers.
+ *  - see object_test_fn() for details.
+ */
+int int_test (const int_t *obj) {
+  /* return true for nonzero integers. */
+  return (obj->val ? 1 : 0);
+}
+
+/* int_cmp(): comparison function for integers.
+ *  - see object_comp_fn() for details.
+ */
+int int_cmp (const int_t *a, const int_t *b) {
+  /* if both arguments are integers, return a result. */
+  if (OBJECT_IS_INT(a) && OBJECT_IS_INT(b))
+    return (a->val < b->val ? -1 : a->val > b->val ? 1 : 0);
+
+  /* return no result. */
+  return OBJECT_CMP_ERR;
+}
+
 /* int_add(): addition function for integers.
  *  - see object_binary_fn() for details.
  */
@@ -133,6 +153,8 @@ static object_type_t int_type = {
   (object_init_fn) int_init,                     /* init      */
   (object_copy_fn) int_copy,                     /* copy      */
   NULL,                                          /* free      */
+  (object_test_fn) int_test,                     /* test      */
+  (object_comp_fn) int_cmp,                      /* cmp       */
 
   (object_binary_fn) int_add,                    /* add       */
   (object_binary_fn) int_sub,                    /* sub       */

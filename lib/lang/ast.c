@@ -236,6 +236,14 @@ void ast_free (ast_t *node) {
     case AST_NODE_SUB:
     case AST_NODE_MUL:
     case AST_NODE_DIV:
+    case AST_NODE_EQ:
+    case AST_NODE_NE:
+    case AST_NODE_LT:
+    case AST_NODE_GT:
+    case AST_NODE_LE:
+    case AST_NODE_GE:
+    case AST_NODE_IF:
+    case AST_NODE_WHILE:
     case AST_NODE_ARG:
     case AST_NODE_NAME:
       /* free the child nodes. */
@@ -256,6 +264,7 @@ void ast_free (ast_t *node) {
     case AST_NODE_ARGS:
     case AST_NODE_BLOCK:
     case AST_NODE_QUALS:
+    case AST_NODE_IFS:
       /* free all child nodes. */
       for (size_t i = 0; i < node->n_list.len; i++)
         ast_free(node->n_list.values[i]);

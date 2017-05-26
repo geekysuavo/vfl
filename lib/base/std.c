@@ -165,6 +165,8 @@ static object_type_t std_type = {
   NULL,                                          /* init      */
   NULL,                                          /* copy      */
   NULL,                                          /* free      */
+  NULL,                                          /* test      */
+  NULL,                                          /* cmp       */
 
   NULL,                                          /* add       */
   NULL,                                          /* sub       */

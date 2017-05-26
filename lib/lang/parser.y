@@ -38,16 +38,18 @@ void vfl_set_tree (ast_t *node);
 %token T_BRACK_OPEN T_BRACK_CLOSE
 %token T_BRACE_OPEN T_BRACE_CLOSE
 %token T_EQUALS T_PLUS T_MINUS T_MUL T_DIV T_POW
+%token T_EQ T_NE T_LT T_GT T_LE T_GE
 %token T_POINT T_COMMA T_COLON T_SEMI
-%token T_IMPORT T_FOR T_IN
+%token T_IMPORT T_IF T_ELIF T_ELSE T_FOR T_IN T_WHILE
 %token T_UNKNOWN
 
 /* declare the types of all tokens and symbols. */
 %type <v_int> T_INT
 %type <v_flt> T_FLOAT
 %type <v_str> T_IDENT T_STRING
-%type <v_ast> lang scope stmt_list stmt for import
-%type <v_ast> expr power factor value name list int float string ident
+%type <v_ast> lang scope stmt_list stmt
+%type <v_ast> if elifs if_blk elif_blk else_blk for while import
+%type <v_ast> expr cmp term factor value name list int float string ident
 %type <v_ast> expr_list arg_list qual_list arguments arg qual
 
 %%
@@ -64,27 +66,39 @@ stmt_list
  ;
 
 stmt
- : for
+ : if
+ | for
+ | while
  | import T_SEMI
  | name T_SEMI
  | name T_EQUALS expr T_SEMI { $$ = ast_binary(AST_NODE_ASSIGN, $1, $3); }
  ;
 
 expr
- : power
- | expr T_POW power { $$ = ast_binary(AST_NODE_POW, $1, $3); }
+ : cmp
+ | expr T_EQ cmp { $$ = ast_binary(AST_NODE_EQ, $1, $3); }
+ | expr T_NE cmp { $$ = ast_binary(AST_NODE_NE, $1, $3); }
+ | expr T_LT cmp { $$ = ast_binary(AST_NODE_LT, $1, $3); }
+ | expr T_GT cmp { $$ = ast_binary(AST_NODE_GT, $1, $3); }
+ | expr T_LE cmp { $$ = ast_binary(AST_NODE_LE, $1, $3); }
+ | expr T_GE cmp { $$ = ast_binary(AST_NODE_GE, $1, $3); }
  ;
 
-power
+cmp
+ : term
+ | cmp T_PLUS term  { $$ = ast_binary(AST_NODE_ADD, $1, $3); }
+ | cmp T_MINUS term { $$ = ast_binary(AST_NODE_SUB, $1, $3); }
+ ;
+
+term
  : factor
- | power T_PLUS factor  { $$ = ast_binary(AST_NODE_ADD, $1, $3); }
- | power T_MINUS factor { $$ = ast_binary(AST_NODE_SUB, $1, $3); }
+ | term T_MUL factor { $$ = ast_binary(AST_NODE_MUL, $1, $3); }
+ | term T_DIV factor { $$ = ast_binary(AST_NODE_DIV, $1, $3); }
  ;
 
 factor
  : value
- | factor T_MUL value { $$ = ast_binary(AST_NODE_MUL, $1, $3); }
- | factor T_DIV value { $$ = ast_binary(AST_NODE_DIV, $1, $3); }
+ | factor T_POW value { $$ = ast_binary(AST_NODE_POW, $1, $3); }
  ;
 
 value
@@ -138,9 +152,28 @@ expr_list
  | expr                   { $$ = ast_list(AST_NODE_LIST, $1); }
  ;
 
+if: elifs
+ | elifs else_blk { $$ = ast_list_append($1, $2); }
+ ;
+
+elifs
+ : if_blk         { $$ = ast_list(AST_NODE_IFS, $1); }
+ | elifs elif_blk { $$ = ast_list_append($1, $2); }
+ ;
+
+if_blk: T_IF expr scope { $$ = ast_binary(AST_NODE_IF, $2, $3); };
+
+elif_blk: T_ELIF expr scope { $$ = ast_binary(AST_NODE_IF, $2, $3); };
+
+else_blk: T_ELSE scope { $$ = $2; };
+
 for: T_FOR ident T_IN value scope {
   $$ = ast_ternary(AST_NODE_FOR, $2, $4, $5);
 };
+
+while: T_WHILE expr scope {
+  $$ = ast_binary(AST_NODE_WHILE, $2, $3);
+}
 
 import: T_IMPORT ident {
   ast_node_type($2) = AST_NODE_IMPORT;

@@ -61,15 +61,30 @@ typedef int (*object_copy_fn) (const object_t *obj,
  */
 typedef void (*object_free_fn) (object_t *obj);
 
-/* object_unary_fn(): perform a unary operation on an object.
+/* object_test_fn(): assert the contents of an object.
  *
  * arguments:
- *  @in: input object structure pointer.
+ *  @obj: object structure pointer to test.
  *
  * returns:
- *  output object structure pointer.
+ *  integer indicating a true (1) or false (0) assertion.
  */
-typedef object_t* (*object_unary_fn) (const object_t *in);
+typedef int (*object_test_fn) (const object_t *obj);
+
+/* object_comp_fn(): perform a binary comparison of two objects.
+ *
+ * arguments:
+ *  @a, @b: input object structure pointers.
+ *
+ * returns:
+ *  integer indicating the comparison result:
+ *   -1,  if  a < b
+ *    0,  if  a = b
+ *    1,  if  a > b
+ *  322,  if  error
+ */
+#define OBJECT_CMP_ERR  322
+typedef int (*object_comp_fn) (const object_t *a, const object_t *b);
 
 /* object_binary_fn(): perform a binary operation on two objects.
  *
@@ -170,10 +185,14 @@ typedef struct {
    *  @init: initialization hook.
    *  @copy: deep copying hook.
    *  @free: deallocation hook.
+   *  @test: assertion hook.
+   *  @cmp: comparison hook.
    */
   object_init_fn init;
   object_copy_fn copy;
   object_free_fn free;
+  object_test_fn test;
+  object_comp_fn cmp;
 
   /* arithmetic object functions:
    *  @add: addition hook.
@@ -244,6 +263,8 @@ void obj_release (object_t *obj);
 
 void obj_free (object_t *obj);
 
+int obj_test (const object_t *obj);
+
 object_t *obj_add (const object_t *a, const object_t *b);
 
 object_t *obj_sub (const object_t *a, const object_t *b);
@@ -253,6 +274,18 @@ object_t *obj_mul (const object_t *a, const object_t *b);
 object_t *obj_div (const object_t *a, const object_t *b);
 
 object_t *obj_pow (const object_t *a, const object_t *b);
+
+object_t *obj_eq (const object_t *a, const object_t *b);
+
+object_t *obj_ne (const object_t *a, const object_t *b);
+
+object_t *obj_lt (const object_t *a, const object_t *b);
+
+object_t *obj_gt (const object_t *a, const object_t *b);
+
+object_t *obj_le (const object_t *a, const object_t *b);
+
+object_t *obj_ge (const object_t *a, const object_t *b);
 
 object_t *obj_getprop (const object_t *obj, const char *name);
 

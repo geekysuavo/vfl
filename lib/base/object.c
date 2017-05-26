@@ -1,6 +1,7 @@
 
-/* include the object header. */
+/* include the object and integer headers. */
 #include <vfl/base/object.h>
+#include <vfl/base/int.h>
 
 /* obj_alloc(): allocate a new object by its type structure pointer.
  *
@@ -112,6 +113,56 @@ void obj_free (object_t *obj) {
   /* free the structure pointer. */
   free(obj);
 }
+
+/* obj_test(): test the value of an object.
+ *  - see object_test_fn() for details.
+ */
+int obj_test (const object_t *obj) {
+  /* check the input argument. */
+  if (!obj || OBJECT_IS_NIL(obj))
+    return 0;
+
+  /* call the object assertion function. */
+  object_test_fn test_fn = OBJECT_TYPE(obj)->test;
+  if (test_fn)
+    return test_fn(obj);
+
+  /* no test function available. use the default test. */
+  return 1;
+}
+
+/* obj_cmp(): compare the values of two objects.
+ *  - see object_comp_fn() for details.
+ */
+int obj_cmp (const object_t *a, const object_t *b) {
+  /* check the input arguments. */
+  if (!a || !b)
+    return OBJECT_CMP_ERR;
+
+  /* get the argument object types. */
+  const object_type_t *ta = OBJECT_TYPE(a);
+  const object_type_t *tb = OBJECT_TYPE(b);
+
+  /* initialize the comparison result. */
+  int res = OBJECT_CMP_ERR;
+
+  /* try the first type function. */
+  if (ta->cmp)
+    res = ta->cmp(a, b);
+
+  /* try the second type function. */
+  if (res == OBJECT_CMP_ERR && tb->cmp)
+    res = tb->cmp(a, b);
+
+  /* no function available. use pointer comparison. */
+  if (res == OBJECT_CMP_ERR)
+    res = (a == b ? 0 : 1);
+
+  /* return the comparison result. */
+  return res;
+}
+
+/* --- */
 
 /* obj_add(): perform object addition.
  *  - see object_binary_fn() for details.
@@ -237,6 +288,58 @@ object_t *obj_pow (const object_t *a, const object_t *b) {
   /* return the result. */
   return c;
 }
+
+/* --- */
+
+/* obj_eq(): equality object comparison function.
+ *  - see object_binary_fn() for details.
+ */
+object_t *obj_eq (const object_t *a, const object_t *b) {
+  /* test for object equality. */
+  return (object_t*) int_alloc_with_value(obj_cmp(a, b) == 0);
+}
+
+/* obj_ne(): inequality object comparison function.
+ *  - see object_binary_fn() for details.
+ */
+object_t *obj_ne (const object_t *a, const object_t *b) {
+  /* test for object inequality. */
+  return (object_t*) int_alloc_with_value(obj_cmp(a, b) != 0);
+}
+
+/* obj_lt(): less-than object comparison function.
+ *  - see object_binary_fn() for details.
+ */
+object_t *obj_lt (const object_t *a, const object_t *b) {
+  /* test for object less-than inequality. */
+  return (object_t*) int_alloc_with_value(obj_cmp(a, b) < 0);
+}
+
+/* obj_gt(): greater-than object comparison function.
+ *  - see object_binary_fn() for details.
+ */
+object_t *obj_gt (const object_t *a, const object_t *b) {
+  /* test for object greater-than inequality. */
+  return (object_t*) int_alloc_with_value(obj_cmp(a, b) > 0);
+}
+
+/* obj_le(): less-than or equal-to object comparison function.
+ *  - see object_binary_fn() for details.
+ */
+object_t *obj_le (const object_t *a, const object_t *b) {
+  /* test for object less-than inequality, or equality. */
+  return (object_t*) int_alloc_with_value(obj_cmp(a, b) <= 0);
+}
+
+/* obj_ge(): greater-than or equal-to object comparison function.
+ *  - see object_binary_fn() for details.
+ */
+object_t *obj_ge (const object_t *a, const object_t *b) {
+  /* test for object greater-than inequality, or equality. */
+  return (object_t*) int_alloc_with_value(obj_cmp(a, b) >= 0);
+}
+
+/* --- */
 
 /* obj_getprop(): get the value of an object property.
  *

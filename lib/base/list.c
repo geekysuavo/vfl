@@ -571,6 +571,8 @@ static object_type_t list_type = {
   (object_init_fn) list_init,                    /* init      */
   (object_copy_fn) list_copy,                    /* copy      */
   (object_free_fn) list_free,                    /* free      */
+  NULL,                                          /* test      */
+  NULL,                                          /* cmp       */
 
   (object_binary_fn) list_add,                   /* add       */
   NULL,                                          /* sub       */

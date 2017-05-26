@@ -178,6 +178,8 @@ static object_type_t math_type = {
   NULL,                                          /* init      */
   NULL,                                          /* copy      */
   NULL,                                          /* free      */
+  NULL,                                          /* test      */
+  NULL,                                          /* cmp       */
 
   NULL,                                          /* add       */
   NULL,                                          /* sub       */

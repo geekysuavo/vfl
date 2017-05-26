@@ -156,6 +156,8 @@ static factor_type_t impulse_type = {
     (object_init_fn) factor_init,                /* init      */
     (object_copy_fn) factor_copy,                /* copy      */
     (object_free_fn) factor_free,                /* free      */
+    NULL,                                        /* test      */
+    NULL,                                        /* cmp       */
 
     (object_binary_fn) factor_add,               /* add       */
     NULL,                                        /* sub       */

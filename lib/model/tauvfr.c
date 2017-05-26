@@ -425,6 +425,8 @@ static model_type_t tauvfr_type = {
     (object_init_fn) model_init,                 /* init      */
     NULL,                                        /* copy      */
     (object_free_fn) model_free,                 /* free      */
+    NULL,                                        /* test      */
+    NULL,                                        /* cmp       */
 
     NULL,                                        /* add       */
     NULL,                                        /* sub       */

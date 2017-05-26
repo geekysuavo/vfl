@@ -280,6 +280,8 @@ static object_type_t rng_type = {
   (object_init_fn) rng_init,                     /* init      */
   (object_copy_fn) rng_copy,                     /* copy      */
   NULL,                                          /* free      */
+  NULL,                                          /* test      */
+  NULL,                                          /* cmp       */
 
   NULL,                                          /* add       */
   NULL,                                          /* sub       */

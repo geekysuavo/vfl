@@ -284,11 +284,22 @@ static object_t *eval_arith (ast_t *node, sym_table_t *tab) {
   /* determine the arithmetic function to call. */
   object_binary_fn fn = NULL;
   switch (ast_node_type(node)) {
+    /* arithmetic: */
     case AST_NODE_ADD: fn = obj_add; break;
     case AST_NODE_SUB: fn = obj_sub; break;
     case AST_NODE_MUL: fn = obj_mul; break;
     case AST_NODE_DIV: fn = obj_div; break;
     case AST_NODE_POW: fn = obj_pow; break;
+
+    /* comparison: */
+    case AST_NODE_EQ:  fn = obj_eq;  break;
+    case AST_NODE_NE:  fn = obj_ne;  break;
+    case AST_NODE_LT:  fn = obj_lt;  break;
+    case AST_NODE_GT:  fn = obj_gt;  break;
+    case AST_NODE_LE:  fn = obj_le;  break;
+    case AST_NODE_GE:  fn = obj_ge;  break;
+
+    /* other: */
     default:           fn = NULL;    break;
   }
 
@@ -301,6 +312,49 @@ static object_t *eval_arith (ast_t *node, sym_table_t *tab) {
 
   /* return the function result. */
   return obj;
+}
+
+/* eval_if(): evaluate an if block node.
+ */
+static object_t *eval_if (ast_t *node, sym_table_t *tab) {
+  /* loop over the blocks. */
+  for (size_t i = 0; i < node->n_list.len; i++) {
+    /* get the current block. */
+    ast_t *blk = node->n_list.values[i];
+
+    /* check for a block condition. */
+    if (ast_node_type(blk) == AST_NODE_IF) {
+      /* evaluate and test the block condition. */
+      object_t *cond = ast_eval(blk->n_binary.left, tab);
+      const int condval = obj_test(cond);
+      obj_collect(cond);
+
+      /* if the block condition is false, move to the next block. */
+      if (!condval)
+        continue;
+
+      /* evaluate the current block and break. */
+      object_t *obj = ast_eval(blk->n_binary.right, tab);
+      if (!obj)
+        return NULL;
+
+      /* collect garbage and break the loop. */
+      obj_collect(obj);
+      break;
+    }
+    else {
+      /* evaluate the else block. */
+      object_t *obj = ast_eval(blk, tab);
+      if (!obj)
+        return NULL;
+
+      /* collect garbage (statement block value). */
+      obj_collect(obj);
+    }
+  }
+
+  /* return success. */
+  VFL_RETURN_NIL;
 }
 
 /* eval_for(): evaluate a for loop node.
@@ -351,6 +405,33 @@ fail:
   /* collect garbage (loop expression), and return. */
   obj_collect(loopexpr);
   return result;
+}
+
+/* eval_while(): evaluate a while loop node.
+ */
+static object_t *eval_while (ast_t *node, sym_table_t *tab) {
+  /* loop until the condition is false. */
+  while (1) {
+    /* evaluate the loop condition. */
+    object_t *cond = ast_eval(node->n_binary.left, tab);
+    const int condval = obj_test(cond);
+    obj_collect(cond);
+
+    /* break if the condition is false. */
+    if (!condval)
+      break;
+
+    /* evaluate the statement block. */
+    object_t *obj = ast_eval(node->n_binary.right, tab);
+    if (!obj)
+      return NULL;
+
+    /* collect garbage (statement block value). */
+    obj_collect(obj);
+  }
+
+  /* return success. */
+  VFL_RETURN_NIL;
 }
 
 /* eval_list(): evaluate a general list node.
@@ -423,7 +504,9 @@ object_t *ast_eval (ast_t *node, sym_table_t *symbols) {
   /* determine how to propagate symbols. */
   switch (ast_node_type(node)) {
     /* new scopes: allocate a new symbol table. */
-    case AST_NODE_FOR: tab = symbols_alloc(symbols); break;
+    case AST_NODE_IFS:
+    case AST_NODE_FOR:
+    case AST_NODE_WHILE: tab = symbols_alloc(symbols); break;
 
     /* other: use the parent symbol table. */
     default: tab = symbols; break;
@@ -448,15 +531,23 @@ object_t *ast_eval (ast_t *node, sym_table_t *symbols) {
     /* assignment nodes. */
     case AST_NODE_ASSIGN: val = eval_assign(node, tab); break;
 
-    /* arithmetic nodes. */
+    /* arithmetic and comparison nodes. */
     case AST_NODE_ADD:
     case AST_NODE_SUB:
     case AST_NODE_MUL:
     case AST_NODE_DIV:
-    case AST_NODE_POW: val = eval_arith(node, tab); break;
+    case AST_NODE_POW:
+    case AST_NODE_EQ:
+    case AST_NODE_NE:
+    case AST_NODE_LT:
+    case AST_NODE_GT:
+    case AST_NODE_LE:
+    case AST_NODE_GE: val = eval_arith(node, tab); break;
 
-    /* ternary nodes. */
-    case AST_NODE_FOR: val = eval_for(node, tab); break;
+    /* control flow nodes. */
+    case AST_NODE_IFS:   val = eval_if(node, tab);    break;
+    case AST_NODE_FOR:   val = eval_for(node, tab);   break;
+    case AST_NODE_WHILE: val = eval_while(node, tab); break;
 
     /* general list and statement block nodes. */
     case AST_NODE_LIST:  val = eval_list(node, tab);  break;
