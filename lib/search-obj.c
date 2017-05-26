@@ -199,8 +199,13 @@ static object_property_t search_properties[] = {
  *  - see object_method_fn() for details.
  */
 static object_t *search_method_execute (search_t *S, map_t *args) {
+  /* get the current search dimensionality. */
+  const unsigned int D = (S->mdl ? S->mdl->D : 0);
+  if (!D)
+    return NULL;
+
   /* allocate a temporary vector for the result. */
-  vector_t *x = vector_alloc(S->D);
+  vector_t *x = vector_alloc(D);
   if (!x)
     return NULL;
 
