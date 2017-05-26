@@ -443,6 +443,7 @@ static int refresh_buffers (search_t *S) {
 
     /* store the new sizes. */
     S->G = G;
+    S->N = N;
     S->n = n;
   }
 #endif
@@ -685,6 +686,12 @@ int search_set_model (search_t *S, model_t *mdl) {
   obj_retain(mdl);
   S->mdl = mdl;
 
+#ifndef __VFL_USE_OPENCL
+  /* store the new parameter and dimension counts. */
+  S->P = S->mdl->P + 1;
+  S->D = S->mdl->D;
+#endif
+
   /* attempt to set the kernel information. */
   return set_kernel(S);
 }
@@ -839,16 +846,16 @@ int search_execute (search_t *S, vector_t *x) {
         sum += model_cov(S->mdl, gx, gx, ps, ps);
 
         /* compute the kernel vector elements. */
-        datum_t *di = S->dat->data;
-        for (unsigned int i = 0; i < S->n; i++)
-          vector_set(S->cs, i, model_cov(S->mdl, di->x, gx, di->p, ps));
+        datum_t *dj = S->dat->data;
+        for (unsigned int j = 0; j < S->n; j++, dj++)
+          vector_set(S->cs, j, model_cov(S->mdl, dj->x, gx, dj->p, ps));
 
         /* include the second term. */
-        for (unsigned int i = 0; i < S->n; i++)
-          for (unsigned int j = 0; j < S->n; j++)
-            sum -= vector_get(S->cs, i)
-                 * vector_get(S->cs, j)
-                 * matrix_get(S->cov, i, j);
+        for (unsigned int j = 0; j < S->n; j++)
+          for (unsigned int k = 0; k < S->n; k++)
+            sum -= vector_get(S->cs, j)
+                 * vector_get(S->cs, k)
+                 * matrix_get(S->cov, j, k);
       }
 
       /* check if the current variance is larger. */
