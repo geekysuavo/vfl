@@ -42,6 +42,8 @@ double rng_uniform (rng_t *gen);
 
 double rng_normal (rng_t *gen);
 
+double rng_exp (rng_t *gen);
+
 /* available object types: */
 
 extern const object_type_t *vfl_object_rng;

@@ -98,6 +98,11 @@ static object_t *mathobj_unary (map_t *args, math_unary_fn func) {
   return val;
 }
 
+/* integer functions. */
+MATH_METHOD_UNARY_DEF (round);
+MATH_METHOD_UNARY_DEF (floor);
+MATH_METHOD_UNARY_DEF (ceil);
+
 /* absolute values and roots. */
 MATH_METHOD_UNARY_DEF (fabs)
 MATH_METHOD_UNARY_DEF (sqrt)
@@ -133,6 +138,11 @@ MATH_METHOD_UNARY_DEF (atanh)
 /* math_methods: array of callable math library methods.
  */
 static object_method_t math_methods[] = {
+  /* integer functions. */
+  MATH_METHOD_UNARY (round),
+  MATH_METHOD_UNARY (floor),
+  MATH_METHOD_UNARY (ceil),
+
   /* absolute values and roots. */
   MATH_METHOD_UNARY_NAMED (fabs, abs),
   MATH_METHOD_UNARY (sqrt),

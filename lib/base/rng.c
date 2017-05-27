@@ -139,6 +139,20 @@ double rng_normal (rng_t *gen) {
   return x1 * w;
 }
 
+/* rng_exp(): sample a floating-point standard exponential random
+ * deviate using the inverse transform.
+ *
+ * arguments:
+ *  @gen: pointer to the generator structure to use for sampling.
+ *
+ * returns:
+ *  new exponentially distributed sample.
+ */
+double rng_exp (rng_t *gen) {
+  /* compute and return the random deviate. */
+  return -log(rng_uniform(gen));
+}
+
 /* --- */
 
 /* rng_getprop_seed(): get the seed value of a random number generator.
@@ -213,6 +227,38 @@ static flt_t *rng_method_uniform (rng_t *gen, map_t *args) {
   return float_alloc_with_value(dev * (upper - lower) + lower);
 }
 
+/* rng_method_exp(): sample an exponential random deviate from
+ * a random number generator.
+ *  - see object_method_fn() for details.
+ */
+static flt_t *rng_method_exp (rng_t *gen, map_t *args) {
+  /* declare required variables:
+   *  @dev: standard exponential random deviate.
+   *  @lambda: transformation rate.
+   */
+  double dev, lambda;
+
+  /* initialize the variables. */
+  dev = rng_exp(gen);
+  lambda = 1.0;
+
+  /* get the rate value. */
+  object_t *arg = map_get(args, "lambda");
+  if (arg) {
+    if (OBJECT_IS_NUM(arg))
+      lambda = num_get(arg);
+    else
+      return NULL;
+  }
+
+  /* check the rate value. */
+  if (lambda <= 0.0)
+    return NULL;
+
+  /* return the transformed random deviate. */
+  return float_alloc_with_value(dev / lambda);
+}
+
 /* rng_method_normal(): sample a normal random deviate from
  * a random number generator.
  *  - see object_method_fn() for details.
@@ -266,6 +312,7 @@ static flt_t *rng_method_normal (rng_t *gen, map_t *args) {
 static object_method_t rng_methods[] = {
   { "uniform", (object_method_fn) rng_method_uniform },
   { "normal",  (object_method_fn) rng_method_normal },
+  { "exp",     (object_method_fn) rng_method_exp },
   { NULL, NULL }
 };
 
