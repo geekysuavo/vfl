@@ -65,8 +65,14 @@ and active learning:
 
  * **data**: datasets for organizing inputs and outputs.
  * **datum**: individual entries of dataset objects.
+ * **timer**: high-resolution event timer.
  * **rng**: pseudorandom number generator (LCG).
  * **search**: gaussian process posterior variance search.
+
+Finally, two "library" objects are provided as well:
+
+ * **std**: Assorted standard library methods.
+ * **math**: Assorted mathmematical functions.
 
 ## Programming
 
