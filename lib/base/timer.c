@@ -200,8 +200,10 @@ static object_t *timer_method_reset (tmr_t *T, map_t *args) {
  *  - see object_method_fn() for details.
  */
 static object_t *timer_method_report (tmr_t *T, map_t *args) {
-  /* stop the timer to compute the elapsed time. */
-  timer_stop(T);
+  /* if the timer is running, pause to compute the elapsed time. */
+  const int paused = T->running;
+  if (paused)
+    timer_stop(T);
 
   /* report the elapsed time. */
   printf("Elapsed time: %lg seconds.\n", T->elapsed * 1.0e-9);
@@ -211,8 +213,11 @@ static object_t *timer_method_report (tmr_t *T, map_t *args) {
   if (arg && obj_test(arg))
     timer_reset(T);
 
-  /* start the timer and return nothing. */
-  timer_start(T);
+  /* if the timer was running, restart it. */
+  if (paused)
+    timer_start(T);
+
+  /* return nothing. */
   VFL_RETURN_NIL;
 }
 

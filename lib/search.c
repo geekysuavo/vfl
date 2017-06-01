@@ -45,7 +45,7 @@
 
 /* SEARCH_MAX_GRID: maximum number of grid points searched at once.
  */
-#define SEARCH_MAX_GRID 256
+#define SEARCH_MAX_GRID 512
 
 /* SEARCH_FORMAT: constant format string used to generate opencl
  * program source code for searching the posterior variance of
