@@ -1,6 +1,8 @@
 
-/* include the integer header. */
+/* include the required object headers. */
 #include <vfl/base/int.h>
+#include <vfl/base/float.h>
+#include <vfl/base/string.h>
 
 /* int_init(): initialize an integer.
  *
@@ -144,6 +146,44 @@ int_t *int_div (const int_t *a, const int_t *b) {
   return NULL;
 }
 
+/* --- */
+
+/* int_setprop_value(): set the value of an integer.
+ *  - see object_setprop_fn() for details.
+ */
+static int int_setprop_value (int_t *i, object_t *val) {
+  /* accept integers, floats, and strings. */
+  if (OBJECT_IS_INT(val)) {
+    /* set the value from the integer. */
+    i->val = int_get((int_t*) val);
+    return 1;
+  }
+  else if (OBJECT_IS_FLOAT(val)) {
+    /* cast the float to an integer. */
+    i->val = (long) float_get((flt_t*) val);
+    return 1;
+  }
+  else if (OBJECT_IS_STRING(val)) {
+    /* cast the string to an integer. */
+    i->val = atol(string_get((string_t*) val));
+    return 1;
+  }
+
+  /* invalid value type. */
+  return 0;
+}
+
+/* int_properties: array of accessible object properties.
+ */
+static object_property_t int_properties[] = {
+  { "value", NULL, (object_setprop_fn) int_setprop_value },
+  { "val",   NULL, (object_setprop_fn) int_setprop_value },
+  { "v",     NULL, (object_setprop_fn) int_setprop_value },
+  { NULL, NULL, NULL }
+};
+
+/* --- */
+
 /* int_type: integer type structure.
  */
 static object_type_t int_type = {
@@ -164,7 +204,7 @@ static object_type_t int_type = {
 
   NULL,                                          /* get       */
   NULL,                                          /* set       */
-  NULL,                                          /* props     */
+  int_properties,                                /* props     */
   NULL                                           /* methods   */
 };
 

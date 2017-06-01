@@ -115,6 +115,7 @@ int vfl_init (void) {
   res &= vfl_register_type(vfl_object_rng);
   res &= vfl_register_type(vfl_object_data);
   res &= vfl_register_type(vfl_object_datum);
+  res &= vfl_register_type(vfl_object_timer);
   res &= vfl_register_type(vfl_object_list);
   res &= vfl_register_type(vfl_object_map);
   res &= vfl_register_type(vfl_object_int);

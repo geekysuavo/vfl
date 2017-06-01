@@ -1,6 +1,8 @@
 
-/* include the float header. */
+/* include the required object headers. */
+#include <vfl/base/int.h>
 #include <vfl/base/float.h>
+#include <vfl/base/string.h>
 
 /* float_get(): get the value of a float object.
  *
@@ -175,6 +177,42 @@ flt_t *float_pow (const object_t *a, const object_t *b) {
   return NULL;
 }
 
+/* float_setprop_value(): set the value of a float.
+ *  - see object_setprop_fn() for details.
+ */
+static int float_setprop_value (flt_t *f, object_t *val) {
+  /* accept integers, floats, and strings. */
+  if (OBJECT_IS_INT(val)) {
+    /* cast the integer to a float. */
+    f->val = (double) int_get((int_t*) val);
+    return 1;
+  }
+  else if (OBJECT_IS_FLOAT(val)) {
+    /* set the value from the float. */
+    f->val = float_get((flt_t*) val);
+    return 1;
+  }
+  else if (OBJECT_IS_STRING(val)) {
+    /* cast the string to a float. */
+    f->val = atof(string_get((string_t*) val));
+    return 1;
+  }
+
+  /* invalid value type. */
+  return 0;
+}
+
+/* float_properties: array of accessible object properties.
+ */
+static object_property_t float_properties[] = {
+  { "value", NULL, (object_setprop_fn) float_setprop_value },
+  { "val",   NULL, (object_setprop_fn) float_setprop_value },
+  { "v",     NULL, (object_setprop_fn) float_setprop_value },
+  { NULL, NULL, NULL }
+};
+
+/* --- */
+
 /* float_type: float type structure.
  */
 static object_type_t float_type = {
@@ -195,7 +233,7 @@ static object_type_t float_type = {
 
   NULL,                                          /* get       */
   NULL,                                          /* set       */
-  NULL,                                          /* props     */
+  float_properties,                              /* props     */
   NULL                                           /* methods   */
 };
 

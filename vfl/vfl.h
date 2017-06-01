@@ -10,6 +10,7 @@
 #include <vfl/base/int.h>
 #include <vfl/base/float.h>
 #include <vfl/base/string.h>
+#include <vfl/base/timer.h>
 #include <vfl/base/rng.h>
 
 /* include vfl base library headers. */
