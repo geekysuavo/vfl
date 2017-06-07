@@ -196,6 +196,16 @@ static object_t *timer_method_reset (tmr_t *T, map_t *args) {
   VFL_RETURN_NIL;
 }
 
+/* timer_method_restart(): timer restart method.
+ *  - see object_method_fn() for details.
+ */
+static object_t *timer_method_restart (tmr_t *T, map_t *args) {
+  /* reset the timer and return nothing. */
+  timer_reset(T);
+  timer_start(T);
+  VFL_RETURN_NIL;
+}
+
 /* timer_method_report(): timer elapsed time reporting method.
  *  - see object_method_fn() for details.
  */
@@ -224,10 +234,11 @@ static object_t *timer_method_report (tmr_t *T, map_t *args) {
 /* timer_methods: array of callable object methods.
  */
 static object_method_t timer_methods[] = {
-  { "start",  (object_method_fn) timer_method_start },
-  { "stop",   (object_method_fn) timer_method_stop },
-  { "reset",  (object_method_fn) timer_method_reset },
-  { "report", (object_method_fn) timer_method_report },
+  { "start",   (object_method_fn) timer_method_start },
+  { "stop",    (object_method_fn) timer_method_stop },
+  { "reset",   (object_method_fn) timer_method_reset },
+  { "restart", (object_method_fn) timer_method_restart },
+  { "report",  (object_method_fn) timer_method_report },
   { NULL, NULL }
 };
 
