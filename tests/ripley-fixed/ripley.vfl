@@ -41,3 +41,13 @@ mdl.predict(mean: mean, var: var);
 mean.write(file: 'mean.dat');
 var.write(file: 'var.dat');
 
+# output a final set of statistics.
+W = [[nil] * 4] * mdl.M;
+for j in std.range(n: mdl.M) {
+  W[j][0] = mdl.wbar[j];
+  W[j][1] = math.sqrt(v: mdl.Sigma[j][j]);
+  W[j][2] = 1 / math.sqrt(v: mdl.factors[j][0].tau);
+  W[j][3] = 1 / math.sqrt(v: mdl.factors[j][1].tau);
+  std.println(f: '%le ' * 4, v: W[j]);
+}
+

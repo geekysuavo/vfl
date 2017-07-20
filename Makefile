@@ -43,6 +43,7 @@ clean-figs:
 	@$(MAKE) -sC figs/environ clean
 	@$(MAKE) -sC figs/ping clean
 	@$(MAKE) -sC figs/ripley clean
+	@$(MAKE) -sC figs/weights clean
 
 # full recompilation target.
 again: clean all

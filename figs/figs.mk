@@ -7,6 +7,7 @@ GP=gnuplot
 PYDIR=../../scripts
 PY_CLS=$(PYDIR)/cls.py
 PY_DAT=$(PYDIR)/dat.py
+PY_SRT=$(PYDIR)/srt.py
 PY_STITCH=$(PYDIR)/stitch.py
 OCT_CNTR=octave --no-gui $(PYDIR)/cntr.m
 
@@ -26,6 +27,12 @@ endef
 define mkpos
 echo " CLS $(2)"
 $(PY_CLS) 1 $(1) > $(2)
+endef
+
+# function for creating sorted weight files.
+define mksrt
+echo " SRT $(2)"
+$(PY_SRT) $(1) > $(2)
 endef
 
 # function for creating model files.
