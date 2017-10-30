@@ -20,45 +20,45 @@
 #define CblasLower   122
 #endif
 
-/* blas_transpose_t: enumeration of all possible ways to transpose
+/* BlasTranspose: enumeration of all possible ways to transpose
  * a matrix (or not) during calculations.
  */
 typedef enum {
   BLAS_NO_TRANS = CblasNoTrans,
   BLAS_TRANS    = CblasTrans
 }
-blas_transpose_t;
+BlasTranspose;
 
-/* blas_triangle_t: enumeration of all possible ways to access
+/* BlasTriangle: enumeration of all possible ways to access
  * a triangular matrix.
  */
 typedef enum {
   BLAS_UPPER = CblasUpper,
   BLAS_LOWER = CblasLower
 }
-blas_triangle_t;
+BlasTriangle;
 
 /* function declarations (util/blas.c): */
 
-double blas_dasum (const vector_t *x);
+double blas_dasum (const Vector *x);
 
-double blas_dnrm2 (const vector_t *x);
+double blas_dnrm2 (const Vector *x);
 
-double blas_ddot (const vector_t *x, const vector_t *y);
+double blas_ddot (const Vector *x, const Vector *y);
 
-void blas_daxpy (double alpha, const vector_t *x, vector_t *y);
+void blas_daxpy (double alpha, const Vector *x, Vector *y);
 
-void blas_dscal (double alpha, vector_t *y);
+void blas_dscal (double alpha, Vector *y);
 
 /* --- */
 
-void blas_dgemv (blas_transpose_t trans, double alpha, const matrix_t *A,
-                 const vector_t *x, double beta, vector_t *y);
+void blas_dgemv (BlasTranspose trans, double alpha, const Matrix *A,
+                 const Vector *x, double beta, Vector *y);
 
-void blas_dtrmv (blas_transpose_t trans, const matrix_t *L,
-                 const vector_t *x, vector_t *y);
+void blas_dtrmv (BlasTranspose trans, const Matrix *L,
+                 const Vector *x, Vector *y);
 
-void blas_dtrsv (blas_triangle_t tri, const matrix_t *L, vector_t *x);
+void blas_dtrsv (BlasTriangle tri, const Matrix *L, Vector *x);
 
 #endif /* !__VFL_BLAS_H__ */
 

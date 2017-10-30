@@ -13,7 +13,7 @@
  */
 #define vector_disp(v) vector_dispfn(v, #v)
 
-/* vector_t: structure for holding a real vector.
+/* Vector: structure for holding a real vector.
  */
 typedef struct {
   /* data access parameters:
@@ -27,12 +27,12 @@ typedef struct {
    */
   double *data;
 }
-vector_t;
+Vector;
 
-/* vector_view_t: aliased type used to explicitly note that a given
+/* VectorView: aliased type used to explicitly note that a given
  * vector data structure does not own its data array.
  */
-typedef vector_t vector_view_t;
+typedef Vector VectorView;
 
 /* function declarations (util/vector.c): */
 
@@ -40,37 +40,37 @@ unsigned int vector_bytes (const unsigned int len);
 
 void vector_init (void *addr, const unsigned int len);
 
-vector_t *vector_alloc (const unsigned int len);
+Vector *vector_alloc (const unsigned int len);
 
-void vector_copy (vector_t *dest, const vector_t *src);
+void vector_copy (Vector *dest, const Vector *src);
 
-void vector_free (vector_t *v);
+void vector_free (Vector *v);
 
-vector_view_t vector_view_array (double *data, const unsigned int len);
+VectorView vector_view_array (double *data, const unsigned int len);
 
-vector_view_t vector_subvector (const vector_t *v,
-                                const unsigned int offset,
-                                const unsigned int len);
+VectorView vector_subvector (const Vector *v,
+                             const unsigned int offset,
+                             const unsigned int len);
 
-double vector_get (const vector_t *v, const unsigned int i);
+double vector_get (const Vector *v, const unsigned int i);
 
-double vector_max (const vector_t *v);
+double vector_max (const Vector *v);
 
-void vector_set (vector_t *v, const unsigned int i, const double vi);
+void vector_set (Vector *v, const unsigned int i, const double vi);
 
-void vector_set_all (vector_t *v, const double vall);
+void vector_set_all (Vector *v, const double vall);
 
-void vector_set_zero (vector_t *v);
+void vector_set_zero (Vector *v);
 
-void vector_add (vector_t *a, const vector_t *b);
+void vector_add (Vector *a, const Vector *b);
 
-void vector_add_const (vector_t *v, const double beta);
+void vector_add_const (Vector *v, const double beta);
 
-int vector_equal (const vector_t *a, const vector_t *b);
+int vector_equal (const Vector *a, const Vector *b);
 
-int vector_positive (const vector_t *v);
+int vector_positive (const Vector *v);
 
-void vector_dispfn (const vector_t *v, const char *str);
+void vector_dispfn (const Vector *v, const char *str);
 
 #endif /* !__VFL_VECTOR_H__ */
 

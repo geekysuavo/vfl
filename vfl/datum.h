@@ -4,7 +4,6 @@
 #define __VFL_DATUM_H__
 
 /* include vfl headers. */
-#include <vfl/base/object.h>
 #include <vfl/util/vector.h>
 
 /* OBJECT_IS_DATUM(): check if an object is a datum.

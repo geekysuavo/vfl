@@ -8,26 +8,26 @@
 
 /* function declarations (util/grid.c): */
 
-int grid_validate (const matrix_t *grid);
+int grid_validate (const Matrix *grid);
 
-unsigned int grid_dims (const matrix_t *grid);
+unsigned int grid_dims (const Matrix *grid);
 
-unsigned int grid_elements (const matrix_t *grid);
+unsigned int grid_elements (const Matrix *grid);
 
-int grid_iterator_alloc (const matrix_t *grid,
+int grid_iterator_alloc (const Matrix *grid,
                          unsigned int *elems,
                          unsigned int **idx,
                          unsigned int **sz,
-                         vector_t **x);
+                         Vector **x);
 
 void grid_iterator_free (unsigned int *idx,
                          unsigned int *sz,
-                         vector_t *x);
+                         Vector *x);
 
-int grid_iterator_next (const matrix_t *grid,
+int grid_iterator_next (const Matrix *grid,
                         unsigned int *idx,
                         unsigned int *sz,
-                        vector_t *x);
+                        Vector *x);
 
 #endif /* !__VFL_GRID_H__ */
 

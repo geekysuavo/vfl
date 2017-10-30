@@ -10,15 +10,15 @@
 
 /* function declarations (util/chol.c): */
 
-int chol_decomp (matrix_t *A);
+int chol_decomp (Matrix *A);
 
-int chol_invert (const matrix_t *L, matrix_t *B);
+int chol_invert (const Matrix *L, Matrix *B);
 
-void chol_solve (const matrix_t *L, const vector_t *b, vector_t *x);
+void chol_solve (const Matrix *L, const Vector *b, Vector *x);
 
-void chol_update (matrix_t *L, vector_t *x);
+void chol_update (Matrix *L, Vector *x);
 
-int chol_downdate (matrix_t *L, vector_t *y);
+int chol_downdate (Matrix *L, Vector *y);
 
 #endif /* !__VFL_CHOL_H__ */
 

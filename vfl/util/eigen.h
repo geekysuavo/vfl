@@ -10,10 +10,10 @@
 
 /* function declarations (util/eigen.c): */
 
-double eigen_upper (const matrix_t *A);
+double eigen_upper (const Matrix *A);
 
-double eigen_minev (const matrix_t *A, matrix_t *B,
-                    vector_t *b, vector_t *z);
+double eigen_minev (const Matrix *A, Matrix *B,
+                    Vector *b, Vector *z);
 
 #endif /* !__VFL_EIGEN_H__ */
 

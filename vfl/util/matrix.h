@@ -16,7 +16,7 @@
  */
 #define matrix_disp(A) matrix_dispfn(A, #A)
 
-/* matrix_t: structure for holding a real matrix.
+/* Matrix: structure for holding a real matrix.
  */
 typedef struct {
   /* data access parameters:
@@ -31,12 +31,12 @@ typedef struct {
    */
   double *data;
 }
-matrix_t;
+Matrix;
 
-/* matrix_view_t: aliased type used to explicitly note that a given
+/* MatrixView: aliased type used to explicitly note that a given
  * matrix data structure does not own its data array.
  */
-typedef matrix_t matrix_view_t;
+typedef Matrix MatrixView;
 
 /* function declarations (util/matrix.c): */
 
@@ -46,60 +46,60 @@ unsigned int matrix_bytes (const unsigned int rows,
 void matrix_init (void *addr, const unsigned int rows,
                   const unsigned int cols);
 
-matrix_t *matrix_alloc (const unsigned int rows, const unsigned int cols);
+Matrix *matrix_alloc (const unsigned int rows, const unsigned int cols);
 
-void matrix_copy (matrix_t *dest, const matrix_t *src);
+void matrix_copy (Matrix *dest, const Matrix *src);
 
-void matrix_copy_row (vector_t *dest, const matrix_t *src,
+void matrix_copy_row (Vector *dest, const Matrix *src,
                       const unsigned int i);
 
-void matrix_copy_col (vector_t *dest, const matrix_t *src,
+void matrix_copy_col (Vector *dest, const Matrix *src,
                       const unsigned int j);
 
-void matrix_free (matrix_t *A);
+void matrix_free (Matrix *A);
 
-matrix_view_t matrix_view_array (double *data,
-                                 const unsigned int n1,
-                                 const unsigned int n2);
+MatrixView matrix_view_array (double *data,
+                              const unsigned int n1,
+                              const unsigned int n2);
 
-vector_view_t matrix_diag (const matrix_t *A);
+VectorView matrix_diag (const Matrix *A);
 
-vector_view_t matrix_row (const matrix_t *A, const unsigned int i);
+VectorView matrix_row (const Matrix *A, const unsigned int i);
 
-vector_view_t matrix_col (const matrix_t *A, const unsigned int j);
+VectorView matrix_col (const Matrix *A, const unsigned int j);
 
-vector_view_t matrix_subrow (const matrix_t *A, const unsigned int i,
-                             const unsigned int offset,
-                             const unsigned int n);
+VectorView matrix_subrow (const Matrix *A, const unsigned int i,
+                          const unsigned int offset,
+                          const unsigned int n);
 
-vector_view_t matrix_subcol (const matrix_t *A, const unsigned int j,
-                             const unsigned int offset,
-                             const unsigned int n);
+VectorView matrix_subcol (const Matrix *A, const unsigned int j,
+                          const unsigned int offset,
+                          const unsigned int n);
 
-matrix_view_t matrix_submatrix (const matrix_t *A,
-                                const unsigned int i1,
-                                const unsigned int i2,
-                                const unsigned int n1,
-                                const unsigned int n2);
+MatrixView matrix_submatrix (const Matrix *A,
+                             const unsigned int i1,
+                             const unsigned int i2,
+                             const unsigned int n1,
+                             const unsigned int n2);
 
-double matrix_get (const matrix_t *A,
+double matrix_get (const Matrix *A,
                    const unsigned int i,
                    const unsigned int j);
 
-void matrix_set (matrix_t *A, const unsigned int i, const unsigned int j,
+void matrix_set (Matrix *A, const unsigned int i, const unsigned int j,
                  const double Aij);
 
-void matrix_set_all (matrix_t *A, const double Aall);
+void matrix_set_all (Matrix *A, const double Aall);
 
-void matrix_set_ident (matrix_t *A);
+void matrix_set_ident (Matrix *A);
 
-void matrix_set_zero (matrix_t *A);
+void matrix_set_zero (Matrix *A);
 
-void matrix_sub (matrix_t *A, const matrix_t *B);
+void matrix_sub (Matrix *A, const Matrix *B);
 
-void matrix_scale (matrix_t *A, const double alpha);
+void matrix_scale (Matrix *A, const double alpha);
 
-void matrix_dispfn (const matrix_t *A, const char *str);
+void matrix_dispfn (const Matrix *A, const char *str);
 
 #endif /* !__VFL_MATRIX_H__ */
 
