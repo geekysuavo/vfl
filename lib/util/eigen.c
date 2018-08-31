@@ -14,14 +14,14 @@
  *  real number @U such that the largest eigenvalue of the input
  *  matrix is bounded above by @U.
  */
-double eigen_upper (const matrix_t *A) {
+double eigen_upper (const Matrix *A) {
   /* initialize the upper bound. */
   double ub = -1.0e9;
 
   /* loop over each row of the matrix. */
   for (unsigned int i = 0; i < A->rows; i++) {
     /* get the current absolute row sum of the matrix. */
-    vector_view_t ai = matrix_row(A, i);
+    VectorView ai = matrix_row(A, i);
     double Ri = blas_dasum(&ai);
 
     /* replace the absolute diagonal element with the original element. */
@@ -49,8 +49,8 @@ double eigen_upper (const matrix_t *A) {
  * returns:
  *  min(eig(A)).
  */
-double eigen_minev (const matrix_t *A, matrix_t *B,
-                    vector_t *b, vector_t *z) {
+double eigen_minev (const Matrix *A, Matrix *B,
+                    Vector *b, Vector *z) {
   /* declare required variables:
    *  @mu: current eigenvalue estimate.
    *  @mu_prev: previous eigenvalue estimate.
@@ -71,7 +71,7 @@ double eigen_minev (const matrix_t *A, matrix_t *B,
   const double evub = eigen_upper(B);
 
   /* shift the spectrum of the matrix. */
-  vector_view_t Bdiag = matrix_diag(B);
+  VectorView Bdiag = matrix_diag(B);
   vector_add_const(&Bdiag, -evub);
 
   /* loop until convergence. */

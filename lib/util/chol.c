@@ -12,7 +12,7 @@
  *  integer indicating success (1) or failure (0). the method will return
  *  failure if the input matrix is not positive definite.
  */
-int chol_decomp (matrix_t *A) {
+int chol_decomp (Matrix *A) {
   /* locally store the matrix size. */
   const unsigned int n = A->cols;
 
@@ -24,14 +24,14 @@ int chol_decomp (matrix_t *A) {
   /* perform decomposition column-wise. */
   for (unsigned int j = 0; j < n; j++) {
     /* v := A(j : n, j) */
-    vector_view_t v = matrix_subcol(A, j, j, n - j);
+    VectorView v = matrix_subcol(A, j, j, n - j);
 
     if (j > 0) {
       /* w := A(j, 1 : j)
        * M := A(j : n, 1 : j)
        */
-      vector_view_t w = matrix_subrow(A, j, 0, j);
-      matrix_view_t M = matrix_submatrix(A, j, 0, n - j, j);
+      VectorView w = matrix_subrow(A, j, 0, j);
+      MatrixView M = matrix_submatrix(A, j, 0, n - j, j);
 
       /* v <- v - M w */
       blas_dgemv(BLAS_NO_TRANS, -1.0, &M, &w, 1.0, &v);
@@ -66,7 +66,7 @@ int chol_decomp (matrix_t *A) {
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-int chol_invert (const matrix_t *L, matrix_t *B) {
+int chol_invert (const Matrix *L, Matrix *B) {
   /* locally store the matrix size. */
   const unsigned int n = L->cols;
 
@@ -90,7 +90,7 @@ int chol_invert (const matrix_t *L, matrix_t *B) {
   /* invert each column of the identity matrix. */
   for (unsigned int j = 0; j < n; j++) {
     /* extract the current column. */
-    vector_view_t b = matrix_col(B, j);
+    VectorView b = matrix_col(B, j);
 
     /* perform forward and backward substitution. */
     blas_dtrsv(BLAS_LOWER, L, &b);
@@ -111,7 +111,7 @@ int chol_invert (const matrix_t *L, matrix_t *B) {
  *  @b: vector of input variables.
  *  @x: vector of output regressors.
  */
-void chol_solve (const matrix_t *L, const vector_t *b, vector_t *x) {
+void chol_solve (const Matrix *L, const Vector *b, Vector *x) {
   /* solve using forward and backward substitution. */
   vector_copy(x, b);
   blas_dtrsv(BLAS_LOWER, L, x);
@@ -126,7 +126,7 @@ void chol_solve (const matrix_t *L, const vector_t *b, vector_t *x) {
  *  @L: cholesky factors of the matrix.
  *  @x: update vector to apply.
  */
-void chol_update (matrix_t *L, vector_t *x) {
+void chol_update (Matrix *L, Vector *x) {
   /* locally store the update vector length. */
   const unsigned int n = x->len;
 
@@ -147,8 +147,8 @@ void chol_update (matrix_t *L, vector_t *x) {
     /* lk := L(k+1 : n, k)
      * yk := x(k+1 : n)
      */
-    vector_view_t lk = matrix_subcol(L, k, k + 1, n - k - 1);
-    vector_view_t yk = vector_subvector(x, k + 1, n - k - 1);
+    VectorView lk = matrix_subcol(L, k, k + 1, n - k - 1);
+    VectorView yk = vector_subvector(x, k + 1, n - k - 1);
 
     /* lk <- (lk + s yk) / c */
     blas_daxpy(s, &yk, &lk);
@@ -177,7 +177,7 @@ void chol_update (matrix_t *L, vector_t *x) {
  *  integer indicating whether (1) or not (0) the rank-one downdate
  *  preserved positive definiteness.
  */
-int chol_downdate (matrix_t *L, vector_t *y) {
+int chol_downdate (Matrix *L, Vector *y) {
   /* locally store the downdate vector length. */
   const unsigned int n = y->len;
 
@@ -203,8 +203,8 @@ int chol_downdate (matrix_t *L, vector_t *y) {
     /* lk := L(k+1 : n, k)
      * zk := y(k+1 : n)
      */
-    vector_view_t lk = matrix_subcol(L, k, k + 1, n - k - 1);
-    vector_view_t zk = vector_subvector(y, k + 1, n - k - 1);
+    VectorView lk = matrix_subcol(L, k, k + 1, n - k - 1);
+    VectorView zk = vector_subvector(y, k + 1, n - k - 1);
 
     /* lk <- (lk - s zk) / c */
     blas_daxpy(-s, &zk, &lk);

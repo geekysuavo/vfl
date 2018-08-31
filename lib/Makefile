@@ -9,33 +9,19 @@ USE_OPENCL=y
 CC=gcc
 RM=rm -f
 WC=wc -l
-LEX=flex
-YACC=bison
 GREP=grep -RHni --color
 
 # compilation and linkage flags.
 CFLAGS+= -fPIC -ggdb -O3 -std=gnu99 -I..
 CFLAGS+= -Wall -Wextra -Wno-unused-parameter
 LDFLAGS+= -shared
-LIBS=-lm -ldl
-
-# flex/bison generation flags.
-LFLAGS=
-YFLAGS=-d
+LIBS=-lm
 
 # output library filename.
 LIB=libvfl.so
 
 # basenames of C utility source files.
 C_UTIL=specfun vector matrix grid blas chol eigen
-
-# basenames of C base type source files.
-C_BASE=object list map int float string rng timer math std
-
-# basenames of C, flex, and bison source files.
-C_LANG=symbols ast eval
-L_LANG=scanner
-Y_LANG=parser
 
 # basenames of C factor source files.
 C_FACTOR=cosine decay impulse fixed-impulse polynomial product
@@ -60,10 +46,6 @@ endif
 
 # basenames of C source files in sub-directories.
 C=  $(addprefix util/,$(C_UTIL))
-C+= $(addprefix lang/,$(Y_LANG))
-C+= $(addprefix lang/,$(L_LANG))
-C+= $(addprefix lang/,$(C_LANG))
-C+= $(addprefix base/,$(C_BASE))
 C+= $(addprefix factor/,$(C_FACTOR)) factor-obj factor
 C+= $(addprefix model/,$(C_MODEL)) model-obj model
 C+= $(addprefix optim/,$(C_OPTIM)) optim-obj optim
@@ -78,11 +60,6 @@ SRC=$(addsuffix .c,$(C))
 # filenames of compiled objects.
 OBJ=$(addsuffix .o,$(C))
 
-# filenames of generated sources.
-GEN=  $(addsuffix .c,$(addprefix lang/,$(L_LANG)))
-GEN+= $(addsuffix .c,$(addprefix lang/,$(Y_LANG)))
-GEN+= $(addsuffix .h,$(addprefix lang/,$(Y_LANG)))
-
 # installation directories.
 DESTDIR=
 PREFIX=$(DESTDIR)/usr/local
@@ -90,8 +67,8 @@ LIBDIR=$(PREFIX)/lib
 
 # non-file targets and accepted filename extensions.
 .PHONY: all clean again install lines fixme
-.SUFFIXES: .c .l .y .o
-.PRECIOUS: %.c %.l %.y %.o
+.SUFFIXES: .c .o
+.PRECIOUS: %.c %.o
 
 # global, default make target.
 all: $(LIB)
@@ -106,20 +83,10 @@ $(LIB): $(OBJ)
 	@echo " CC   $^"
 	@$(CC) $(CFLAGS) -c $^ -o $@
 
-# flex scanner generator target.
-.l.c:
-	@echo " LEX  $^"
-	@$(LEX) $(LFLAGS) -o$@ $^
-
-# bison parser generator target.
-.y.c:
-	@echo " YACC $^"
-	@$(YACC) $(YFLAGS) -o $@ $^
-
 # intermediate file cleanup target.
 clean:
 	@echo " CLEAN"
-	@$(RM) $(LIB) $(OBJ) $(GEN)
+	@$(RM) $(LIB) $(OBJ)
 
 # full recompilation target.
 again: clean all
@@ -133,7 +100,7 @@ install: $(LIB)
 # line-count reporting target.
 lines: clean
 	@echo " WC"
-	@$(WC) $(shell find * -name '*.[cly]')
+	@$(WC) $(shell find * -name '*.c')
 
 # fixme statement reporting target.
 fixme:

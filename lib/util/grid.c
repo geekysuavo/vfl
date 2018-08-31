@@ -11,7 +11,7 @@
  * returns:
  *  integer indicating whether (1) or not (0) the grid is valid.
  */
-int grid_validate (const matrix_t *grid) {
+int grid_validate (const Matrix *grid) {
   /* valid grids have at least one row and exactly three columns. */
   return (grid && grid->rows >= 1 && grid->cols == 3);
 }
@@ -24,7 +24,7 @@ int grid_validate (const matrix_t *grid) {
  * returns:
  *  number of grid dimensions.
  */
-unsigned int grid_dims (const matrix_t *grid) {
+unsigned int grid_dims (const Matrix *grid) {
   /* return the grid row count. */
   return grid->rows;
 }
@@ -37,7 +37,7 @@ unsigned int grid_dims (const matrix_t *grid) {
  * returns:
  *  number of elements implied by a gridding matrix.
  */
-unsigned int grid_elements (const matrix_t *grid) {
+unsigned int grid_elements (const Matrix *grid) {
   /* compute the element count. */
   unsigned int elems = 0;
   grid_iterator_alloc(grid, &elems, NULL, NULL, NULL);
@@ -58,11 +58,11 @@ unsigned int grid_elements (const matrix_t *grid) {
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-int grid_iterator_alloc (const matrix_t *grid,
+int grid_iterator_alloc (const Matrix *grid,
                          unsigned int *elems,
                          unsigned int **idx,
                          unsigned int **sz,
-                         vector_t **x) {
+                         Vector **x) {
   /* initialize the element count. */
   const unsigned int D = grid_dims(grid);
   unsigned int N = 1;
@@ -130,7 +130,7 @@ int grid_iterator_alloc (const matrix_t *grid,
  */
 void grid_iterator_free (unsigned int *idx,
                          unsigned int *sz,
-                         vector_t *x) {
+                         Vector *x) {
   /* free the variables. */
   vector_free(x);
   free(idx);
@@ -148,10 +148,10 @@ void grid_iterator_free (unsigned int *idx,
  * returns:
  *  whether (1) or not (0) the grid has been fully traversed.
  */
-int grid_iterator_next (const matrix_t *grid,
+int grid_iterator_next (const Matrix *grid,
                         unsigned int *idx,
                         unsigned int *sz,
-                        vector_t *x) {
+                        Vector *x) {
   /* initialize the rollover flag. */
   const unsigned int D = grid_dims(grid);
   int roll = 0;

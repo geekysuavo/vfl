@@ -13,7 +13,7 @@
  * returns:
  *  value of the requested vector element.
  */
-inline double vector_get (const vector_t *v, const unsigned int i) {
+inline double vector_get (const Vector *v, const unsigned int i) {
   /* return the element without bounds checking. */
   return v->data[i * v->stride];
 }
@@ -25,7 +25,7 @@ inline double vector_get (const vector_t *v, const unsigned int i) {
  *  @i: element index.
  *  @vi: new element value
  */
-inline void vector_set (vector_t *v, const unsigned int i,
+inline void vector_set (Vector *v, const unsigned int i,
                         const double vi) {
   /* set the element without bounds checking. */
   v->data[i * v->stride] = vi;
@@ -44,7 +44,7 @@ inline void vector_set (vector_t *v, const unsigned int i,
  */
 unsigned int vector_bytes (const unsigned int len) {
   /* compute and return the space requirement. */
-  return sizeof(vector_t) + len * sizeof(double);
+  return sizeof(Vector) + len * sizeof(double);
 }
 
 /* vector_init(): overlay a vector at a specified memory address.
@@ -55,14 +55,14 @@ unsigned int vector_bytes (const unsigned int len) {
  */
 void vector_init (void *addr, const unsigned int len) {
   /* cast the memory address to a vector structure pointer. */
-  vector_t *v = (vector_t*) addr;
+  Vector *v = (Vector*) addr;
 
   /* store the structure parameters. */
   v->len = len;
   v->stride = 1;
 
   /* point the vector data array to the end of the structure. */
-  v->data = (double*) ((char*) v + sizeof(vector_t));
+  v->data = (double*) ((char*) v + sizeof(Vector));
 }
 
 /* vector_alloc(): allocate a new vector for use.
@@ -74,10 +74,10 @@ void vector_init (void *addr, const unsigned int len) {
  *  newly allocated vector structure pointer. the elements of the
  *  vector will not yet be initialized.
  */
-vector_t *vector_alloc (const unsigned int len) {
+Vector *vector_alloc (const unsigned int len) {
   /* allocate a new structure pointer, or fail. */
   const unsigned int bytes = vector_bytes(len);
-  vector_t *v = malloc(bytes);
+  Vector *v = malloc(bytes);
   if (!v)
     return NULL;
 
@@ -93,7 +93,7 @@ vector_t *vector_alloc (const unsigned int len) {
  *  @dest: destination vector structure pointer.
  *  @src: source vector structure pointer.
  */
-void vector_copy (vector_t *dest, const vector_t *src) {
+void vector_copy (Vector *dest, const Vector *src) {
   /* copy each element without bounds checking. */
   for (unsigned int i = 0; i < dest->len; i++)
     vector_set(dest, i, vector_get(src, i));
@@ -104,7 +104,7 @@ void vector_copy (vector_t *dest, const vector_t *src) {
  * arguments:
  *  @v: vector structure pointer to free.
  */
-void vector_free (vector_t *v) {
+void vector_free (Vector *v) {
   /* return if the structure pointer is null. */
   if (!v) return;
 
@@ -121,9 +121,9 @@ void vector_free (vector_t *v) {
  * returns:
  *  newly created vector view.
  */
-vector_view_t vector_view_array (double *data, const unsigned int len) {
+VectorView vector_view_array (double *data, const unsigned int len) {
   /* initialize the view. */
-  vector_view_t view = { 0, 0, NULL };
+  VectorView view = { 0, 0, NULL };
 
   /* the vector view will access each array element in order. */
   view.len = len;
@@ -145,11 +145,11 @@ vector_view_t vector_view_array (double *data, const unsigned int len) {
  * returns:
  *  newly created vector view.
  */
-vector_view_t vector_subvector (const vector_t *v,
-                                const unsigned int offset,
-                                const unsigned int len) {
+VectorView vector_subvector (const Vector *v,
+                             const unsigned int offset,
+                             const unsigned int len) {
   /* initialize the view. */
-  vector_view_t view = { 0, 0, NULL };
+  VectorView view = { 0, 0, NULL };
 
   /* the view will access elements using the original vector's stride. */
   view.data = v->data + (offset * v->stride);
@@ -168,7 +168,7 @@ vector_view_t vector_subvector (const vector_t *v,
  * returns:
  *  largest element of the vector.
  */
-double vector_max (const vector_t *v) {
+double vector_max (const Vector *v) {
   /* identify the largest element of the vector. */
   double vmax = vector_get(v, 0);
   for (unsigned int i = 1; i < v->len; i++) {
@@ -186,7 +186,7 @@ double vector_max (const vector_t *v) {
  *  @v: vector to modify.
  *  @vall: new element value.
  */
-void vector_set_all (vector_t *v, const double vall) {
+void vector_set_all (Vector *v, const double vall) {
   /* set all elements of the vector. */
   for (unsigned int i = 0; i < v->len; i++)
     vector_set(v, i, vall);
@@ -197,7 +197,7 @@ void vector_set_all (vector_t *v, const double vall) {
  * arguments:
  *  @v: vector to modify.
  */
-inline void vector_set_zero (vector_t *v) {
+inline void vector_set_zero (Vector *v) {
   /* zero all elements of the vector. */
   vector_set_all(v, 0.0);
 }
@@ -211,7 +211,7 @@ inline void vector_set_zero (vector_t *v) {
  *  @a: first input and output vector.
  *  @b: second input vector.
  */
-void vector_add (vector_t *a, const vector_t *b) {
+void vector_add (Vector *a, const Vector *b) {
   /* perform the element-wise sum. */
   for (unsigned int i = 0; i < a->len; i++)
     vector_set(a, i, vector_get(a, i) + vector_get(b, i));
@@ -226,7 +226,7 @@ void vector_add (vector_t *a, const vector_t *b) {
  *  @a: input and output vector.
  *  @beta: constant to add.
  */
-void vector_add_const (vector_t *v, const double beta) {
+void vector_add_const (Vector *v, const double beta) {
   /* perform the element-wise sum. */
   for (unsigned int i = 0; i < v->len; i++)
     vector_set(v, i, vector_get(v, i) + beta);
@@ -241,7 +241,7 @@ void vector_add_const (vector_t *v, const double beta) {
  * returns:
  *  integer indicating whether (1) or not (0) the vectors are equal.
  */
-int vector_equal (const vector_t *a, const vector_t *b) {
+int vector_equal (const Vector *a, const Vector *b) {
   /* test each pair of elements for inequality. */
   for (unsigned int i = 0; i < a->len; i++) {
     if (vector_get(a, i) != vector_get(b, i))
@@ -260,7 +260,7 @@ int vector_equal (const vector_t *a, const vector_t *b) {
  * returns:
  *  integer indicating whether (1) or not (0) the vector is positive.
  */
-int vector_positive (const vector_t *v) {
+int vector_positive (const Vector *v) {
   /* test each vector element for non-positivity. */
   for (unsigned int i = 0; i < v->len; i++) {
     if (vector_get(v, i) <= 0.0)
@@ -277,7 +277,7 @@ int vector_positive (const vector_t *v) {
  *  @v: input vector structure pointer.
  *  @str: variable name of the vector.
  */
-void vector_dispfn (const vector_t *v, const char *str) {
+void vector_dispfn (const Vector *v, const char *str) {
   /* print the variable name. */
   printf("%s =\n", str);
 
