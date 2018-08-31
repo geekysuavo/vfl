@@ -3,12 +3,6 @@
 #ifndef __VFL_MATRIX_H__
 #define __VFL_MATRIX_H__
 
-/* include c library headers. */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-
 /* include vfl headers. */
 #include <vfl/util/vector.h>
 
@@ -24,8 +18,8 @@ typedef struct {
    *  @cols: number of matrix columns.
    *  @stride: array spacing between elements.
    */
-  unsigned int rows, cols;
-  unsigned int stride;
+  size_t rows, cols;
+  size_t stride;
 
   /* @data: array or pointer to matrix elements.
    */
@@ -40,56 +34,43 @@ typedef Matrix MatrixView;
 
 /* function declarations (util/matrix.c): */
 
-unsigned int matrix_bytes (const unsigned int rows,
-                           const unsigned int cols);
+size_t matrix_bytes (size_t rows, size_t cols);
 
-void matrix_init (void *addr, const unsigned int rows,
-                  const unsigned int cols);
+void matrix_init (void *addr, size_t rows, size_t cols);
 
-Matrix *matrix_alloc (const unsigned int rows, const unsigned int cols);
+Matrix *matrix_alloc (size_t rows, size_t cols);
 
 void matrix_copy (Matrix *dest, const Matrix *src);
 
-void matrix_copy_row (Vector *dest, const Matrix *src,
-                      const unsigned int i);
+void matrix_copy_row (Vector *dest, const Matrix *src, size_t i);
 
-void matrix_copy_col (Vector *dest, const Matrix *src,
-                      const unsigned int j);
+void matrix_copy_col (Vector *dest, const Matrix *src, size_t j);
 
 void matrix_free (Matrix *A);
 
-MatrixView matrix_view_array (double *data,
-                              const unsigned int n1,
-                              const unsigned int n2);
+MatrixView matrix_view_array (double *data, size_t n1, size_t n2);
 
 VectorView matrix_diag (const Matrix *A);
 
-VectorView matrix_row (const Matrix *A, const unsigned int i);
+VectorView matrix_row (const Matrix *A, size_t i);
 
-VectorView matrix_col (const Matrix *A, const unsigned int j);
+VectorView matrix_col (const Matrix *A, size_t j);
 
-VectorView matrix_subrow (const Matrix *A, const unsigned int i,
-                          const unsigned int offset,
-                          const unsigned int n);
+VectorView matrix_subrow (const Matrix *A, size_t i,
+                          size_t offset, size_t n);
 
-VectorView matrix_subcol (const Matrix *A, const unsigned int j,
-                          const unsigned int offset,
-                          const unsigned int n);
+VectorView matrix_subcol (const Matrix *A, size_t j,
+                          size_t offset, size_t n);
 
 MatrixView matrix_submatrix (const Matrix *A,
-                             const unsigned int i1,
-                             const unsigned int i2,
-                             const unsigned int n1,
-                             const unsigned int n2);
+                             size_t i1, size_t i2,
+                             size_t n1, size_t n2);
 
-double matrix_get (const Matrix *A,
-                   const unsigned int i,
-                   const unsigned int j);
+double matrix_get (const Matrix *A, size_t i, size_t j);
 
-void matrix_set (Matrix *A, const unsigned int i, const unsigned int j,
-                 const double Aij);
+void matrix_set (Matrix *A, size_t i, size_t j, double Aij);
 
-void matrix_set_all (Matrix *A, const double Aall);
+void matrix_set_all (Matrix *A, double Aall);
 
 void matrix_set_ident (Matrix *A);
 
@@ -97,7 +78,7 @@ void matrix_set_zero (Matrix *A);
 
 void matrix_sub (Matrix *A, const Matrix *B);
 
-void matrix_scale (Matrix *A, const double alpha);
+void matrix_scale (Matrix *A, double alpha);
 
 void matrix_dispfn (const Matrix *A, const char *str);
 

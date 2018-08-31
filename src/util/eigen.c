@@ -19,7 +19,7 @@ double eigen_upper (const Matrix *A) {
   double ub = -1.0e9;
 
   /* loop over each row of the matrix. */
-  for (unsigned int i = 0; i < A->rows; i++) {
+  for (size_t i = 0; i < A->rows; i++) {
     /* get the current absolute row sum of the matrix. */
     VectorView ai = matrix_row(A, i);
     double Ri = blas_dasum(&ai);
@@ -57,7 +57,7 @@ double eigen_minev (const Matrix *A, Matrix *B,
    *  @steps: number of power iterations.
    */
   double mu, mu_prev;
-  unsigned int steps;
+  size_t steps;
 
   /* handle the special case of 1x1 matrices. */
   if (A->rows == 1)

@@ -6,35 +6,34 @@
 /* include vfl headers. */
 #include <vfl/util/vector.h>
 
-/* OBJECT_IS_DATUM(): check if an object is a datum.
+/* Datum_Check(): macro to check if a PyObject is a Datum.
  */
-#define OBJECT_IS_DATUM(obj) \
-  (OBJECT_TYPE(obj) == vfl_object_datum)
+#define Datum_Check(v) (Py_TYPE(v) == &Datum_Type)
 
-/* datum_t: structure for holding a single observation.
+/* Datum_Type: globally available datum type structure.
+ */
+PyAPI_DATA(PyTypeObject) Datum_Type;
+
+/* Datum: structure for holding a single observation.
  */
 typedef struct {
-  /* base structure members. */
-  OBJECT_BASE;
+  /* object base. */
+  PyObject_HEAD
 
   /* properties of each observation:
    *  @p: observation output index.
    *  @x: observation location.
    *  @y: observed value.
    */
-  unsigned int p;
-  vector_t *x;
+  size_t p;
+  Vector *x;
   double y;
 }
-datum_t;
+Datum;
 
 /* function declarations (datum.c): */
 
-int datum_cmp (const datum_t *d1, const datum_t *d2);
-
-/* available object types: */
-
-extern const object_type_t *vfl_object_datum;
+int datum_cmp (const Datum *d1, const Datum *d2);
 
 #endif /* !__VFL_DATUM_H__ */
 

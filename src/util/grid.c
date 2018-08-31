@@ -24,7 +24,7 @@ int grid_validate (const Matrix *grid) {
  * returns:
  *  number of grid dimensions.
  */
-unsigned int grid_dims (const Matrix *grid) {
+size_t grid_dims (const Matrix *grid) {
   /* return the grid row count. */
   return grid->rows;
 }
@@ -37,9 +37,9 @@ unsigned int grid_dims (const Matrix *grid) {
  * returns:
  *  number of elements implied by a gridding matrix.
  */
-unsigned int grid_elements (const Matrix *grid) {
+size_t grid_elements (const Matrix *grid) {
   /* compute the element count. */
-  unsigned int elems = 0;
+  size_t elems = 0;
   grid_iterator_alloc(grid, &elems, NULL, NULL, NULL);
 
   /* return the computed count. */
@@ -59,13 +59,13 @@ unsigned int grid_elements (const Matrix *grid) {
  *  integer indicating success (1) or failure (0).
  */
 int grid_iterator_alloc (const Matrix *grid,
-                         unsigned int *elems,
-                         unsigned int **idx,
-                         unsigned int **sz,
+                         size_t *elems,
+                         size_t **idx,
+                         size_t **sz,
                          Vector **x) {
   /* initialize the element count. */
-  const unsigned int D = grid_dims(grid);
-  unsigned int N = 1;
+  const size_t D = grid_dims(grid);
+  size_t N = 1;
 
   /* initialize the results. */
   if (elems) *elems = 0;
@@ -76,7 +76,7 @@ int grid_iterator_alloc (const Matrix *grid,
   /* check if the index should be allocated. */
   if (idx) {
     /* allocate the index array. */
-    *idx = malloc(D * sizeof(unsigned int));
+    *idx = malloc(D * sizeof(size_t));
     if (!(*idx))
       return 0;
   }
@@ -84,7 +84,7 @@ int grid_iterator_alloc (const Matrix *grid,
   /* check if the size should be allocated. */
   if (sz) {
     /* allocate the array. */
-    *sz = malloc(D * sizeof(unsigned int));
+    *sz = malloc(D * sizeof(size_t));
     if (!(*sz))
       return 0;
   }
@@ -101,14 +101,14 @@ int grid_iterator_alloc (const Matrix *grid,
   }
 
   /* loop to determine the sizes and element count. */
-  for (unsigned int d = 0; d < D; d++) {
+  for (size_t d = 0; d < D; d++) {
     /* get the start, end, and step along this dimension. */
     const double x1 = matrix_get(grid, d, 0);
     const double x2 = matrix_get(grid, d, 2);
     const double dx = matrix_get(grid, d, 1);
 
     /* compute the size along this dimension. */
-    const unsigned int szd = (unsigned int) floor((x2 - x1) / dx) + 1;
+    const size_t szd = (size_t) floor((x2 - x1) / dx) + 1;
     N *= szd;
 
     /* store the index and size values, if necessary. */
@@ -128,9 +128,7 @@ int grid_iterator_alloc (const Matrix *grid,
  *  @sz: size array.
  *  @x: grid vector.
  */
-void grid_iterator_free (unsigned int *idx,
-                         unsigned int *sz,
-                         Vector *x) {
+void grid_iterator_free (size_t *idx, size_t *sz, Vector *x) {
   /* free the variables. */
   vector_free(x);
   free(idx);
@@ -148,16 +146,14 @@ void grid_iterator_free (unsigned int *idx,
  * returns:
  *  whether (1) or not (0) the grid has been fully traversed.
  */
-int grid_iterator_next (const Matrix *grid,
-                        unsigned int *idx,
-                        unsigned int *sz,
+int grid_iterator_next (const Matrix *grid, size_t *idx, size_t *sz,
                         Vector *x) {
   /* initialize the rollover flag. */
-  const unsigned int D = grid_dims(grid);
+  const size_t D = grid_dims(grid);
   int roll = 0;
 
   /* loop over the grid dimensions. */
-  for (unsigned int d = 0; d < D; d++) {
+  for (size_t d = 0; d < D; d++) {
     /* get the start and step along this dimension. */
     const double x1 = matrix_get(grid, d, 0);
     const double dx = matrix_get(grid, d, 1);

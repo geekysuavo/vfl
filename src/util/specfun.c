@@ -38,7 +38,7 @@ static const double coeff_trigamma[N_PSI] = {
  * returns:
  *  value of psi(0,@z).
  */
-double digamma (const double z) {
+double digamma (double z) {
   /* declare required variables:
    *  @psi: function value.
    *  @x: shifted argument.
@@ -62,7 +62,7 @@ double digamma (const double z) {
   xn = xsq;
 
   /* compute the series. */
-  for (unsigned int n = 0; n < N_PSI; n++) {
+  for (size_t n = 0; n < N_PSI; n++) {
     psi += coeff_digamma[n] / xn;
     xn *= xsq;
   }
@@ -80,7 +80,7 @@ double digamma (const double z) {
  * returns:
  *  value of psi(1,@z).
  */
-double trigamma (const double z) {
+double trigamma (double z) {
   /* declare required variables:
    *  @psi: function value.
    *  @x: shifted argument.
@@ -104,7 +104,7 @@ double trigamma (const double z) {
   xn = x;
 
   /* compute the series. */
-  for (unsigned int n = 0; n < N_PSI; n++) {
+  for (size_t n = 0; n < N_PSI; n++) {
     psi += coeff_trigamma[n] / xn;
     xn *= xsq;
   }

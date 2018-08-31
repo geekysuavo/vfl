@@ -14,7 +14,7 @@
  */
 int chol_decomp (Matrix *A) {
   /* locally store the matrix size. */
-  const unsigned int n = A->cols;
+  const size_t n = A->cols;
 
 #ifdef __VFL_USE_ATLAS
   /* use atlas lapack. */
@@ -22,7 +22,7 @@ int chol_decomp (Matrix *A) {
     return 0;
 #else
   /* perform decomposition column-wise. */
-  for (unsigned int j = 0; j < n; j++) {
+  for (size_t j = 0; j < n; j++) {
     /* v := A(j : n, j) */
     VectorView v = matrix_subcol(A, j, j, n - j);
 
@@ -48,8 +48,8 @@ int chol_decomp (Matrix *A) {
 #endif
 
   /* symmetrize the cholesky factor matrix. */
-  for (unsigned int i = 0; i < n; i++)
-    for (unsigned int j = i + 1; j < n; j++)
+  for (size_t i = 0; i < n; i++)
+    for (size_t j = i + 1; j < n; j++)
       matrix_set(A, i, j, matrix_get(A, j, i));
 
   /* return success. */
@@ -68,7 +68,7 @@ int chol_decomp (Matrix *A) {
  */
 int chol_invert (const Matrix *L, Matrix *B) {
   /* locally store the matrix size. */
-  const unsigned int n = L->cols;
+  const size_t n = L->cols;
 
 #ifdef __VFL_USE_ATLAS
   /* if the matrices are different, perform a copy. */
@@ -80,15 +80,15 @@ int chol_invert (const Matrix *L, Matrix *B) {
     return 0;
 
   /* symmetrize the inverted matrix. */
-  for (unsigned int i = 0; i < n; i++)
-    for (unsigned int j = i + 1; j < n; j++)
+  for (size_t i = 0; i < n; i++)
+    for (size_t j = i + 1; j < n; j++)
       matrix_set(B, i, j, matrix_get(B, j, i));
 #else
   /* initialize the matrix inverse. */
   matrix_set_ident(B);
 
   /* invert each column of the identity matrix. */
-  for (unsigned int j = 0; j < n; j++) {
+  for (size_t j = 0; j < n; j++) {
     /* extract the current column. */
     VectorView b = matrix_col(B, j);
 
@@ -128,10 +128,10 @@ void chol_solve (const Matrix *L, const Vector *b, Vector *x) {
  */
 void chol_update (Matrix *L, Vector *x) {
   /* locally store the update vector length. */
-  const unsigned int n = x->len;
+  const size_t n = x->len;
 
   /* perform updating column-wise. */
-  for (unsigned int k = 0; k < n; k++) {
+  for (size_t k = 0; k < n; k++) {
     /* get the relevant quantities. */
     const double Lkk = matrix_get(L, k, k);
     const double xk = vector_get(x, k);
@@ -160,8 +160,8 @@ void chol_update (Matrix *L, Vector *x) {
   }
 
   /* re-symmetrize the cholesky factor matrix. */
-  for (unsigned int i = 0; i < n; i++)
-    for (unsigned int j = i + 1; j < n; j++)
+  for (size_t i = 0; i < n; i++)
+    for (size_t j = i + 1; j < n; j++)
       matrix_set(L, i, j, matrix_get(L, j, i));
 }
 
@@ -179,10 +179,10 @@ void chol_update (Matrix *L, Vector *x) {
  */
 int chol_downdate (Matrix *L, Vector *y) {
   /* locally store the downdate vector length. */
-  const unsigned int n = y->len;
+  const size_t n = y->len;
 
   /* perform downdating column-wise. */
-  for (unsigned int k = 0; k < n; k++) {
+  for (size_t k = 0; k < n; k++) {
     /* get the relevant quantities. */
     const double Lkk = matrix_get(L, k, k);
     const double yk = vector_get(y, k);
@@ -216,8 +216,8 @@ int chol_downdate (Matrix *L, Vector *y) {
   }
 
   /* re-symmetrize the cholesky factor matrix. */
-  for (unsigned int i = 0; i < n; i++)
-    for (unsigned int j = i + 1; j < n; j++)
+  for (size_t i = 0; i < n; i++)
+    for (size_t j = i + 1; j < n; j++)
       matrix_set(L, i, j, matrix_get(L, j, i));
 
   /* return success. */

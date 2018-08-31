@@ -14,9 +14,7 @@
  * returns:
  *  value of the requested matrix element.
  */
-inline double matrix_get (const Matrix *A,
-                          const unsigned int i,
-                          const unsigned int j) {
+inline double matrix_get (const Matrix *A, size_t i, size_t j) {
   /* return the element without bounds checking. */
   return A->data[i * A->stride + j];
 }
@@ -29,10 +27,7 @@ inline double matrix_get (const Matrix *A,
  *  @j: column index.
  *  @Aij: new element value.
  */
-inline void matrix_set (Matrix *A,
-                        const unsigned int i,
-                        const unsigned int j,
-                        const double Aij) {
+inline void matrix_set (Matrix *A, size_t i, size_t j, double Aij) {
   /* set the element without bounds checking. */
   A->data[i * A->stride + j] = Aij;
 }
@@ -49,8 +44,7 @@ inline void matrix_set (Matrix *A,
  *  number of bytes required by a matrix structure having the
  *  specified number of rows and columns.
  */
-unsigned int matrix_bytes (const unsigned int rows,
-                           const unsigned int cols) {
+size_t matrix_bytes (size_t rows, size_t cols) {
   /* compute and return the space requirement. */
   return sizeof(Matrix) + rows * cols * sizeof(double);
 }
@@ -62,8 +56,7 @@ unsigned int matrix_bytes (const unsigned int rows,
  *  @rows: number of rows in the overlaid matrix.
  *  @cols: number of columns in the overlaid matrix.
  */
-void matrix_init (void *addr, const unsigned int rows,
-                  const unsigned int cols) {
+void matrix_init (void *addr, size_t rows, size_t cols) {
   /* cast the memory address to a matrix structure pointer. */
   Matrix *A = (Matrix*) addr;
 
@@ -86,9 +79,9 @@ void matrix_init (void *addr, const unsigned int rows,
  *  newly allocated matrix structure pointer. the elements of the
  *  matrix will not yet be initialized.
  */
-Matrix *matrix_alloc (const unsigned int rows, const unsigned int cols) {
+Matrix *matrix_alloc (size_t rows, size_t cols) {
   /* allocate a new structure pointer, or fail. */
-  const unsigned int bytes = matrix_bytes(rows, cols);
+  const size_t bytes = matrix_bytes(rows, cols);
   Matrix *A = malloc(bytes);
   if (!A)
     return NULL;
@@ -107,8 +100,8 @@ Matrix *matrix_alloc (const unsigned int rows, const unsigned int cols) {
  */
 void matrix_copy (Matrix *dest, const Matrix *src) {
   /* copy each element without bounds checking. */
-  for (unsigned int i = 0; i < dest->rows; i++)
-    for (unsigned int j = 0; j < dest->cols; j++)
+  for (size_t i = 0; i < dest->rows; i++)
+    for (size_t j = 0; j < dest->cols; j++)
       matrix_set(dest, i, j, matrix_get(src, i, j));
 }
 
@@ -120,10 +113,9 @@ void matrix_copy (Matrix *dest, const Matrix *src) {
  *  @src: source matrix structure pointer.
  *  @i: row index to copy from the matrix.
  */
-void matrix_copy_row (Vector *dest, const Matrix *src,
-                      const unsigned int i) {
+void matrix_copy_row (Vector *dest, const Matrix *src, size_t i) {
   /* copy the row elements without bounds checking. */
-  for (unsigned int j = 0; j < dest->len; j++)
+  for (size_t j = 0; j < dest->len; j++)
     vector_set(dest, j, matrix_get(src, i, j));
 }
 
@@ -135,10 +127,9 @@ void matrix_copy_row (Vector *dest, const Matrix *src,
  *  @src: source matrix structure pointer.
  *  @j: column index to copy from the matrix.
  */
-void matrix_copy_col (Vector *dest, const Matrix *src,
-                      const unsigned int j) {
+void matrix_copy_col (Vector *dest, const Matrix *src, size_t j) {
   /* copy the column elements without bounds checking. */
-  for (unsigned int i = 0; i < dest->len; i++)
+  for (size_t i = 0; i < dest->len; i++)
     vector_set(dest, i, matrix_get(src, i, j));
 }
 
@@ -165,9 +156,7 @@ void matrix_free (Matrix *A) {
  * returns:
  *  newly created matrix view.
  */
-MatrixView matrix_view_array (double *data,
-                              const unsigned int n1,
-                              const unsigned int n2) {
+MatrixView matrix_view_array (double *data, size_t n1, size_t n2) {
   /* initialize the view. */
   MatrixView view = { 0, 0, 0, NULL };
 
@@ -211,7 +200,7 @@ VectorView matrix_diag (const Matrix *A) {
  * returns:
  *  newly created vector view.
  */
-VectorView matrix_row (const Matrix *A, const unsigned int i) {
+VectorView matrix_row (const Matrix *A, size_t i) {
   /* initialize the view. */
   VectorView view = { 0, 0, NULL };
 
@@ -233,7 +222,7 @@ VectorView matrix_row (const Matrix *A, const unsigned int i) {
  * returns:
  *  newly created vector view.
  */
-VectorView matrix_col (const Matrix *A, const unsigned int j) {
+VectorView matrix_col (const Matrix *A, size_t j) {
   /* initialize the view. */
   VectorView view = { 0, 0, NULL };
 
@@ -257,9 +246,8 @@ VectorView matrix_col (const Matrix *A, const unsigned int j) {
  * returns:
  *  newly created vector view.
  */
-VectorView matrix_subrow (const Matrix *A, const unsigned int i,
-                          const unsigned int offset,
-                          const unsigned int n) {
+VectorView matrix_subrow (const Matrix *A, size_t i,
+                          size_t offset, size_t n) {
   /* initialize the view. */
   VectorView view = { 0, 0, NULL };
 
@@ -283,9 +271,8 @@ VectorView matrix_subrow (const Matrix *A, const unsigned int i,
  * returns:
  *  newly created vector view.
  */
-VectorView matrix_subcol (const Matrix *A, const unsigned int j,
-                          const unsigned int offset,
-                          const unsigned int n) {
+VectorView matrix_subcol (const Matrix *A, size_t j,
+                          size_t offset, size_t n) {
   /* initialize the view. */
   VectorView view = { 0, 0, NULL };
 
@@ -312,10 +299,8 @@ VectorView matrix_subcol (const Matrix *A, const unsigned int j,
  *  newly created matrix view.
  */
 MatrixView matrix_submatrix (const Matrix *A,
-                             const unsigned int i1,
-                             const unsigned int i2,
-                             const unsigned int n1,
-                             const unsigned int n2) {
+                             size_t i1, size_t i2,
+                             size_t n1, size_t n2) {
   /* initialize the view. */
   MatrixView view = { 0, 0, 0, NULL };
 
@@ -335,10 +320,10 @@ MatrixView matrix_submatrix (const Matrix *A,
  *  @A: matrix to modify.
  *  @Aall: new element value.
  */
-void matrix_set_all (Matrix *A, const double Aall) {
+void matrix_set_all (Matrix *A, double Aall) {
   /* set all elements of the matrix. */
-  for (unsigned int i = 0; i < A->rows; i++)
-    for (unsigned int j = 0; j < A->cols; j++)
+  for (size_t i = 0; i < A->rows; i++)
+    for (size_t j = 0; j < A->cols; j++)
       matrix_set(A, i, j, Aall);
 }
 
@@ -349,8 +334,8 @@ void matrix_set_all (Matrix *A, const double Aall) {
  */
 void matrix_set_ident (Matrix *A) {
   /* intelligently set all elements of the matrix. */
-  for (unsigned int i = 0; i < A->rows; i++)
-    for (unsigned int j = 0; j < A->cols; j++)
+  for (size_t i = 0; i < A->rows; i++)
+    for (size_t j = 0; j < A->cols; j++)
       matrix_set(A, i, j, i == j ? 1.0 : 0.0);
 }
 
@@ -375,8 +360,8 @@ inline void matrix_set_zero (Matrix *A) {
  */
 void matrix_sub (Matrix *A, const Matrix *B) {
   /* perform the element-wise difference. */
-  for (unsigned int i = 0; i < A->rows; i++)
-    for (unsigned int j = 0; j < A->cols; j++)
+  for (size_t i = 0; i < A->rows; i++)
+    for (size_t j = 0; j < A->cols; j++)
       matrix_set(A, i, j, matrix_get(A, i, j) - matrix_get(B, i, j));
 }
 
@@ -386,10 +371,10 @@ void matrix_sub (Matrix *A, const Matrix *B) {
  *  @A: input and output matrix.
  *  @alpha: scale factor.
  */
-void matrix_scale (Matrix *A, const double alpha) {
+void matrix_scale (Matrix *A, double alpha) {
   /* perform the element-wise scaling. */
-  for (unsigned int i = 0; i < A->rows; i++)
-    for (unsigned int j = 0; j < A->cols; j++)
+  for (size_t i = 0; i < A->rows; i++)
+    for (size_t j = 0; j < A->cols; j++)
       matrix_set(A, i, j, matrix_get(A, i, j) * alpha);
 }
 
@@ -404,9 +389,9 @@ void matrix_dispfn (const Matrix *A, const char *str) {
   printf("%s =\n", str);
 
   /* print matrix rows. */
-  for (unsigned int i = 0; i < A->rows; i++) {
+  for (size_t i = 0; i < A->rows; i++) {
     /* print the values of the row. */
-    for (unsigned int j = 0; j < A->cols; j++)
+    for (size_t j = 0; j < A->cols; j++)
       printf("  %13.5lf", matrix_get(A, i, j));
 
     /* print a newline. */

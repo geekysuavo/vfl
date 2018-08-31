@@ -23,7 +23,7 @@ double blas_dasum (const Vector *x) {
   double result = 0.0;
 
   /* compute the sum of the absolute values of the vector elements. */
-  for (unsigned int i = 0; i < x->len; i++)
+  for (size_t i = 0; i < x->len; i++)
     result += fabs(vector_get(x, i));
 
   /* return the result. */
@@ -74,7 +74,7 @@ double blas_ddot (const Vector *x, const Vector *y) {
   double result = 0.0;
 
   /* compute the sum of the products of each pair of vector elements. */
-  for (unsigned int i = 0; i < x->len; i++)
+  for (size_t i = 0; i < x->len; i++)
     result += vector_get(x, i) * vector_get(y, i);
 
   /* return the result. */
@@ -98,7 +98,7 @@ void blas_daxpy (double alpha, const Vector *x, Vector *y) {
   cblas_daxpy(x->len, alpha, x->data, x->stride, y->data, y->stride);
 #else
   /* compute the sum over all vector elements. */
-  for (unsigned int i = 0; i < x->len; i++)
+  for (size_t i = 0; i < x->len; i++)
     vector_set(y, i, vector_get(y, i) + alpha * vector_get(x, i));
 #endif
 }
@@ -118,7 +118,7 @@ void blas_dscal (double alpha, Vector *y) {
   cblas_dscal(y->len, alpha, y->data, y->stride);
 #else
   /* compute the scaled value of each vector element. */
-  for (unsigned int i = 0; i < y->len; i++)
+  for (size_t i = 0; i < y->len; i++)
     vector_set(y, i, vector_get(y, i) * alpha);
 #endif
 }
@@ -165,7 +165,7 @@ void blas_dgemv (BlasTranspose trans, double alpha, const Matrix *A,
   /* perform the dense multiplication operation. */
   if (trans == BLAS_NO_TRANS) {
     /* perform: y <- y + alpha A x */
-    for (unsigned int i = 0; i < A->rows; i++) {
+    for (size_t i = 0; i < A->rows; i++) {
       VectorView ai = matrix_row(A, i);
       const double ax = blas_ddot(&ai, x);
       vector_set(y, i, vector_get(y, i) + alpha * ax);
@@ -173,7 +173,7 @@ void blas_dgemv (BlasTranspose trans, double alpha, const Matrix *A,
   }
   else if (trans == BLAS_TRANS) {
     /* perform: y <- y + alpha A' x */
-    for (unsigned int j = 0; j < A->cols; j++) {
+    for (size_t j = 0; j < A->cols; j++) {
       VectorView aj = matrix_col(A, j);
       const double ax = blas_ddot(&aj, x);
       vector_set(y, j, vector_get(y, j) + alpha * ax);
@@ -209,12 +209,12 @@ void blas_dtrmv (BlasTranspose trans, const Matrix *L,
               y->data, y->stride);
 #else
   /* locally store the problem size. */
-  const unsigned int n = x->len;
+  const size_t n = x->len;
 
   /* perform the triangular multiplication operation. */
   if (trans == BLAS_NO_TRANS) {
     /* perform: y <- L x */
-    for (unsigned int i = 0; i < n; i++) {
+    for (size_t i = 0; i < n; i++) {
       VectorView li = matrix_subrow(L, i, 0, i + 1);
       const double lx = blas_ddot(&li, x);
       vector_set(y, i, lx);
@@ -222,7 +222,7 @@ void blas_dtrmv (BlasTranspose trans, const Matrix *L,
   }
   else if (trans == BLAS_TRANS) {
     /* perform: y <- L' x */
-    for (unsigned int j = 0; j < n; j++) {
+    for (size_t j = 0; j < n; j++) {
       VectorView lj = matrix_subcol(L, j, j, n - j);
       VectorView sj = vector_subvector(x, j, n - j);
       const double lx = blas_ddot(&lj, &sj);
@@ -256,12 +256,12 @@ void blas_dtrsv (BlasTriangle tri, const Matrix *A, Vector *x) {
               x->data, x->stride);
 #else
   /* locally store the problem size. */
-  const unsigned int n = x->len;
+  const size_t n = x->len;
 
   /* perform the substitution operation. */
   if (tri == BLAS_LOWER) {
     /* lower triangle => forward substitution: x <- inv(tril(A)) x */
-    for (unsigned int i = 0; i < n; i++) {
+    for (size_t i = 0; i < n; i++) {
       VectorView li = matrix_subrow(A, i, 0, i);
       const double Lii = vector_get(&li, i);
       double xi = vector_get(x, i);
@@ -271,7 +271,7 @@ void blas_dtrsv (BlasTriangle tri, const Matrix *A, Vector *x) {
   }
   else if (tri == BLAS_UPPER) {
     /* upper triangle => backward substitution: x <- inv(triu(A)) x */
-    for (unsigned int i = n - 1; i < n; i--) {
+    for (size_t i = n - 1; i < n; i--) {
       VectorView ui = matrix_subrow(A, i, i + 1, n - i - 1);
       VectorView si = vector_subvector(x, i + 1, n - i - 1);
       const double Uii = matrix_get(A, i, i);

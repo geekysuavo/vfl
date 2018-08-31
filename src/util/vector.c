@@ -13,7 +13,7 @@
  * returns:
  *  value of the requested vector element.
  */
-inline double vector_get (const Vector *v, const unsigned int i) {
+inline double vector_get (const Vector *v, size_t i) {
   /* return the element without bounds checking. */
   return v->data[i * v->stride];
 }
@@ -25,8 +25,7 @@ inline double vector_get (const Vector *v, const unsigned int i) {
  *  @i: element index.
  *  @vi: new element value
  */
-inline void vector_set (Vector *v, const unsigned int i,
-                        const double vi) {
+inline void vector_set (Vector *v, size_t i, double vi) {
   /* set the element without bounds checking. */
   v->data[i * v->stride] = vi;
 }
@@ -42,7 +41,7 @@ inline void vector_set (Vector *v, const unsigned int i,
  *  number of bytes required for a vector structure having the
  *  specified number of elements.
  */
-unsigned int vector_bytes (const unsigned int len) {
+size_t vector_bytes (size_t len) {
   /* compute and return the space requirement. */
   return sizeof(Vector) + len * sizeof(double);
 }
@@ -53,7 +52,7 @@ unsigned int vector_bytes (const unsigned int len) {
  *  @addr: memory address to overlay structure onto.
  *  @len: number of elements in the overlaid vector.
  */
-void vector_init (void *addr, const unsigned int len) {
+void vector_init (void *addr, size_t len) {
   /* cast the memory address to a vector structure pointer. */
   Vector *v = (Vector*) addr;
 
@@ -74,9 +73,9 @@ void vector_init (void *addr, const unsigned int len) {
  *  newly allocated vector structure pointer. the elements of the
  *  vector will not yet be initialized.
  */
-Vector *vector_alloc (const unsigned int len) {
+Vector *vector_alloc (size_t len) {
   /* allocate a new structure pointer, or fail. */
-  const unsigned int bytes = vector_bytes(len);
+  const size_t bytes = vector_bytes(len);
   Vector *v = malloc(bytes);
   if (!v)
     return NULL;
@@ -95,7 +94,7 @@ Vector *vector_alloc (const unsigned int len) {
  */
 void vector_copy (Vector *dest, const Vector *src) {
   /* copy each element without bounds checking. */
-  for (unsigned int i = 0; i < dest->len; i++)
+  for (size_t i = 0; i < dest->len; i++)
     vector_set(dest, i, vector_get(src, i));
 }
 
@@ -121,7 +120,7 @@ void vector_free (Vector *v) {
  * returns:
  *  newly created vector view.
  */
-VectorView vector_view_array (double *data, const unsigned int len) {
+VectorView vector_view_array (double *data, size_t len) {
   /* initialize the view. */
   VectorView view = { 0, 0, NULL };
 
@@ -145,9 +144,7 @@ VectorView vector_view_array (double *data, const unsigned int len) {
  * returns:
  *  newly created vector view.
  */
-VectorView vector_subvector (const Vector *v,
-                             const unsigned int offset,
-                             const unsigned int len) {
+VectorView vector_subvector (const Vector *v, size_t offset, size_t len) {
   /* initialize the view. */
   VectorView view = { 0, 0, NULL };
 
@@ -171,7 +168,7 @@ VectorView vector_subvector (const Vector *v,
 double vector_max (const Vector *v) {
   /* identify the largest element of the vector. */
   double vmax = vector_get(v, 0);
-  for (unsigned int i = 1; i < v->len; i++) {
+  for (size_t i = 1; i < v->len; i++) {
     const double vi = vector_get(v, i);
     vmax = (vi > vmax ? vi : vmax);
   }
@@ -186,9 +183,9 @@ double vector_max (const Vector *v) {
  *  @v: vector to modify.
  *  @vall: new element value.
  */
-void vector_set_all (Vector *v, const double vall) {
+void vector_set_all (Vector *v, double vall) {
   /* set all elements of the vector. */
-  for (unsigned int i = 0; i < v->len; i++)
+  for (size_t i = 0; i < v->len; i++)
     vector_set(v, i, vall);
 }
 
@@ -213,7 +210,7 @@ inline void vector_set_zero (Vector *v) {
  */
 void vector_add (Vector *a, const Vector *b) {
   /* perform the element-wise sum. */
-  for (unsigned int i = 0; i < a->len; i++)
+  for (size_t i = 0; i < a->len; i++)
     vector_set(a, i, vector_get(a, i) + vector_get(b, i));
 }
 
@@ -226,9 +223,9 @@ void vector_add (Vector *a, const Vector *b) {
  *  @a: input and output vector.
  *  @beta: constant to add.
  */
-void vector_add_const (Vector *v, const double beta) {
+void vector_add_const (Vector *v, double beta) {
   /* perform the element-wise sum. */
-  for (unsigned int i = 0; i < v->len; i++)
+  for (size_t i = 0; i < v->len; i++)
     vector_set(v, i, vector_get(v, i) + beta);
 }
 
@@ -243,7 +240,7 @@ void vector_add_const (Vector *v, const double beta) {
  */
 int vector_equal (const Vector *a, const Vector *b) {
   /* test each pair of elements for inequality. */
-  for (unsigned int i = 0; i < a->len; i++) {
+  for (size_t i = 0; i < a->len; i++) {
     if (vector_get(a, i) != vector_get(b, i))
       return 0;
   }
@@ -262,7 +259,7 @@ int vector_equal (const Vector *a, const Vector *b) {
  */
 int vector_positive (const Vector *v) {
   /* test each vector element for non-positivity. */
-  for (unsigned int i = 0; i < v->len; i++) {
+  for (size_t i = 0; i < v->len; i++) {
     if (vector_get(v, i) <= 0.0)
       return 0;
   }
@@ -282,7 +279,7 @@ void vector_dispfn (const Vector *v, const char *str) {
   printf("%s =\n", str);
 
   /* print the vector elements. */
-  for (unsigned int i = 0; i < v->len; i++)
+  for (size_t i = 0; i < v->len; i++)
     printf("  %13.5lf\n", vector_get(v, i));
 }
 
