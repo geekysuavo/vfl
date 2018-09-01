@@ -1,6 +1,6 @@
 
-/* include the dataset header. */
-#include <vfl/data.h>
+/* include the vfl header. */
+#include <vfl/vfl.h>
 
 /* data_swap(): swap two data within a dataset.
  *
@@ -9,9 +9,7 @@
  *  @i: first element index.
  *  @j: second element index.
  */
-static inline void data_swap (data_t *dat,
-                              const unsigned int i,
-                              const unsigned int j) {
+static inline void data_swap (Data *dat, size_t i, size_t j) {
   /* copy the first element into the swap location. */
   vector_copy(dat->swp.x, dat->data[i].x);
   dat->swp.y = dat->data[i].y;
@@ -40,15 +38,15 @@ static inline void data_swap (data_t *dat,
  * returns:
  *  integer indicating sort success (1) or failure (0).
  */
-int data_sort (data_t *dat) {
+int data_sort (Data *dat) {
   /* check the structure pointer. */
   if (!dat)
     return 0;
 
   /* run an outer loop to sort every element. */
-  for (unsigned int i = 0; i < dat->N; i++) {
+  for (size_t i = 0; i < dat->N; i++) {
     /* initialize the starting index. */
-    unsigned int j = i;
+    size_t j = i;
 
     /* loop until the current element has been sorted. */
     while (j > 0 && datum_cmp(dat->data + (j - 1), dat->data + j) > 0) {
@@ -76,14 +74,14 @@ int data_sort (data_t *dat) {
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-int data_sort_single (data_t *dat, const unsigned int i) {
+int data_sort_single (Data *dat, size_t i) {
   /* check the input arguments. */
   if (!dat || i >= dat->N)
     return 0;
 
   /* initialize the sorting index. */
-  const unsigned int jmax = dat->N - 1;
-  unsigned int j = i;
+  const size_t jmax = dat->N - 1;
+  size_t j = i;
 
   /* while the element is less than its leftmost neighbor... */
   while (j > 0 && datum_cmp(dat->data + j, dat->data + (j - 1)) < 0) {

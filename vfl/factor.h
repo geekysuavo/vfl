@@ -3,75 +3,21 @@
 #ifndef __VFL_FACTOR_H__
 #define __VFL_FACTOR_H__
 
-/* include c headers. */
-#include <stdlib.h>
-#include <stdarg.h>
-#include <math.h>
-
 /* include vfl headers. */
 #include <vfl/util/specfun.h>
 #include <vfl/util/blas.h>
 #include <vfl/data.h>
 
-/* OBJECT_IS_FACTOR(): check if an object is a factor.
+/* Factor_Check(): macro to check if a PyObject is a Factor.
  */
-#define OBJECT_IS_FACTOR(obj) \
-  (OBJECT_TYPE(obj)->init == (object_init_fn) factor_init)
+#define Factor_Check(v) (Py_TYPE(v) == &Factor_Type)
 
-/* FACTOR_TYPE(): macro function for casting factor structure pointers
- * to their associated type structures.
+/* Factor_Type: globally available factor type structure.
  */
-#define FACTOR_TYPE(s) ((factor_type_t*) (s)->type)
+PyAPI_DATA(PyTypeObject) Factor_Type;
 
-/* FACTOR_PROP_BASE: base set of object properties available
- * to all factors.
- */
-#define FACTOR_PROP_BASE \
-  { "dim", \
-    (object_getprop_fn) factor_getprop_dim, \
-    (object_setprop_fn) factor_setprop_dim }, \
-  { "fixed", \
-    (object_getprop_fn) factor_getprop_fixed, \
-    (object_setprop_fn) factor_setprop_fixed }
-
-/* FACTOR_METHOD_BASE: base set of object methods available
- * to all factors.
- */
-#define FACTOR_METHOD_BASE \
-  { "set", (object_method_fn) factor_setprop }
-
-/* FACTOR_PROP(): macro function for inserting a static factor
- * property into an object properties array.
- */
-#define FACTOR_PROP(typ,name) \
-  { #name, \
-    (object_getprop_fn) typ ## obj_getparm_ ## name, \
-    (object_setprop_fn) typ ## obj_setparm_ ## name }
-
-/* FACTOR_PROP_GETSET(): macro function for defining property
- * getter and setter functions for a static factor property.
- */
-#define FACTOR_PROP_GETSET(typ,name,idx) \
-  FACTOR_PROP_GET (typ, name, idx) \
-  FACTOR_PROP_SET (typ, name, idx)
-
-/* FACTOR_PROP_GET(): macro function for defining a getter function
- * for static factor properties.
- */
-#define FACTOR_PROP_GET(typ,name,idx) \
-static flt_t *typ ## obj_getparm_ ## name (const factor_t *f) { \
-  return float_alloc_with_value(factor_get(f, idx)); }
-
-/* FACTOR_PROP_SET(): macro function for defining a setter function
- * for static factor properties.
- */
-#define FACTOR_PROP_SET(typ,name,idx) \
-static int typ ## obj_setparm_ ## name (factor_t *f, object_t *val) { \
-  if (!OBJECT_IS_NUM(val)) return 0; \
-  return factor_set(f, idx, num_get(val)); }
-
-/* factor_t: defined type for the factor structure. */
-typedef struct factor factor_t;
+/* Factor: defined type for the factor structure. */
+typedef struct factor Factor;
 
 /* factor_mean_fn(): return the a first-order mode or moment
  * of a basis element.
@@ -85,10 +31,8 @@ typedef struct factor factor_t;
  * returns:
  *  E[ phi^{p}(x | theta(f))_i ]
  */
-typedef double (*factor_mean_fn) (const factor_t *f,
-                                  const vector_t *x,
-                                  const unsigned int p,
-                                  const unsigned int i);
+typedef double (*factor_mean_fn) (const Factor *f, const Vector *x,
+                                  size_t p, size_t i);
 
 /* factor_var_fn(): return the second moment of basis elements.
  *
@@ -102,11 +46,8 @@ typedef double (*factor_mean_fn) (const factor_t *f,
  * returns:
  *  E[ phi^{p}(x | theta(f))_i phi^{p}(x | theta(f))_j ]
  */
-typedef double (*factor_var_fn) (const factor_t *f,
-                                 const vector_t *x,
-                                 const unsigned int p,
-                                 const unsigned int i,
-                                 const unsigned int j);
+typedef double (*factor_var_fn) (const Factor *f, const Vector *x,
+                                 size_t p, size_t i, size_t j);
 
 /* factor_cov_fn(): return the covariance of basis elements.
  *
@@ -120,11 +61,10 @@ typedef double (*factor_var_fn) (const factor_t *f,
  * returns:
  *  E[ phi^{p1}(x1 | theta(f)) phi^{p2}(x2 | theta(f)) ]
  */
-typedef double (*factor_cov_fn) (const factor_t *f,
-                                 const vector_t *x1,
-                                 const vector_t *x2,
-                                 const unsigned int p1,
-                                 const unsigned int p2);
+typedef double (*factor_cov_fn) (const Factor *f,
+                                 const Vector *x1,
+                                 const Vector *x2,
+                                 size_t p1, size_t p2);
 
 /* factor_diff_mean_fn(): return the gradient of the first moment
  * of a basis element.
@@ -139,11 +79,8 @@ typedef double (*factor_cov_fn) (const factor_t *f,
  * returns:
  *  grad(lambda) E[ phi^{p}(x | theta(f))_i ]
  */
-typedef void (*factor_diff_mean_fn) (const factor_t *f,
-                                     const vector_t *x,
-                                     const unsigned int p,
-                                     const unsigned int i,
-                                     vector_t *df);
+typedef void (*factor_diff_mean_fn) (const Factor *f, const Vector *x,
+                                     size_t p, size_t i, Vector *df);
 
 /* factor_diff_var_fn(): return the gradient of the second moment
  * of a basis element.
@@ -159,12 +96,9 @@ typedef void (*factor_diff_mean_fn) (const factor_t *f,
  * returns:
  *  grad(lambda) E[ phi^{p}(x | theta(f))_i phi^{p}(x | theta(f))_j ]
  */
-typedef void (*factor_diff_var_fn) (const factor_t *f,
-                                    const vector_t *x,
-                                    const unsigned int p,
-                                    const unsigned int i,
-                                    const unsigned int j,
-                                    vector_t *df);
+typedef void (*factor_diff_var_fn) (const Factor *f, const Vector *x,
+                                    size_t p, size_t i, size_t j,
+                                    Vector *df);
 
 /* factor_meanfield_fn(): perform an assumed-density mean-field update
  * of a factor, given its associated prior factor and a set of required
@@ -188,10 +122,10 @@ typedef void (*factor_diff_var_fn) (const factor_t *f,
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-typedef int (*factor_meanfield_fn) (factor_t *f, const factor_t *fp,
-                                    const datum_t *dat,
-                                    vector_t *b,
-                                    matrix_t *B);
+typedef int (*factor_meanfield_fn) (Factor *f, const Factor *fp,
+                                    const Datum *dat,
+                                    Vector *b,
+                                    Matrix *B);
 
 /* factor_div_fn(): return the kullback-liebler divergence between
  * two factors of the same type, but different parameters.
@@ -203,7 +137,7 @@ typedef int (*factor_meanfield_fn) (factor_t *f, const factor_t *fp,
  * returns:
  *  KL[ q(theta(f)) || q(theta(f2)) ]
  */
-typedef double (*factor_div_fn) (const factor_t *f, const factor_t *f2);
+typedef double (*factor_div_fn) (const Factor *f, const Factor *f2);
 
 /* factor_init_fn(): initialize a factor structure
  * in a type-specific manner.
@@ -214,7 +148,7 @@ typedef double (*factor_div_fn) (const factor_t *f, const factor_t *f2);
  * returns:
  *  integer indicating initialization success (1) or failure (0).
  */
-typedef int (*factor_init_fn) (factor_t *f);
+typedef int (*factor_init_fn) (Factor *f);
 
 /* factor_resize_fn(): resize a factor structure.
  *
@@ -225,10 +159,7 @@ typedef int (*factor_init_fn) (factor_t *f);
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-typedef int (*factor_resize_fn) (factor_t *f,
-                                 const unsigned int D,
-                                 const unsigned int P,
-                                 const unsigned int K);
+typedef int (*factor_resize_fn) (Factor *f, size_t D, size_t P, size_t K);
 
 /* factor_kernel_fn(): write the kernel code of a factor structure.
  *
@@ -241,8 +172,7 @@ typedef int (*factor_resize_fn) (factor_t *f,
  *  on failure. the calling function is responsible for freeing
  *  the string after use.
  */
-typedef char* (*factor_kernel_fn) (const factor_t *f,
-                                   const unsigned int p0);
+typedef char* (*factor_kernel_fn) (const Factor *f, size_t p0);
 
 /* factor_set_fn(): assign a variational parameter in a factor.
  *
@@ -254,8 +184,7 @@ typedef char* (*factor_kernel_fn) (const factor_t *f,
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-typedef int (*factor_set_fn) (factor_t *f, const unsigned int i,
-                              const double value);
+typedef int (*factor_set_fn) (Factor *f, size_t i, double value);
 
 /* factor_copy_fn(): copy any extra (e.g. aliased) memory from one
  * factor into another.
@@ -267,7 +196,7 @@ typedef int (*factor_set_fn) (factor_t *f, const unsigned int i,
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-typedef int (*factor_copy_fn) (const factor_t *f, factor_t *fdup);
+typedef int (*factor_copy_fn) (const Factor *f, Factor *fdup);
 
 /* factor_free_fn(): free any extra (e.g. aliased) memory that is
  * associated with a factor.
@@ -275,73 +204,60 @@ typedef int (*factor_copy_fn) (const factor_t *f, factor_t *fdup);
  * arguments:
  *  @f: factor structure pointer to free.
  */
-typedef void (*factor_free_fn) (factor_t *f);
+typedef void (*factor_free_fn) (Factor *f);
 
 /* FACTOR_EVAL(): macro function for declaring and defining
  * functions conforming to factor_mean_fn() for evaluation.
  */
 #define FACTOR_EVAL(name) \
-double name ## _eval (const factor_t *f, \
-                      const vector_t *x, \
-                      const unsigned int p, \
-                      const unsigned int i)
+double name ## _eval (const Factor *f, const Vector *x, \
+                      size_t p, size_t i)
 
 /* FACTOR_MEAN(): macro function for declaring and defining
  * functions conforming to factor_mean_fn() for expectations.
  */
 #define FACTOR_MEAN(name) \
-double name ## _mean (const factor_t *f, \
-                      const vector_t *x, \
-                      const unsigned int p, \
-                      const unsigned int i)
+double name ## _mean (const Factor *f, const Vector *x, \
+                      size_t p, size_t i)
 
 /* FACTOR_VAR(): macro function for declaring and defining
  * functions conforming to factor_var_fn().
  */
 #define FACTOR_VAR(name) \
-double name ## _var (const factor_t *f, \
-                     const vector_t *x, \
-                     const unsigned int p, \
-                     const unsigned int i, \
-                     const unsigned int j)
+double name ## _var (const Factor *f, const Vector *x, \
+                     size_t p, size_t i, size_t j)
 
 /* FACTOR_COV(): macro function for declaring and defining
  * functions conforming to factor_cov_fn().
  */
 #define FACTOR_COV(name) \
-double name ## _cov (const factor_t *f, \
-                     const vector_t *x1, const vector_t *x2, \
-                     const unsigned int p1, const unsigned int p2)
+double name ## _cov (const Factor *f, \
+                     const Vector *x1, const Vector *x2, \
+                     size_t p1, size_t p2)
 
 /* FACTOR_DIFF_MEAN(): macro function for declaring and defining
  * functions conforming to factor_diff_mean_fn().
  */
 #define FACTOR_DIFF_MEAN(name) \
-void name ## _diff_mean (const factor_t *f, \
-                         const vector_t *x, \
-                         const unsigned int p, \
-                         const unsigned int i, \
-                         vector_t *df)
+void name ## _diff_mean (const Factor *f, const Vector *x, \
+                         size_t p, size_t i, Vector *df)
 
 /* FACTOR_DIFF_VAR(): macro function for declaring and defining
  * functions conforming to factor_diff_var_fn().
  */
 #define FACTOR_DIFF_VAR(name) \
-void name ## _diff_var (const factor_t *f, \
-                        const vector_t *x, \
-                        const unsigned int p, \
-                        const unsigned int i, \
-                        const unsigned int j, \
-                        vector_t *df)
+void name ## _diff_var (const Factor *f, const Vector *x, \
+                        size_t p, size_t i, size_t j, \
+                        Vector *df)
 
 /* FACTOR_MEANFIELD(): macro function for declaring and defining
  * functions conforming to factor_meanfield_fn().
  */
 #define FACTOR_MEANFIELD(name) \
-int name ## _meanfield (factor_t *f, const factor_t *fp, \
-                        const datum_t *dat, \
-                        vector_t *b, \
-                        matrix_t *B)
+int name ## _meanfield (Factor *f, const Factor *fp, \
+                        const Datum *dat, \
+                        Vector *b, \
+                        Matrix *B)
 
 /* macro functions for handling the specific types of mean-field calls.
  */
@@ -352,62 +268,56 @@ int name ## _meanfield (factor_t *f, const factor_t *fp, \
  * functions conforming to factor_div_fn().
  */
 #define FACTOR_DIV(name) \
-double name ## _div (const factor_t *f, const factor_t *f2)
+double name ## _div (const Factor *f, const Factor *f2)
 
 /* FACTOR_INIT(): macro function for declaring and defining
  * functions conforming to factor_init_fn().
  */
 #define FACTOR_INIT(name) \
-int name ## _init (factor_t *f)
+int name ## _init (Factor *f)
 
 /* FACTOR_RESIZE(): macro function for declaring and defining
  * functions conforming to factor_resize_fn().
  */
 #define FACTOR_RESIZE(name) \
-int name ## _resize (factor_t *f, const unsigned int D, \
-                     const unsigned int P, const unsigned int K)
+int name ## _resize (Factor *f, size_t D, size_t P, size_t K)
 
 /* FACTOR_KERNEL(): macro function for declaring and defining
  * functions conforming to factor_kernel_fn().
  */
 #define FACTOR_KERNEL(name) \
-char* name ## _kernel (const factor_t *f, const unsigned int p0)
+char* name ## _kernel (const Factor *f, size_t p0)
 
 /* FACTOR_SET(): macro function for declaring and defining
  * functions conforming to factor_set_fn().
  */
 #define FACTOR_SET(name) \
-int name ## _set (factor_t *f, const unsigned int i, const double value)
+int name ## _set (Factor *f, size_t i, double value)
 
 /* FACTOR_COPY(): macro function for declaring and defining
  * functions conforming to factor_copy_fn().
  */
 #define FACTOR_COPY(name) \
-int name ## _copy (const factor_t *f, factor_t *fdup)
+int name ## _copy (const Factor *f, Factor *fdup)
 
 /* FACTOR_FREE(): macro function for declaring and defining
  * functions conforming to factor_free_fn().
  */
 #define FACTOR_FREE(name) \
-void name ## _free (factor_t *f)
+void name ## _free (Factor *f)
 
-/* factor_type_t: structure for holding type-specific factor information.
+/* struct factor: structure for holding a variational factor.
+ *
+ * each factor holds information on a set of @M basis elements,
+ * corresponding to @M model weights. factors accept inputs of
+ * dimensionality @D, and have a set number of variational
+ * parameters, given by @P.
  */
-typedef struct {
-  /* @base: basic object type information. */
-  object_type_t base;
+struct factor {
+  /* object base. */
+  PyObject_HEAD
 
-  /* factor type-specific sizes (instance values may differ, see below):
-   *  @D: number of dimensions.
-   *  @P: number of parameters.
-   *  @K: number of weights.
-   */
-  unsigned int D, P, K;
-
-  /* @parnames: initial factor parameter names. */
-  char **parnames;
-
-  /* factor type-specific functions:
+  /* factor specialization functions:
    *
    *  expectations:
    *   @eval: value at mode.
@@ -447,48 +357,34 @@ typedef struct {
   factor_set_fn       set;
   factor_copy_fn      copy;
   factor_free_fn      free;
-}
-factor_type_t;
-
-/* struct factor: structure for holding a variational factor.
- *
- * each factor holds information on a set of @M basis elements,
- * corresponding to @M model weights. factors accept inputs of
- * dimensionality @D, and have a set number of variational
- * parameters, given by @P.
- */
-struct factor {
-  /* base structure members. */
-  OBJECT_BASE;
 
   /* factor sizes:
    *  @D: number of dimensions.
    *  @P: number of parameters.
    *  @K: number of weights.
    */
-  unsigned int D, P, K;
+  size_t D, P, K;
 
   /* univariate factors only:
    *  @d: input dimension.
    */
-  unsigned int d;
+  size_t d;
 
   /* factor flags:
    *  @fixed: whether to fix the factor to its current state.
    */
-  unsigned int fixed;
+  int fixed;
 
   /* storage of core data:
    *  @inf: fisher information matrix.
    *  @par: parameter vector.
-   *  @parnames: parameter name strings.
    */
-  matrix_t *inf;
-  vector_t *par;
-  char **parnames;
+  Matrix *inf;
+  Vector *par;
 };
 
 /* function declarations (factor-obj.c): */
+/*
 
 #define factor_alloc(T) \
   (factor_t*) obj_alloc((object_type_t*) T)
@@ -514,7 +410,9 @@ int factor_setprop_fixed (factor_t *f, object_t *val);
 
 object_t *factor_setprop (factor_t *f, object_t *args);
 
+*/
 /* function declarations (factor.c): */
+/*
 
 int factor_resize (factor_t *f,
                    const unsigned int D,
@@ -579,15 +477,21 @@ double factor_div (const factor_t *f, const factor_t *f2);
 
 char *factor_kernel (const factor_t *f, const unsigned int p0);
 
+*/
 /* function declarations (factor/fixed-impulse.c): */
+/*
 
 int fixed_impulse_set_location (factor_t *f, const double mu);
 
+*/
 /* function declarations (factor/polynomial.c): */
+/*
 
 int polynomial_set_order (factor_t *f, const unsigned int order);
 
+*/
 /* function declarations (factor/product.c): */
+/*
 
 unsigned int product_get_size (const factor_t *f);
 
@@ -596,15 +500,7 @@ factor_t *product_get_factor (const factor_t *f, const unsigned int idx);
 int product_add_factor (factor_t *f, const unsigned int d, factor_t *fd);
 
 int product_update (factor_t *f);
-
-/* available factor types: */
-
-extern const factor_type_t *vfl_factor_cosine;
-extern const factor_type_t *vfl_factor_decay;
-extern const factor_type_t *vfl_factor_impulse;
-extern const factor_type_t *vfl_factor_fixed_impulse;
-extern const factor_type_t *vfl_factor_polynomial;
-extern const factor_type_t *vfl_factor_product;
+*/
 
 #endif /* !__VFL_FACTOR_H__ */
 

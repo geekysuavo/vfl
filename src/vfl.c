@@ -49,7 +49,8 @@ PyInit_vfl (void) {
     return NULL;
 
   /* FIXME: intialize the core module types. */
-  if (Datum_Type_init(vfl) < 0)
+  if (Datum_Type_init(vfl) < 0 ||
+      Data_Type_init(vfl) < 0)
     return NULL;
 
   /* FIXME: initialize the factor sub-module. */

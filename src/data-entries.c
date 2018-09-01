@@ -1,7 +1,7 @@
 
 /* include the gridding and dataset headers. */
 #include <vfl/util/grid.h>
-#include <vfl/data.h>
+#include <vfl/vfl.h>
 
 /* data_inner(): compute the inner product of the observations
  * stored within a dataset.
@@ -15,13 +15,13 @@
  * returns:
  *  sum of all squared observation values.
  */
-double data_inner (const data_t *dat) {
+double data_inner (const Data *dat) {
   /* initialize the computation. */
   double yy = 0.0;
 
   /* compute the inner product. */
-  datum_t *di = dat->data;
-  for (unsigned int i = 0; i < dat->N; i++, di++)
+  Datum *di = dat->data;
+  for (size_t i = 0; i < dat->N; i++, di++)
     yy += di->y * di->y;
 
   /* return the result. */
@@ -38,7 +38,7 @@ double data_inner (const data_t *dat) {
  *  pointer to the requested observation, or NULL if the
  *  observation index is out of bounds.
  */
-datum_t *data_get (const data_t *dat, const unsigned int i) {
+Datum *data_get (const Data *dat, size_t i) {
   /* check the input arguments. */
   if (!dat || i >= dat->N)
     return NULL;
@@ -57,9 +57,9 @@ datum_t *data_get (const data_t *dat, const unsigned int i) {
  * returns:
  *  integer indicating whether (1) or not (0) the assignment succeeded.
  */
-int data_set (data_t *dat, const unsigned int i, const datum_t *d) {
+int data_set (Data *dat, size_t i, const Datum *d) {
   /* check the input pointers. */
-  if (!dat || !d)
+  if (!dat || !d || !d->x)
     return 0;
 
   /* check the index and dimensions. */
@@ -85,7 +85,7 @@ int data_set (data_t *dat, const unsigned int i, const datum_t *d) {
  * returns:
  *  integer indicating whether (1) or not (0) the assignment succeeded.
  */
-unsigned int data_find (const data_t *dat, const datum_t *d) {
+size_t data_find (const Data *dat, const Datum *d) {
   /* check the input pointers. */
   if (!dat || !d)
     return 0;
@@ -95,13 +95,13 @@ unsigned int data_find (const data_t *dat, const datum_t *d) {
     return 0;
 
   /* initialize the search bounds. */
-  unsigned int imin = 0;
-  unsigned int imax = dat->N - 1;
+  size_t imin = 0;
+  size_t imax = dat->N - 1;
 
   /* search for the datum. */
   while (imin <= imax) {
     /* get the midpoint and compare. */
-    const unsigned i = (imin + imax) / 2;
+    const size_t i = (imin + imax) / 2;
     const int cmp = datum_cmp(dat->data + i, d);
 
     /* check the comparison result. */
@@ -126,9 +126,9 @@ unsigned int data_find (const data_t *dat, const datum_t *d) {
  * returns:
  *  integer indicating whether (1) or not (0) the augmentation succeeded.
  */
-int data_augment (data_t *dat, const datum_t *d) {
+int data_augment (Data *dat, const Datum *d) {
   /* check the input pointers. */
-  if (!dat || !d)
+  if (!dat || !d || !d->x)
     return 0;
 
   /* check the observation dimensionality. */
@@ -159,8 +159,7 @@ int data_augment (data_t *dat, const datum_t *d) {
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-int data_augment_from_grid (data_t *dat, const unsigned int p,
-                            const matrix_t *grid) {
+int data_augment_from_grid (Data *dat, size_t p, const Matrix *grid) {
   /* declare required variables:
    *  @N0: previous dataset size.
    *  @N, @D: new dataset sizes.
@@ -168,8 +167,9 @@ int data_augment_from_grid (data_t *dat, const unsigned int p,
    *  @sz: maximum grid indices.
    *  @x: vector of grid locations.
    */
-  unsigned int status, N0, N, D, *idx, *sz;
-  vector_t *x;
+  size_t N0, N, D, *idx, *sz;
+  int status;
+  Vector *x;
 
   /* check the dataset and validate the gridding matrix. */
   if (!dat || !grid_validate(grid))
@@ -191,7 +191,7 @@ int data_augment_from_grid (data_t *dat, const unsigned int p,
     goto fail;
 
   /* loop over every grid point. */
-  for (unsigned int i = 0; i < N; i++) {
+  for (size_t i = 0; i < N; i++) {
     /* store the current grid point. */
     vector_copy(dat->data[N0 + i].x, x);
     dat->data[N0 + i].y = 0.0;
@@ -220,25 +220,25 @@ fail:
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-int data_augment_from_data (data_t *dat, const data_t *dsrc) {
+int data_augment_from_data (Data *dat, const Data *dsrc) {
   /* check the input pointers. */
   if (!dat || !dsrc)
     return 0;
 
   /* initialize the new sizes. */
-  const unsigned int D = dsrc->D;
-  const unsigned int N = dsrc->N;
-  const unsigned int N0 = dat->N;
+  const size_t D = dsrc->D;
+  const size_t N = dsrc->N;
+  const size_t N0 = dat->N;
 
   /* attempt to resize the dataset. */
   if (!data_resize(dat, N0 + N, D))
     return 0;
 
   /* loop over every augmenting point. */
-  for (unsigned int i = 0; i < N; i++) {
+  for (size_t i = 0; i < N; i++) {
     /* get the source and destination data. */
-    datum_t *di_src = data_get(dsrc, i);
-    datum_t *di = data_get(dat, N0 + i);
+    Datum *di_src = data_get(dsrc, i);
+    Datum *di = data_get(dat, N0 + i);
 
     /* copy from source to destination. */
     vector_copy(di->x, di_src->x);

@@ -3,102 +3,20 @@
 #ifndef __VFL_MODEL_H__
 #define __VFL_MODEL_H__
 
-/* include c headers. */
-#include <stdlib.h>
-#include <math.h>
-
 /* include vfl headers. */
 #include <vfl/util/chol.h>
 #include <vfl/factor.h>
 
-/* OBJECT_IS_MODEL(): check if an object is a model.
+/* Model_Check(): macro to check if a PyObject is a Model.
  */
-#define OBJECT_IS_MODEL(obj) \
-  (OBJECT_TYPE(obj)->init == (object_init_fn) model_init)
+#define Model_Check(v) (Py_TYPE(v) == &Model_Type)
 
-/* MODEL_TYPE(): macro function for casting model structure pointers
- * to their associated type structures.
+/* Model_Type: globally available model type structure.
  */
-#define MODEL_TYPE(s) ((model_type_t*) (s)->type)
+PyAPI_DATA(PyTypeObject) Model_Type;
 
-/* MODEL_PROP_BASE: base set of object properties available
- * to all models.
- */
-#define MODEL_PROP_BASE \
-  { "D", (object_getprop_fn) model_getprop_dims, NULL }, \
-  { "P", (object_getprop_fn) model_getprop_pars, NULL }, \
-  { "M", (object_getprop_fn) model_getprop_cmps, NULL }, \
-  { "K", (object_getprop_fn) model_getprop_wgts, NULL }, \
-  { "bound", (object_getprop_fn) model_getprop_bound, NULL }, \
-  { "wbar", \
-    (object_getprop_fn) model_getprop_wmean, \
-    (object_setprop_fn) model_setprop_wmean }, \
-  { "Sigma", \
-    (object_getprop_fn) model_getprop_wcov, \
-    (object_setprop_fn) model_setprop_wcov }, \
-  { "data", \
-    (object_getprop_fn) model_getprop_data, \
-    (object_setprop_fn) model_setprop_data }, \
-  { "factors", \
-    (object_getprop_fn) model_getprop_factors, \
-    (object_setprop_fn) model_setprop_factors }
-
-/* MODEL_METHOD_BASE: base set of object methods available
- * to all models.
- */
-#define MODEL_METHOD_BASE \
-  { "add", (object_method_fn) model_method_add }, \
-  { "reset", (object_method_fn) model_method_reset }, \
-  { "infer", (object_method_fn) model_method_infer }, \
-  { "eval", (object_method_fn) model_method_eval }, \
-  { "predict", (object_method_fn) model_method_predict }
-
-/* MODEL_PROP_ALPHA0: property array entry for prior noise shape.
- */
-#define MODEL_PROP_ALPHA0 \
-  { "alpha0", \
-    (object_getprop_fn) model_getprop_alpha0, \
-    (object_setprop_fn) model_setprop_alpha0 }
-
-/* MODEL_PROP_BETA0: property array entry for prior noise rate.
- */
-#define MODEL_PROP_BETA0 \
-  { "beta0", \
-    (object_getprop_fn) model_getprop_beta0, \
-    (object_setprop_fn) model_setprop_beta0 }
-
-/* MODEL_PROP_ALPHA: property array entry for posterior noise shape.
- */
-#define MODEL_PROP_ALPHA \
-  { "alpha", (object_getprop_fn) model_getprop_alpha, NULL }
-
-/* MODEL_PROP_BETA: property array entry for posterior noise rate.
- */
-#define MODEL_PROP_BETA \
-  { "beta", (object_getprop_fn) model_getprop_beta, NULL }
-
-/* MODEL_PROP_TAU: property array entry for read/write noise precision.
- */
-#define MODEL_PROP_TAU \
-  { "tau", \
-    (object_getprop_fn) model_getprop_tau, \
-    (object_setprop_fn) model_setprop_tau }
-
-/* MODEL_PROP_TAU_READONLY: property array entry for
- * read-only noise precision.
- */
-#define MODEL_PROP_TAU_READONLY \
-  { "tau", (object_getprop_fn) model_getprop_tau, NULL }
-
-/* MODEL_PROP_NU: property entry for relative noise/weight precision.
- */
-#define MODEL_PROP_NU \
-  { "nu", \
-    (object_getprop_fn) model_getprop_nu, \
-    (object_setprop_fn) model_setprop_nu }
-
-/* model_t: defined type for the model structure. */
-typedef struct model model_t;
+/* Model: defined type for the model structure. */
+typedef struct model Model;
 
 /* model_init_fn(): initialize a model structure
  * in a type-specific manner.
@@ -109,7 +27,7 @@ typedef struct model model_t;
  * returns:
  *  integer indicating initialization success (1) or failure (0).
  */
-typedef int (*model_init_fn) (model_t *mdl);
+typedef int (*model_init_fn) (Model *mdl);
 
 /* model_bound_fn(): return the lower bound on the log-evidence given
  * the currently inferred nuisance parameters.
@@ -120,7 +38,7 @@ typedef int (*model_init_fn) (model_t *mdl);
  * returns:
  *  current value of the variational lower bound.
  */
-typedef double (*model_bound_fn) (const model_t *mdl);
+typedef double (*model_bound_fn) (const Model *mdl);
 
 /* model_predict_fn(): return the posterior predicted mean and variance
  * of the model at a given observation input vector.
@@ -135,10 +53,8 @@ typedef double (*model_bound_fn) (const model_t *mdl);
  * returns:
  *  integer indicating prediction success (1) or failure (0).
  */
-typedef int (*model_predict_fn) (const model_t *mdl, const vector_t *x,
-                                 const unsigned int p,
-                                 double *mean,
-                                 double *var);
+typedef int (*model_predict_fn) (const Model *mdl, const Vector *x,
+                                 size_t p, double *mean, double *var);
 
 /* model_infer_fn(): update the posterior nuisance parameters of a model.
  *
@@ -148,7 +64,7 @@ typedef int (*model_predict_fn) (const model_t *mdl, const vector_t *x,
  * returns:
  *  integer indicating inference success (1) or failure (0).
  */
-typedef int (*model_infer_fn) (model_t *mdl);
+typedef int (*model_infer_fn) (Model *mdl);
 
 /* model_update_fn(): update the posterior nuisance parameters of a model
  * using low-rank updates to the inverse covariance matrix and its cholesky
@@ -161,7 +77,7 @@ typedef int (*model_infer_fn) (model_t *mdl);
  * returns:
  *  integer indicating inference success (1) or failure (0).
  */
-typedef int (*model_update_fn) (model_t *mdl, const unsigned int j);
+typedef int (*model_update_fn) (Model *mdl, size_t j);
 
 /* model_gradient_fn(): return the gradient of the variational lower bound
  * with respect to the parameters of a single factor, taken against a
@@ -176,8 +92,8 @@ typedef int (*model_update_fn) (model_t *mdl, const unsigned int j);
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-typedef int (*model_gradient_fn) (const model_t *mdl, const unsigned int i,
-                                  const unsigned int j, vector_t *grad);
+typedef int (*model_gradient_fn) (const Model *mdl, size_t i, size_t j,
+                                  Vector *grad);
 
 /* model_meanfield_fn(): perform an assumed-density mean-field update
  * of a single factor in a variational feature learning model.
@@ -192,67 +108,61 @@ typedef int (*model_gradient_fn) (const model_t *mdl, const unsigned int i,
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-typedef int (*model_meanfield_fn) (const model_t *mdl,
-                                   const unsigned int i,
-                                   const unsigned int j,
-                                   vector_t *b, matrix_t *B);
+typedef int (*model_meanfield_fn) (const Model *mdl, size_t i, size_t j,
+                                   Vector *b, Matrix *B);
 
 /* MODEL_INIT(): macro function for declaring and defining
  * functions conforming to model_init_fn().
  */
 #define MODEL_INIT(name) \
-int name ## _init (model_t *mdl)
+int name ## _init (Model *mdl)
 
 /* MODEL_BOUND(): macro function for declaring and defining
  * functions conforming to model_bound_fn().
  */
 #define MODEL_BOUND(name) \
-double name ## _bound (const model_t *mdl)
+double name ## _bound (const Model *mdl)
 
 /* MODEL_PREDICT(): macro function for declaring and defining
  * functions conforming to model_predict_fn().
  */
 #define MODEL_PREDICT(name) \
-int name ## _predict (const model_t *mdl, const vector_t *x, \
-                      const unsigned int p, \
-                      double *mean, \
-                      double *var)
+int name ## _predict (const Model *mdl, const Vector *x, \
+                      size_t p, double *mean, double *var)
 
 /* MODEL_INFER(): macro function for declaring and defining
  * functions conforming to model_infer_fn().
  */
 #define MODEL_INFER(name) \
-int name ## _infer (model_t *mdl)
+int name ## _infer (Model *mdl)
 
 /* MODEL_UPDATE(): macro function for declaring and defining
  * functions conforming to model_update_fn().
  */
 #define MODEL_UPDATE(name) \
-int name ## _update (model_t *mdl, const unsigned int j)
+int name ## _update (Model *mdl, size_t j)
 
 /* MODEL_GRADIENT(): macro function for declaring and defining
  * functions conforming to model_gradient_fn().
  */
 #define MODEL_GRADIENT(name) \
-int name ## _gradient (const model_t *mdl, const unsigned int i, \
-                       const unsigned int j, vector_t *grad)
+int name ## _gradient (const Model *mdl, size_t i, size_t j, \
+                       Vector *grad)
 
 /* MODEL_MEANFIELD(): macro function for declaring and defining
  * functions conforming to model_meanfield_fn().
  */
 #define MODEL_MEANFIELD(name) \
-int name ## _meanfield (const model_t *mdl, \
-                        const unsigned int i, \
-                        const unsigned int j, \
-                        vector_t *b, matrix_t *B)
+int name ## _meanfield (const Model *mdl, size_t i, size_t j, \
+                        Vector *b, Matrix *B)
 
-/* model_type_t: structure for holding type-specific model information.
+/* struct model: structure for holding a variational feature model.
  */
-typedef struct {
-  /* @base: basic object type information. */
-  object_type_t base;
+struct model {
+  /* object base. */
+  PyObject_HEAD
 
-  /* model type-specific functions:
+  /* model specialization functions:
    *  @init: initialization.
    *  @bound: variational lower bound.
    *  @predict: predictive mean and variance.
@@ -268,14 +178,6 @@ typedef struct {
   model_update_fn update;
   model_gradient_fn gradient;
   model_meanfield_fn meanfield;
-}
-model_type_t;
-
-/* struct model: structure for holding a variational feature model.
- */
-struct model {
-  /* base structure members. */
-  OBJECT_BASE;
 
   /* model sizes:
    *  @D: number of dimensions.
@@ -283,7 +185,7 @@ struct model {
    *  @M: number of factors.
    *  @K: number of weights.
    */
-  unsigned int D, P, M, K;
+  size_t D, P, M, K;
 
   /* prior parameters:
    *
@@ -311,37 +213,38 @@ struct model {
    *   @xi: variational parameters of the logistic functions.
    */
   double alpha, beta, tau;
-  vector_t *wbar;
-  matrix_t *Sigma;
-  vector_t *xi;
+  Vector *wbar;
+  Matrix *Sigma;
+  Vector *xi;
 
   /* intermediate variables:
    *  @Sinv: weight precisions.
    *  @L: weight precision cholesky factors.
    *  @h: projection vector.
    */
-  matrix_t *Sinv;
-  matrix_t *L;
-  vector_t *h;
+  Matrix *Sinv;
+  Matrix *L;
+  Vector *h;
 
   /* variational heart of the model:
    *  @factors: array of variational features/factors to be inferred.
    *  @priors: array of feature priors to use during inference.
    */
-  factor_t **factors;
-  factor_t **priors;
+  Factor **factors;
+  Factor **priors;
 
   /* @dat: associated dataset for inference.
    */
-  data_t *dat;
+  Data *dat;
 
   /* @tmp: temporary vector used to store transient intermediates
-   * during bound, inference and gradient calculations.
+   *       during bound, inference and gradient calculations.
    */
-  vector_t *tmp;
+  Vector *tmp;
 };
 
 /* function declarations (model-obj.c): */
+/*
 
 #define model_alloc(T) \
   (model_t*) obj_alloc((object_type_t*) T)
@@ -406,7 +309,9 @@ object_t *model_method_eval (model_t *mdl, object_t *args);
 
 object_t *model_method_predict (model_t *mdl, object_t *args);
 
+*/
 /* function declarations (model.c): */
+/*
 
 int model_set_alpha0 (model_t *mdl, const double alpha0);
 
@@ -463,7 +368,9 @@ int model_gradient (const model_t *mdl, const unsigned int i,
 
 int model_meanfield (const model_t *mdl, const unsigned int j);
 
+*/
 /* global, yet internally used function declarations (model.c): */
+/*
 
 unsigned int model_weight_idx (const model_t *mdl,
                                const unsigned int j,
@@ -473,15 +380,12 @@ void model_weight_adjust_init (const model_t *mdl, const unsigned int j);
 
 int model_weight_adjust (model_t *mdl, const unsigned int j);
 
+*/
 /* function declarations (model/tauvfr.c): */
+/*
 
 int tauvfr_set_tau (model_t *mdl, const double tau);
-
-/* available model types: */
-
-extern const model_type_t *vfl_model_vfc;
-extern const model_type_t *vfl_model_vfr;
-extern const model_type_t *vfl_model_tauvfr;
+*/
 
 #endif /* !__VFL_MODEL_H__ */
 

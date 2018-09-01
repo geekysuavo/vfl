@@ -1,6 +1,7 @@
 
 # import the required functionality.
-from distutils.core import setup, Extension
+from setuptools import setup, Extension
+import unittest
 import os
 
 # walk the 'src' directory to find all source files.
@@ -52,6 +53,9 @@ setup(
     'Programming Language :: Python :: 3.5',
     'Programming Language :: Python :: 3.6'
   ],
+
+  # project test suite.
+  test_suite = 'tests',
 
   # project package and extension module list.
   ext_modules = [vfl_extension]

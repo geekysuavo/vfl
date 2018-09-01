@@ -4,7 +4,6 @@
 #define __VFL_SEARCH_H__
 
 /* include vfl headers. */
-#include <vfl/base/object.h>
 #include <vfl/model.h>
 
 /* if required, include the opencl header. */
@@ -16,25 +15,28 @@
 # endif
 #endif
 
-/* OBJECT_IS_SEARCH(): check if an object is a search structure.
+/* Search_Check(): macro to check if a PyObject is a Search.
  */
-#define OBJECT_IS_SEARCH(obj) \
-  (OBJECT_TYPE(obj) == vfl_object_search)
+#define Search_Check(v) (Py_TYPE(v) == &Search_Type)
 
-/* search_t: structure for holding the state of a variance search.
+/* Search_Type: globally available search type structure.
+ */
+PyAPI_DATA(PyTypeObject) Search_Type;
+
+/* Search: structure for holding the state of a variance search.
  */
 typedef struct {
-  /* base structure members. */
-  OBJECT_BASE;
+  /* object base. */
+  PyObject_HEAD
 
   /* associated core structures:
    *  @grid: matrix of gridding information.
    *  @mdl: model used to build kernel code strings.
    *  @dat: dataset used for individual searches.
    */
-  matrix_t *grid;
-  model_t *mdl;
-  data_t *dat;
+  Matrix *grid;
+  Model *mdl;
+  Data *dat;
 
   /* current buffer states:
    *  @D: dimension count.
@@ -47,7 +49,7 @@ typedef struct {
 #ifdef __VFL_USE_OPENCL
   cl_uint D, P, K, G, N, n;
 #else
-  unsigned int D, P, K, G, N, n;
+  size_t D, P, K, G, N, n;
 #endif
 
   /* memory utilization and execution control variables:
@@ -91,9 +93,9 @@ typedef struct {
   cl_double *par, *var, *xgrid, *xmax, *xdat, *C;
   cl_uint *pdat;
 #else
-  vector_t *cs;
+  Vector *cs;
 #endif
-  matrix_t *cov;
+  Matrix *cov;
   float vmax;
 
   /* opencl device memory addresses:
@@ -120,9 +122,10 @@ typedef struct {
   cl_mem dev_C;
 #endif
 }
-search_t;
+Search;
 
 /* function declarations (search.c): */
+/*
 
 #define search_alloc() \
   (search_t*) obj_alloc(vfl_object_search);
@@ -136,10 +139,7 @@ int search_set_grid (search_t *S, matrix_t *grid);
 int search_set_outputs (search_t *S, const unsigned int num);
 
 int search_execute (search_t *S, vector_t *x);
-
-/* available object types: */
-
-extern const object_type_t *vfl_object_search;
+*/
 
 #endif /* !__VFL_SEARCH_H__ */
 

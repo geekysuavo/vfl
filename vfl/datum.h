@@ -31,7 +31,7 @@ typedef struct {
 }
 Datum;
 
-/* function declarations (datum.c): */
+/* function declarations (datum-cmp.c): */
 
 int datum_cmp (const Datum *d1, const Datum *d2);
 

@@ -1,6 +1,6 @@
 
-/* include the dataset header. */
-#include <vfl/data.h>
+/* include the vfl header. */
+#include <vfl/vfl.h>
 
 /* data_fread(): read a text file into an allocated dataset structure.
  *
@@ -11,14 +11,14 @@
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-int data_fread (data_t *dat, const char *fname) {
+int data_fread (Data *dat, const char *fname) {
   /* declare required variables:
    *  @N, @D: sizes of the input data.
    *  @buf: buffer of input lines.
    *  @fh: input file handle.
    */
-  unsigned int N, D;
   char buf[1024];
+  size_t N, D;
   FILE *fh;
 
   /* check the input pointers. */
@@ -31,7 +31,7 @@ int data_fread (data_t *dat, const char *fname) {
     return 0;
 
   /* attempt to read and parse the first line of input. */
-  if (!fgets(buf, 1024, fh) || sscanf(buf, "# %u %u", &N, &D) != 2)
+  if (!fgets(buf, 1024, fh) || sscanf(buf, "# %zu %zu", &N, &D) != 2)
     goto fail;
 
   /* check that the dataset has conforming dimensionality. */
@@ -39,7 +39,7 @@ int data_fread (data_t *dat, const char *fname) {
     goto fail;
 
   /* determine the total observation count. */
-  unsigned int i = dat->N;
+  size_t i = dat->N;
   N += dat->N;
 
   /* attempt to resize the dataset to accomodate the augmenting data. */
@@ -59,7 +59,7 @@ int data_fread (data_t *dat, const char *fname) {
       dat->data[i].p = atoi(tok);
 
       /* read each observation input value. */
-      for (unsigned int d = 0; d < D; d++) {
+      for (size_t d = 0; d < D; d++) {
         tok = strtok(NULL, " ");
         vector_set(dat->data[i].x, d, atof(tok));
       }
@@ -94,7 +94,7 @@ fail:
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-int data_fwrite (const data_t *dat, const char *fname) {
+int data_fwrite (const Data *dat, const char *fname) {
   /* check the input pointers. */
   if (!dat || !fname)
     return 0;
@@ -105,15 +105,15 @@ int data_fwrite (const data_t *dat, const char *fname) {
     return 0;
 
   /* write a short header. */
-  fprintf(fh, "# %u %u\n", dat->N, dat->D);
+  fprintf(fh, "# %zu %zu\n", dat->N, dat->D);
 
   /* loop over each observation. */
-  for (unsigned int i = 0; i < dat->N; i++) {
+  for (size_t i = 0; i < dat->N; i++) {
     /* write the observation output index. */
-    fprintf(fh, "%u", dat->data[i].p);
+    fprintf(fh, "%zu", dat->data[i].p);
 
     /* write the observation location. */
-    for (unsigned int d = 0; d < dat->D; d++)
+    for (size_t d = 0; d < dat->D; d++)
       fprintf(fh, " %le", vector_get(dat->data[i].x, d));
 
     /* write the observed value. */

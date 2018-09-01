@@ -8,11 +8,11 @@
 
 /* include vfl inference object headers. */
 #include <vfl/datum.h>
-//#include <vfl/data.h>
-//#include <vfl/model.h>
-//#include <vfl/optim.h>
-//#include <vfl/factor.h>
-//#include <vfl/search.h>
+#include <vfl/data.h>
+#include <vfl/model.h>
+#include <vfl/optim.h>
+#include <vfl/factor.h>
+#include <vfl/search.h>
 
 /* include vfl utility headers. */
 #include <vfl/util/list.h>
