@@ -7,40 +7,40 @@ class TestDatum(unittest.TestCase):
   def test_defaults(self):
     # Datum should initialize its properties to sane values.
     dat = vfl.Datum()
-    self.assertEqual(dat.D, 0)
-    self.assertEqual(dat.p, 0)
+    self.assertEqual(dat.dims, 0)
+    self.assertEqual(dat.output, 0)
     self.assertEqual(dat.y, 0.0)
     self.assertEqual(dat.x, [])
 
   def test_dims(self):
     # dimensionalities track the input location size.
     dat = vfl.Datum(x = [3])
-    self.assertEqual(dat.D, 1)
+    self.assertEqual(dat.dims, 1)
 
     # dimensionalities are immutable.
     with self.assertRaises(AttributeError):
-      dat.D = 10
+      dat.dims = 10
 
   def test_output(self):
     # output indices can be set at creation.
-    dat = vfl.Datum(p = 2)
-    self.assertEqual(dat.p, 2)
+    dat = vfl.Datum(output = 2)
+    self.assertEqual(dat.output, 2)
 
     # output indices are mutable.
-    dat.p = 3
-    self.assertEqual(dat.p, 3)
+    dat.output = 3
+    self.assertEqual(dat.output, 3)
 
     # negative output indices are not allowed.
     with self.assertRaises(OverflowError):
-      dat.p = -1
+      dat.output = -1
 
     # negative output indices are not allowed.
     with self.assertRaises(OverflowError):
-      dat = vfl.Datum(p = -2)
+      dat = vfl.Datum(output = -2)
 
     # non-integer output indices are not allowed.
     with self.assertRaises(TypeError):
-      dat.p = 'foo'
+      dat.output = 'foo'
 
   def test_input(self):
     # input locations can be set at creation.
@@ -49,8 +49,8 @@ class TestDatum(unittest.TestCase):
 
     # input locations are mutable.
     dat.x = [4, 5]
-    self.assertEqual(dat.D, 2)
     self.assertEqual(len(dat), 2)
+    self.assertEqual(dat.dims, 2)
     self.assertEqual(dat.x, [4, 5])
 
     # non-float-sequence input locations are not allowed.
@@ -75,7 +75,7 @@ class TestDatum(unittest.TestCase):
       dat = vfl.Datum(y = 'bar')
 
   def test_empty_sequence(self):
-    # Datum sequences are default to empty (as does 'x')
+    # Datum sequences default to empty (as does 'x')
     dat = vfl.Datum()
     self.assertEqual(len(dat), 0)
     with self.assertRaises(IndexError):

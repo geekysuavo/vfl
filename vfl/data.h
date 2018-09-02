@@ -11,6 +11,10 @@
  */
 #define Data_Check(v) (Py_TYPE(v) == &Data_Type)
 
+/* Data_Type: globally available dataset type structure.
+ */
+PyAPI_DATA(PyTypeObject) Data_Type;
+
 /* Data: structure for holding observations.
  */
 typedef struct {

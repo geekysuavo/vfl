@@ -3,9 +3,9 @@
 
 /* declare sub-module initialization functions: */
 
-PyMODINIT_FUNC PyInit_factors (void);
-PyMODINIT_FUNC PyInit_models (void);
-PyMODINIT_FUNC PyInit_optims (void);
+PyMODINIT_FUNC PyInit_factor (void);
+PyMODINIT_FUNC PyInit_model (void);
+PyMODINIT_FUNC PyInit_optim (void);
 
 /* declare type initialization functions: */
 

@@ -10,25 +10,17 @@ PyDoc_STRVAR(
 "\n");
 
 PyDoc_STRVAR(
-  Data_getset_len_doc,
-"Number of observations in a dataset (read-only)\n"
-"\n");
-
-PyDoc_STRVAR(
   Data_getset_dims_doc,
 "Dimensionality of a dataset (read-only)\n"
 "\n");
 
 PyDoc_STRVAR(
   Data_method_augment_doc,
-"augment(data=None, datum=None)\n"
-"augment(grid, output=0, outputs=None)\n"
 "Augment a dataset with new observations.\n"
 "\n");
 
 PyDoc_STRVAR(
   Data_method_write_doc,
-"write(file)\n"
 "Write the contents of a dataset to a file.\n"
 "\n");
 
@@ -51,7 +43,25 @@ data_seq_get (Data *self, Py_ssize_t i) {
     return NULL;
   }
 
-  /* FIXME: implement data_seq_get() */ return NULL;
+  /* allocate a vector for the new datum. */
+  Vector *xsrc = vector_alloc(self->D);
+  if (!xsrc)
+    return NULL;
+
+  /* create a new datum to return. */
+  Datum *dsrc = data_get(self, i);
+  Datum *d = (Datum*) PyObject_CallObject((PyObject*) &Datum_Type, NULL);
+  if (!d)
+    return NULL;
+
+  /* copy the datum properties. */
+  d->p = dsrc->p;
+  d->y = dsrc->y;
+  d->x = xsrc;
+  vector_copy(d->x, dsrc->x);
+
+  /* return the new datum. */
+  return (PyObject*) d;
 }
 
 /* data_seq_set(): method for setting dataset entries.
@@ -65,17 +75,20 @@ data_seq_set (Data *self, Py_ssize_t i, PyObject *v) {
     return -1;
   }
 
-  /* FIXME: implement data_seq_set() */
+  /* check that the value is a datum type. */
+  if (!Datum_Check(v)) {
+    PyErr_SetNone(PyExc_TypeError);
+    return -1;
+  }
+
+  /* copy the datum information into the dataset. */
+  if (!data_set(self, i, (Datum*) v)) {
+    PyErr_SetNone(PyExc_RuntimeError);
+    return -1;
+  }
 
   /* return success. */
   return 0;
-}
-
-/* data_get_len(): method for getting dataset observation counts.
- */
-static PyObject*
-data_get_len (Data *self) {
-  return PyLong_FromSize_t(self->N);
 }
 
 /* data_get_dims(): method for getting dataset dimensionalities.
@@ -90,8 +103,117 @@ data_get_dims (Data *self) {
 /* data_method_augment(): augment a dataset with new points.
  */
 static PyObject*
-data_method_augment (Data *self, PyObject *args, PyObject *keywords) {
-  /* FIXME: implement data_method_augment() */
+data_method_augment (Data *self, PyObject *args, PyObject *kwargs) {
+  /* define the keyword argument list. */
+  static char *kwlist[] = {
+    "file", "datum", "data", "grid", "output", "outputs", NULL
+  };
+
+  /* parse the method arguments. */
+  PyObject *fobj = NULL;
+  PyObject *dobj = NULL;
+  PyObject *Dobj = NULL;
+  PyObject *pobj = NULL;
+  PyObject *Pobj = NULL;
+  Matrix *grid = NULL;
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O&$O!O!O&OO", kwlist,
+                                   PyUnicode_FSConverter, &fobj,
+                                   &Datum_Type, &dobj,
+                                   &Data_Type, &Dobj,
+                                   Matrix_Converter, &grid,
+                                   &pobj, &Pobj))
+                                     return NULL;
+
+  /* if a grid was specified, do grid augmentation first, so we
+   * can deallocate it and assume its null from here on out.
+   */
+  if (grid) {
+    /* make sure 'output' and 'outputs' were not simultaneously given. */
+    if (pobj && Pobj) {
+      PyErr_SetString(PyExc_ValueError, "'output' and 'outputs' given");
+      matrix_free(grid);
+      return NULL;
+    }
+
+    /* check if multiple output indices were given. */
+    if (Pobj) {
+      /* check that the object is a sequence. */
+      if (!PySequence_Check(Pobj)) {
+        PyErr_SetString(PyExc_TypeError, "expected sequence 'outputs'");
+        matrix_free(grid);
+        return NULL;
+      }
+
+      /* loop over the outputs. */
+      for (Py_ssize_t i = 0; i < PySequence_Length(Pobj); i++) {
+        /* get the current sequence element. */
+        pobj = PySequence_GetItem(Pobj, i);
+        if (!pobj) {
+          matrix_free(grid);
+          return NULL;
+        }
+
+        /* get the current output value. */
+        const size_t pval = PyLong_AsSize_t(pobj);
+        Py_DECREF(pobj);
+
+        /* check for proper conversion. */
+        if (PyErr_Occurred()) {
+          matrix_free(grid);
+          return NULL;
+        }
+
+        /* augment from the grid. */
+        if (!data_augment_from_grid(self, pval, grid)) {
+          PyErr_SetString(PyExc_RuntimeError, "failed to augment from grid");
+          matrix_free(grid);
+          return NULL;
+        }
+      }
+    }
+    else {
+      /* set the default output index value. */
+      size_t pval = 0;
+
+      /* check if an output index was specified. */
+      if (pobj) {
+        /* get the output index value. */
+        pval = PyLong_AsSize_t(pobj);
+        if (PyErr_Occurred()) {
+          matrix_free(grid);
+          return NULL;
+        }
+      }
+
+      /* augment from the grid. */
+      if (!data_augment_from_grid(self, pval, grid)) {
+        PyErr_SetString(PyExc_RuntimeError, "failed to augment from grid");
+        matrix_free(grid);
+        return NULL;
+      }
+    }
+
+    /* free the gridding matrix. */
+    matrix_free(grid);
+  }
+
+  /* if a filename was given, read it into the dataset. */
+  if (fobj && !data_fread(self, PyBytes_AsString(fobj))) {
+    PyErr_SetNone(PyExc_IOError);
+    return NULL;
+  }
+
+  /* if a datum was given, add it to the dataset. */
+  if (dobj && !data_augment(self, (Datum*) dobj)) {
+    PyErr_SetString(PyExc_RuntimeError, "failed to append datum");
+    return NULL;
+  }
+
+  /* if a dataset was given, add it to the dataset. */
+  if (Dobj && !data_augment_from_data(self, (Data*) Dobj)) {
+    PyErr_SetString(PyExc_RuntimeError, "failed to append dataset");
+    return NULL;
+  }
 
   /* return nothing. */
   Py_RETURN_NONE;
@@ -100,8 +222,21 @@ data_method_augment (Data *self, PyObject *args, PyObject *keywords) {
 /* data_method_write(): write the contents of a dataset to a file.
  */
 static PyObject*
-data_method_write (Data *self, PyObject *args, PyObject *keywords) {
-  /* FIXME: implement data_method_write() */
+data_method_write (Data *self, PyObject *args, PyObject *kwargs) {
+  /* define the keyword argument list. */
+  static char *kwlist[] = { "file", NULL };
+
+  /* parse the filename argument. */
+  PyObject *fobj = NULL;
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&", kwlist,
+                                   PyUnicode_FSConverter, &fobj))
+                                     return NULL;
+
+  /* write the data to the file. */
+  if (!data_fwrite(self, PyBytes_AsString(fobj))) {
+    PyErr_SetNone(PyExc_IOError);
+    return NULL;
+  }
 
   /* return nothing. */
   Py_RETURN_NONE;
@@ -112,7 +247,7 @@ data_method_write (Data *self, PyObject *args, PyObject *keywords) {
 /* data_new(): allocation method for datasets.
  */
 static PyObject*
-data_new (PyTypeObject *type, PyObject *args, PyObject *keywords) {
+data_new (PyTypeObject *type, PyObject *args, PyObject *kwargs) {
   /* allocate a new dataset. */
   Data *self = (Data*) type->tp_alloc(type, 0);
   if (!self)
@@ -138,12 +273,13 @@ data_new (PyTypeObject *type, PyObject *args, PyObject *keywords) {
  */
 static int
 data_init (Data *self, PyObject *args, PyObject *kwargs) {
-  /* define the list of accepted keywords. */
-  const char *kwlist[] = { "file", "grid", NULL };
-
-  /* FIXME: implement data_init() */
+  /* creation and calling augment() behave exactly the same. */
+  PyObject *obj = data_method_augment(self, args, kwargs);
+  if (!obj)
+    return -1;
 
   /* return success. */
+  Py_DECREF(obj);
   return 0;
 }
 
@@ -187,13 +323,7 @@ static PySequenceMethods Data_sequence = {
 /* Data_getset: property definition structure for datasets.
  */
 static PyGetSetDef Data_getset[] = {
-  { "N",
-    (getter) data_get_len,
-    NULL,
-    Data_getset_len_doc,
-    NULL
-  },
-  { "D",
+  { "dims",
     (getter) data_get_dims,
     NULL,
     Data_getset_dims_doc,

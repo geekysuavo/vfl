@@ -179,6 +179,10 @@ int data_augment_from_grid (Data *dat, size_t p, const Matrix *grid) {
   D = grid_dims(grid);
   N0 = dat->N;
 
+  /* check the dimensionality of the grid. */
+  if (dat->D && dat->N && D != dat->D)
+    return 0;
+
   /* initialize the return status. */
   status = 0;
 
@@ -229,6 +233,10 @@ int data_augment_from_data (Data *dat, const Data *dsrc) {
   const size_t D = dsrc->D;
   const size_t N = dsrc->N;
   const size_t N0 = dat->N;
+
+  /* check the dimensionality of the source dataset. */
+  if (dat->D && dat->N && D != dat->D)
+    return 0;
 
   /* attempt to resize the dataset. */
   if (!data_resize(dat, N0 + N, D))

@@ -155,7 +155,7 @@ datum_set_value (Datum *self, PyObject *value, void *closure) {
 /* datum_new(): allocation method for datum objects.
  */
 static PyObject*
-datum_new (PyTypeObject *type, PyObject *args, PyObject *keywords) {
+datum_new (PyTypeObject *type, PyObject *args, PyObject *kwargs) {
   /* allocate a new datum object. */
   Datum *self = (Datum*) type->tp_alloc(type, 0);
   if (!self)
@@ -176,8 +176,8 @@ datum_new (PyTypeObject *type, PyObject *args, PyObject *keywords) {
  */
 static int
 datum_init (Datum *self, PyObject *args, PyObject *kwargs) {
-  /* define the list of accepted keywords. */
-  static char *kwlist[] = { "p", "x", "y", NULL };
+  /* define the keyword argument list. */
+  static char *kwlist[] = { "output", "x", "y", NULL };
 
   /* parse the arguments. */
   PyObject *pobj = NULL;
@@ -239,13 +239,13 @@ static PySequenceMethods Datum_sequence = {
 /* Datum_getset: property definition structure for datum objects.
  */
 static PyGetSetDef Datum_getset[] = {
-  { "D",
+  { "dims",
     (getter) datum_get_dims,
     NULL,
     Datum_getset_dims_doc,
     NULL
   },
-  { "p",
+  { "output",
     (getter) datum_get_output,
     (setter) datum_set_output,
     Datum_getset_output_doc,
