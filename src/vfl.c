@@ -9,6 +9,7 @@ PyMODINIT_FUNC PyInit_optim (void);
 
 /* declare type initialization functions: */
 
+int Search_Type_init (PyObject *mod);
 int Factor_Type_init (PyObject *mod);
 int Model_Type_init (PyObject *mod);
 int Optim_Type_init (PyObject *mod);
@@ -50,6 +51,8 @@ PyInit_vfl (void) {
 
   /* FIXME: intialize the core module types. */
   if (Factor_Type_init(vfl) < 0 ||
+      Model_Type_init(vfl) < 0 ||
+      Optim_Type_init(vfl) < 0 ||
       Datum_Type_init(vfl) < 0 ||
       Data_Type_init(vfl) < 0)
     return NULL;
@@ -83,5 +86,28 @@ PyInit_vfl (void) {
 
   /* return the new module. */
   return vfl;
+}
+
+/* vfl_base_init(): initialization method for factors, models, and
+ * optimizers in vfl.
+ */
+int
+vfl_base_init (PyObject *self, PyObject *args, PyObject *kwargs) {
+  /* return if no keyword arguments were given. */
+  if (!kwargs || !PyDict_Check(kwargs))
+    return 0;
+
+  /* declare variables for dictionary traversal. */
+  PyObject *key, *val;
+  Py_ssize_t i = 0;
+
+  /* treat each dictionary key-value pair as an attribute to set. */
+  while (PyDict_Next(kwargs, &i, &key, &val)) {
+    if (PyObject_SetAttr((PyObject*) self, key, val) < 0)
+      return -1;
+  }
+
+  /* return success. */
+  return 0;
 }
 

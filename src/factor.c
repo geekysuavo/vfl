@@ -181,28 +181,6 @@ factor_new (PyTypeObject *type, PyObject *args, PyObject *kwargs) {
   return (PyObject*) self;
 }
 
-/* factor_init(): initialization method for factors.
- */
-static int
-factor_init (Factor *self, PyObject *args, PyObject *kwargs) {
-  /* return if no keyword arguments were given. */
-  if (!kwargs || !PyDict_Check(kwargs))
-    return 0;
-
-  /* declare variables for dictionary traversal. */
-  PyObject *key, *val;
-  Py_ssize_t i = 0;
-
-  /* treat each dictionary key-value pair as an attribute set. */
-  while (PyDict_Next(kwargs, &i, &key, &val)) {
-    if (PyObject_SetAttr((PyObject*) self, key, val) < 0)
-      return -1;
-  }
-
-  /* return success. */
-  return 0;
-}
-
 /* factor_dealloc(): deallocation method for factors.
  */
 static void
@@ -224,7 +202,8 @@ factor_dealloc (Factor *self) {
 static PyObject*
 factor_repr (Factor *self) {
   /* build and return the representation string. */
-  return PyUnicode_FromFormat("<vfl.Factor at 0x%x>", (long) self);
+  return PyUnicode_FromFormat("<%s at 0x%x>", Py_TYPE(self)->tp_name,
+                              (long) self);
 }
 
 /* factor_call(): evaluation method for factors.
@@ -329,7 +308,7 @@ PyTypeObject Factor_Type = {
   0,                                             /* tp_descr_get      */
   0,                                             /* tp_descr_set      */
   0,                                             /* tp_dictoffset     */
-  (initproc) factor_init,                        /* tp_init           */
+  vfl_base_init,                                 /* tp_init           */
   0,                                             /* tp_alloc          */
   factor_new                                     /* tp_new            */
 };

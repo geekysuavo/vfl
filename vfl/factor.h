@@ -467,6 +467,8 @@ struct factor {
 
 void factor_reset (Factor *f);
 
+Factor *factor_copy (const Factor *f);
+
 int factor_resize (Factor *f, size_t D, size_t P, size_t K);
 
 size_t factor_dims (const Factor *f);

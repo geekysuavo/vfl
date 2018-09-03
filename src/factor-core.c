@@ -44,6 +44,54 @@ void factor_reset (Factor *f) {
   f->par = NULL;
 }
 
+/* factor_copy(): create a copy of a factor.
+ *
+ * arguments:
+ *  @f: factor structure pointer to access.
+ *
+ * returns:
+ *  pointer to a new factor structure with identical data.
+ *  (New reference)
+ */
+Factor *factor_copy (const Factor *f) {
+  /* return null if the input is null. */
+  if (!f)
+    return NULL;
+
+  /* allocate a new factor having the same type. */
+  Factor *g = (Factor*) PyObject_CallObject((PyObject*) Py_TYPE(f), NULL);
+  if (!g)
+    return NULL;
+
+  /* check if the factors have different sizes. */
+  if (g->D != f->D ||
+      g->P != f->P ||
+      g->K != f->K) {
+    /* resize the duplicate to match. */
+    if (!factor_resize(g, f->D, f->P, f->K)) {
+      Py_DECREF(g);
+      return NULL;
+    }
+  }
+
+  /* copy the factor flags and dimension index. */
+  g->fixed = f->fixed;
+  g->d = f->d;
+
+  /* copy the information matrix and parameter vector. */
+  matrix_copy(g->inf, f->inf);
+  vector_copy(g->par, f->par);
+
+  /* if the input factor has a copy function assigned, call it. */
+  if (f->copy && !f->copy(f, g)) {
+    Py_DECREF(g);
+    return NULL;
+  }
+
+  /* return the new factor. */
+  return g;
+}
+
 /* factor_resize(): modify the dimension, parameter and weight counts
  * of a factor.
  *

@@ -227,7 +227,7 @@ int model_add_factor (Model *mdl, Factor *f) {
 
   /* store the posterior factor and make a copy for the prior. */
   mdl->factors[M - 1] = f;
-  mdl->priors[M - 1] = (Factor*) obj_copy(f); /* FIXME: PYTHON! */
+  mdl->priors[M - 1] = factor_copy(f);
 
   /* retain references to the factor and copied prior. */
   Py_INCREF(mdl->factors[M - 1]);
