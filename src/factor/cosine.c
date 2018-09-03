@@ -1,16 +1,42 @@
 
-/* include the factor and float headers. */
-#include <vfl/factor.h>
-#include <vfl/base/float.h>
+/* include the vfl header. */
+#include <vfl/vfl.h>
 
 /* define the parameter indices. */
 #define P_MU   0
 #define P_TAU  1
 
+/* Cosine: structure for holding cosine factors.
+ */
+typedef struct {
+  /* factor superclass. */
+  Factor super;
+
+  /* subclass struct members. */
+}
+Cosine;
+
+/* define documentation strings: */
+
+PyDoc_STRVAR(
+  Cosine_doc,
+"Cosine() -> Cosine object\n"
+"\n");
+
+PyDoc_STRVAR(
+  Cosine_getset_mu_doc,
+"Frequency mean (read/write)\n"
+"\n");
+
+PyDoc_STRVAR(
+  Cosine_getset_tau_doc,
+"Frequency precision (read/write)\n"
+"\n");
+
 /* cosine_eval(): evaluate the cosine factor at its mode.
  *  - see factor_mean_fn() for more information.
  */
-FACTOR_EVAL (cosine) {
+FACTOR_EVAL (Cosine) {
   /* get the input value along the factor dimension. */
   const double xd = vector_get(x, f->d);
 
@@ -24,7 +50,7 @@ FACTOR_EVAL (cosine) {
 /* cosine_mean(): evaluate the cosine factor mean.
  *  - see factor_mean_fn() for more information.
  */
-FACTOR_MEAN (cosine) {
+FACTOR_MEAN (Cosine) {
   /* get the input value along the factor dimension. */
   const double xd = vector_get(x, f->d);
 
@@ -39,7 +65,7 @@ FACTOR_MEAN (cosine) {
 /* cosine_var(): evaluate the cosine factor variance.
  *  - see factor_var_fn() for more information.
  */
-FACTOR_VAR (cosine) {
+FACTOR_VAR (Cosine) {
   /* get the input value along the factor dimension. */
   const double xd = vector_get(x, f->d);
 
@@ -62,7 +88,7 @@ FACTOR_VAR (cosine) {
 /* cosine_cov(): evaluate the cosine factor covariance.
  *  - see factor_cov_fn() for more information.
  */
-FACTOR_COV (cosine) {
+FACTOR_COV (Cosine) {
   /* get the factor parameters. */
   const double mu = vector_get(f->par, P_MU);
   const double tau = vector_get(f->par, P_TAU);
@@ -78,7 +104,7 @@ FACTOR_COV (cosine) {
 /* cosine_diff_mean(): evaluate the cosine factor mean gradient.
  *  - see factor_diff_mean_fn() for more information.
  */
-FACTOR_DIFF_MEAN (cosine) {
+FACTOR_DIFF_MEAN (Cosine) {
   /* get the input value along the factor dimension. */
   const double xd = vector_get(x, f->d);
 
@@ -106,7 +132,7 @@ FACTOR_DIFF_MEAN (cosine) {
 /* cosine_diff_var(): evaluate the cosine factor variance gradient.
  *  - see factor_diff_var_fn() for more information.
  */
-FACTOR_DIFF_VAR (cosine) {
+FACTOR_DIFF_VAR (Cosine) {
   /* get twice the input value along the factor dimension. */
   const double xp = 2.0 * vector_get(x, f->d);
 
@@ -134,7 +160,7 @@ FACTOR_DIFF_VAR (cosine) {
 /* cosine_div(): evaluate the cosine factor divergence.
  *  - see factor_div_fn() for more information.
  */
-FACTOR_DIV (cosine) {
+FACTOR_DIV (Cosine) {
   /* get the first factor parameters. */
   const double mu = vector_get(f->par, P_MU);
   const double tau = vector_get(f->par, P_TAU);
@@ -151,7 +177,7 @@ FACTOR_DIV (cosine) {
 /* cosine_kernel(): write the kernel code of a cosine factor.
  *  - see factor_kernel_fn() for more information.
  */
-FACTOR_KERNEL (cosine) {
+FACTOR_KERNEL (Cosine) {
   /* define the kernel code format string. */
   const char *fmt = "\
 const double xd = x1[%u] - x2[%u];\n\
@@ -178,7 +204,7 @@ cov = exp(-0.5 * xd * xd / tau) * cos(mu * xd + zd);\n\
 /* cosine_set(): store a parameter into a cosine factor.
  *  - see factor_set_fn() for more information.
  */
-FACTOR_SET (cosine) {
+FACTOR_SET (Cosine) {
   /* determine which parameter is being assigned. */
   switch (i) {
     /* frequency mean: in (-inf, inf) */
@@ -206,84 +232,60 @@ FACTOR_SET (cosine) {
   return 0;
 }
 
-/* --- */
-
-/* define the static cosine factor properties. */
-FACTOR_PROP_GETSET (cosine, mu,  P_MU)
-FACTOR_PROP_GETSET (cosine, tau, P_TAU)
-
-/* cosine_properties: array of accessible cosine factor properties.
+/* Cosine_new(): allocate a new cosine factor.
+ *  - see PyTypeObject.tp_new for details.
  */
-static object_property_t cosine_properties[] = {
-  FACTOR_PROP_BASE,
-  FACTOR_PROP (cosine, mu),
-  FACTOR_PROP (cosine, tau),
-  { NULL, NULL, NULL }
+FACTOR_NEW (Cosine) {
+  /* allocate a new cosine factor. */
+  Cosine *self = (Cosine*) type->tp_alloc(type, 0);
+  factor_reset((Factor*) self);
+  if (!self)
+    return NULL;
+
+  /* initialize the function pointers. */
+  Factor *f = (Factor*) self;
+  f->eval      = Cosine_eval;
+  f->mean      = Cosine_mean;
+  f->var       = Cosine_var;
+  f->cov       = Cosine_cov;
+  f->diff_mean = Cosine_diff_mean;
+  f->diff_var  = Cosine_diff_var;
+  f->div       = Cosine_div;
+  f->kernel    = Cosine_kernel;
+  f->set       = Cosine_set;
+
+  /* resize to the default size. */
+  if (!factor_resize(f, 1, 2, 2)) {
+    Py_DECREF(f);
+    return NULL;
+  }
+
+  /* set the default parameter values. */
+  factor_set(f, P_MU, 0.0);
+  factor_set(f, P_TAU, 1.0);
+
+  /* return the new object. */
+  return (PyObject*) self;
+}
+
+/* cosine factor properties. */
+FACTOR_PROP_GETSET (Cosine, mu, P_MU)
+FACTOR_PROP_GETSET (Cosine, tau, P_TAU)
+
+/* Cosine_getset: property definition structure for cosine factors.
+ */
+static PyGetSetDef Cosine_getset[] = {
+  FACTOR_PROP (Cosine, mu),
+  FACTOR_PROP (Cosine, tau),
+  { NULL }
 };
 
-/* cosine_names: table of cosine factor parameter names.
+/* Cosine_methods: method definition structure for cosine factors.
  */
-char *cosine_names[] = {
-  "mu",
-  "tau"
+static PyMethodDef Cosine_methods[] = {
+  { NULL }
 };
 
-/* --- */
-
-/* cosine_methods: array of callable object methods.
- */
-static object_method_t cosine_methods[] = {
-  FACTOR_METHOD_BASE,
-  { NULL, NULL }
-};
-
-/* --- */
-
-/* cosine_type: cosine factor type structure.
- */
-static factor_type_t cosine_type = {
-  { /* base: */
-    "cosine",                                    /* name      */
-    sizeof(factor_t),                            /* size      */
-
-    (object_init_fn) factor_init,                /* init      */
-    (object_copy_fn) factor_copy,                /* copy      */
-    (object_free_fn) factor_free,                /* free      */
-    NULL,                                        /* test      */
-    NULL,                                        /* cmp       */
-
-    (object_binary_fn) factor_add,               /* add       */
-    NULL,                                        /* sub       */
-    (object_binary_fn) factor_mul,               /* mul       */
-    NULL,                                        /* div       */
-    NULL,                                        /* pow       */
-
-    NULL,                                        /* get       */
-    NULL,                                        /* set       */
-    cosine_properties,                           /* props     */
-    cosine_methods                               /* methods   */
-  },
-
-  1,                                             /* initial D */
-  2,                                             /* initial P */
-  2,                                             /* initial K */
-  cosine_names,                                  /* parnames  */
-  cosine_eval,                                   /* eval      */
-  cosine_mean,                                   /* mean      */
-  cosine_var,                                    /* var       */
-  cosine_cov,                                    /* cov       */
-  cosine_diff_mean,                              /* diff_mean */
-  cosine_diff_var,                               /* diff_var  */
-  NULL,                                          /* meanfield */
-  cosine_div,                                    /* div       */
-  NULL,                                          /* init      */
-  NULL,                                          /* resize    */
-  cosine_kernel,                                 /* kernel    */
-  cosine_set,                                    /* set       */
-  NULL,                                          /* copy      */
-  NULL                                           /* free      */
-};
-
-/* vfl_factor_cosine: address of the cosine_type structure. */
-const factor_type_t *vfl_factor_cosine = &cosine_type;
+/* Cosine_Type, Cosine_Type_init() */
+FACTOR_TYPE (Cosine)
 

@@ -95,6 +95,7 @@ data_seq_set (Data *self, Py_ssize_t i, PyObject *v) {
  */
 static PyObject*
 data_get_dims (Data *self) {
+  /* return the dimensionality as an integer. */
   return PyLong_FromSize_t(self->D);
 }
 
@@ -302,7 +303,7 @@ data_dealloc (Data *self) {
 static PyObject*
 data_repr (Data *self) {
   /* build and return the representation string. */
-  return PyUnicode_FromFormat("<vfl.Data at 0x%lx>", (long) self);
+  return PyUnicode_FromFormat("<vfl.Data at 0x%x>", (long) self);
 }
 
 /* Data_sequence: sequence definition structure for datasets.

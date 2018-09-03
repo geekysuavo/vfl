@@ -40,8 +40,8 @@ typedef double (*factor_mean_fn) (const Factor *f, const Vector *x,
  *  @f: factor structure pointer.
  *  @x: observation input vector.
  *  @p: function output index.
- *  @i: first basis element index
- *  @j: second basis element index
+ *  @i: first basis element index.
+ *  @j: second basis element index.
  *
  * returns:
  *  E[ phi^{p}(x | theta(f))_i phi^{p}(x | theta(f))_j ]
@@ -73,7 +73,7 @@ typedef double (*factor_cov_fn) (const Factor *f,
  *  @f: factor structure pointer.
  *  @x: observation input vector.
  *  @p: function output index.
- *  @i: basis element index
+ *  @i: basis element index.
  *  @df: vector of gradients.
  *
  * returns:
@@ -89,8 +89,8 @@ typedef void (*factor_diff_mean_fn) (const Factor *f, const Vector *x,
  *  @f: factor structure pointer.
  *  @x: observation input vector.
  *  @p: function output index.
- *  @i: first basis element index
- *  @j: second basis element index
+ *  @i: first basis element index.
+ *  @j: second basis element index.
  *  @df: vector of gradients.
  *
  * returns:
@@ -306,6 +306,86 @@ int name ## _copy (const Factor *f, Factor *fdup)
 #define FACTOR_FREE(name) \
 void name ## _free (Factor *f)
 
+/* FACTOR_NEW(): macro function for declaring and defining
+ * functions conforming to PyTypeObject->tp_new().
+ */
+#define FACTOR_NEW(Typ) \
+static PyObject* \
+Typ ## _new (PyTypeObject *type, PyObject *args, PyObject *kwargs)
+
+/* FACTOR_PROP(): macro function for inserting a static factor
+ * property into a PyGetSetDef array.
+ */
+#define FACTOR_PROP(Typ,name) \
+  { #name, \
+    (getter) Typ ## _get_ ## name, \
+    (setter) Typ ## _set_ ## name, \
+    Typ ## _getset_ ## name ## _doc, \
+    NULL }
+
+/* FACTOR_PROP_GETSET(): macro function for defining property
+ * getter and setter functions for static factor properties.
+ */
+#define FACTOR_PROP_GETSET(Typ,name,idx) \
+  FACTOR_PROP_GET(Typ, name, idx) \
+  FACTOR_PROP_SET(Typ, name, idx)
+
+/* FACTOR_PROP_GET(): macro function for defining a getter function
+ * for static factor properties.
+ */
+#define FACTOR_PROP_GET(Typ,name,idx) \
+static PyObject* Typ ## _get_ ## name (Typ *self) { \
+  return PyFloat_FromDouble(factor_get((Factor*) self, idx)); }
+
+/* FACTOR_PROP_SET(): macro function for defining a setter function
+ * for static factor properties.
+ */
+#define FACTOR_PROP_SET(Typ,name,idx) \
+static int Typ ## _set_ ## name (Typ *self, PyObject *value, void *cl) { \
+  const double v = PyFloat_AsDouble(value); \
+  if (PyErr_Occurred()) return -1; \
+  if (!factor_set((Factor*) self, idx, v)) { \
+    PyErr_SetString(PyExc_ValueError, \
+      "failed to set '" #name "' parameter"); \
+    return -1; } \
+  return 0; }
+
+/* FACTOR_TYPE_INIT(): macro function for defining a PyTypeInit function
+ * for subclasses of Factor.
+ */
+#define FACTOR_TYPE_INIT(Typ) \
+int Typ ## _Type_init (PyObject *mod) { \
+  if (PyType_Ready(&Typ ## _Type) < 0) return -1; \
+  Py_INCREF(&Typ ## _Type); \
+  PyModule_AddObject(mod, #Typ, (PyObject*) &Typ ## _Type); \
+  return 0; }
+
+/* FACTOR_TYPE_DEF(): macro function for defining a PyTypeObject
+ * structure for subclasses of factor.
+ */
+#define FACTOR_TYPE_DEF(Typ) \
+PyTypeObject Typ ## _Type = { \
+  PyVarObject_HEAD_INIT(NULL, 0) \
+  "factor." #Typ, \
+  sizeof(Typ), \
+  0, 0, 0, 0, 0, 0, 0, 0, \
+  0, 0, 0, 0, 0, 0, 0, 0, \
+  Py_TPFLAGS_DEFAULT, \
+  Typ ## _doc, \
+  0, 0, 0, 0, 0, 0, \
+  Typ ## _methods, \
+  0, \
+  Typ ## _getset, \
+  &Factor_Type, \
+  0, 0, 0, 0, 0, 0, \
+  Typ ## _new };
+
+/* FACTOR_TYPE(): macro function for defining a subtype of Factor.
+ */
+#define FACTOR_TYPE(Typ) \
+  FACTOR_TYPE_DEF(Typ) \
+  FACTOR_TYPE_INIT(Typ)
+
 /* struct factor: structure for holding a variational factor.
  *
  * each factor holds information on a set of @M basis elements,
@@ -383,124 +463,49 @@ struct factor {
   Vector *par;
 };
 
-/* function declarations (factor-obj.c): */
-/*
+/* function declarations (factor-core.c): */
 
-#define factor_alloc(T) \
-  (factor_t*) obj_alloc((object_type_t*) T)
+void factor_reset (Factor *f);
 
-int factor_init (factor_t *f);
+int factor_resize (Factor *f, size_t D, size_t P, size_t K);
 
-int factor_copy (const factor_t *f,
-                 factor_t *fdup);
+size_t factor_dims (const Factor *f);
 
-void factor_free (factor_t *f);
+size_t factor_parms (const Factor *f);
 
-object_t *factor_add (const factor_t *a, const factor_t *b);
+size_t factor_weights (const Factor *f);
 
-object_t *factor_mul (const factor_t *a, const factor_t *b);
+double factor_get (const Factor *f, size_t i);
 
-object_t *factor_getprop_dim (const factor_t *f);
+int factor_set (Factor *f, size_t i, double value);
 
-object_t *factor_getprop_fixed (const factor_t *f);
+void factor_fix (Factor *f, int fixed);
 
-int factor_setprop_dim (factor_t *f, object_t *val);
+double factor_eval (const Factor *f, const Vector *x,
+                    size_t p, size_t i);
 
-int factor_setprop_fixed (factor_t *f, object_t *val);
+double factor_mean (const Factor *f, const Vector *x,
+                    size_t p, size_t i);
 
-object_t *factor_setprop (factor_t *f, object_t *args);
+double factor_var (const Factor *f, const Vector *x,
+                   size_t p, size_t i, size_t j);
 
-*/
-/* function declarations (factor.c): */
-/*
+double factor_cov (const Factor *f, const Vector *x1, const Vector *x2,
+                   size_t p1, size_t p2);
 
-int factor_resize (factor_t *f,
-                   const unsigned int D,
-                   const unsigned int P,
-                   const unsigned int K);
+int factor_diff_mean (const Factor *f, const Vector *x,
+                      size_t p, size_t i, Vector *df);
 
-unsigned int factor_dims (const factor_t *f);
+int factor_diff_var (const Factor *f, const Vector *x,
+                     size_t p, size_t i, size_t j,
+                     Vector *df);
 
-unsigned int factor_parms (const factor_t *f);
+int factor_meanfield (Factor *f, const Factor *fp, const Datum *dat,
+                      Vector *b, Matrix *B);
 
-unsigned int factor_weights (const factor_t *f);
+double factor_div (const Factor *f, const Factor *f2);
 
-char *factor_parname (const factor_t *f, const unsigned int i);
-
-double factor_get_by_name (const factor_t *f, const char *name);
-
-double factor_get (const factor_t *f, const unsigned int i);
-
-void factor_set_fixed (factor_t *f, const unsigned int fixed);
-
-int factor_set (factor_t *f, const unsigned int i, const double value);
-
-double factor_eval (const factor_t *f,
-                    const vector_t *x,
-                    const unsigned int p,
-                    const unsigned int i);
-
-double factor_mean (const factor_t *f,
-                    const vector_t *x,
-                    const unsigned int p,
-                    const unsigned int i);
-
-double factor_var (const factor_t *f,
-                   const vector_t *x,
-                   const unsigned int p,
-                   const unsigned int i,
-                   const unsigned int j);
-
-double factor_cov (const factor_t *f,
-                   const vector_t *x1,
-                   const vector_t *x2,
-                   const unsigned int p1,
-                   const unsigned int p2);
-
-int factor_diff_mean (const factor_t *f,
-                      const vector_t *x,
-                      const unsigned int p,
-                      const unsigned int i,
-                      vector_t *df);
-
-int factor_diff_var (const factor_t *f,
-                     const vector_t *x,
-                     const unsigned int p,
-                     const unsigned int i,
-                     const unsigned int j,
-                     vector_t *df);
-
-int factor_meanfield (factor_t *f, const factor_t *fp, const datum_t *dat,
-                      vector_t *b, matrix_t *B);
-
-double factor_div (const factor_t *f, const factor_t *f2);
-
-char *factor_kernel (const factor_t *f, const unsigned int p0);
-
-*/
-/* function declarations (factor/fixed-impulse.c): */
-/*
-
-int fixed_impulse_set_location (factor_t *f, const double mu);
-
-*/
-/* function declarations (factor/polynomial.c): */
-/*
-
-int polynomial_set_order (factor_t *f, const unsigned int order);
-
-*/
-/* function declarations (factor/product.c): */
-/*
-
-unsigned int product_get_size (const factor_t *f);
-
-factor_t *product_get_factor (const factor_t *f, const unsigned int idx);
-
-int product_add_factor (factor_t *f, const unsigned int d, factor_t *fd);
-
-int product_update (factor_t *f);
-*/
+char *factor_kernel (const Factor *f, size_t p0);
 
 #endif /* !__VFL_FACTOR_H__ */
 

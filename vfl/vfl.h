@@ -16,6 +16,7 @@
 
 /* include vfl utility headers. */
 #include <vfl/util/list.h>
+#include <vfl/util/size_t.h>
 
 #endif /* !__VFL_VFL_H__ */
 

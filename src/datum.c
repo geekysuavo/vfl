@@ -218,7 +218,7 @@ datum_dealloc (Datum *self) {
 static PyObject*
 datum_repr (Datum *self) {
   /* build and return the representation string. */
-  return PyUnicode_FromFormat("<vfl.Datum at 0x%lx>", (long) self);
+  return PyUnicode_FromFormat("<vfl.Datum at 0x%x>", (long) self);
 }
 
 /* Datum_sequence: sequence definition structure for datum objects.

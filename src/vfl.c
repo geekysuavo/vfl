@@ -49,15 +49,37 @@ PyInit_vfl (void) {
     return NULL;
 
   /* FIXME: intialize the core module types. */
-  if (Datum_Type_init(vfl) < 0 ||
+  if (Factor_Type_init(vfl) < 0 ||
+      Datum_Type_init(vfl) < 0 ||
       Data_Type_init(vfl) < 0)
     return NULL;
 
-  /* FIXME: initialize the factor sub-module. */
+  /* initialize the factor sub-module. */
+  PyObject *factor = PyInit_factor();
+  if (factor) {
+    Py_INCREF(factor);
+    PyModule_AddObject(vfl, "factor", factor);
+  }
+  else
+    return NULL;
 
-  /* FIXME: initialize the model sub-module. */
+  /* initialize the model sub-module. */
+  PyObject *model = PyInit_model();
+  if (model) {
+    Py_INCREF(model);
+    PyModule_AddObject(vfl, "model", model);
+  }
+  else
+    return NULL;
 
-  /* FIXME: initialize the optim sub-module. */
+  /* initialize the optimizer sub-module. */
+  PyObject *optim = PyInit_optim();
+  if (optim) {
+    Py_INCREF(optim);
+    PyModule_AddObject(vfl, "optim", optim);
+  }
+  else
+    return NULL;
 
   /* return the new module. */
   return vfl;
