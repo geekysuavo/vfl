@@ -243,149 +243,59 @@ struct model {
   Vector *tmp;
 };
 
-/* function declarations (model-obj.c): */
-/*
+/* function declarations (model-core.c): */
 
-#define model_alloc(T) \
-  (model_t*) obj_alloc((object_type_t*) T)
+int model_set_alpha0 (Model *mdl, double alpha0);
 
-int model_init (model_t *mdl);
+int model_set_beta0 (Model *mdl, double beta0);
 
-void model_free (model_t *mdl);
+int model_set_nu (Model *mdl, double nu);
 
-object_t *model_getprop_dims (const model_t *mdl);
+int model_set_parms (Model *mdl, size_t j, const Vector *par);
 
-object_t *model_getprop_pars (const model_t *mdl);
+int model_set_data (Model *mdl, Data *dat);
 
-object_t *model_getprop_cmps (const model_t *mdl);
+int model_add_factor (Model *mdl, Factor *f);
 
-object_t *model_getprop_wgts (const model_t *mdl);
+double model_mean (const Model *mdl, const Vector *x,
+                   size_t p, size_t j, size_t k);
 
-object_t *model_getprop_bound (const model_t *mdl);
+double model_var (const Model *mdl, const Vector *x,
+                  size_t p, size_t j1, size_t j2, size_t k1, size_t k2);
 
-object_t *model_getprop_wmean (const model_t *mdl);
+double model_cov (const Model *mdl, const Vector *x1, const Vector *x2,
+                  size_t p1, size_t p2);
 
-object_t *model_getprop_wcov (const model_t *mdl);
+char *model_kernel (const Model *mdl);
 
-data_t *model_getprop_data (const model_t *mdl);
+double model_bound (const Model *mdl);
 
-object_t *model_getprop_factors (const model_t *mdl);
+double model_eval (const Model *mdl, const Vector *x, size_t p);
 
-object_t *model_getprop_alpha0 (const model_t *mdl);
+int model_predict (const Model *mdl, const Vector *x, size_t p,
+                   double *mean, double *var);
 
-object_t *model_getprop_beta0 (const model_t *mdl);
+int model_eval_all (const Model *mdl, Data *dat);
 
-object_t *model_getprop_alpha (const model_t *mdl);
+int model_predict_all (const Model *mdl, Data *mean, Data *var);
 
-object_t *model_getprop_beta (const model_t *mdl);
+int model_reset (Model *mdl);
 
-object_t *model_getprop_tau (const model_t *mdl);
+int model_infer (Model *mdl);
 
-object_t *model_getprop_nu (const model_t *mdl);
+int model_update (Model *mdl, size_t j);
 
-int model_setprop_wmean (model_t *mdl, object_t *val);
+int model_gradient (const Model *mdl, size_t i, size_t j, Vector *grad);
 
-int model_setprop_wcov (model_t *mdl, object_t *val);
+int model_meanfield (const Model *mdl, size_t j);
 
-int model_setprop_data (model_t *mdl, object_t *val);
+/* global, yet internally used function declarations (model-core.c): */
 
-int model_setprop_factors (model_t *mdl, object_t *val);
+size_t model_weight_idx (const Model *mdl, size_t j, size_t k);
 
-int model_setprop_alpha0 (model_t *mdl, object_t *val);
+void model_weight_adjust_init (const Model *mdl, size_t j);
 
-int model_setprop_beta0 (model_t *mdl, object_t *val);
-
-int model_setprop_tau (model_t *mdl, object_t *val);
-
-int model_setprop_nu (model_t *mdl, object_t *val);
-
-object_t *model_method_add (model_t *mdl, object_t *args);
-
-object_t *model_method_infer (model_t *mdl, object_t *args);
-
-object_t *model_method_reset (model_t *mdl, object_t *args);
-
-object_t *model_method_eval (model_t *mdl, object_t *args);
-
-object_t *model_method_predict (model_t *mdl, object_t *args);
-
-*/
-/* function declarations (model.c): */
-/*
-
-int model_set_alpha0 (model_t *mdl, const double alpha0);
-
-int model_set_beta0 (model_t *mdl, const double beta0);
-
-int model_set_nu (model_t *mdl, const double nu);
-
-int model_set_parms (model_t *mdl, const unsigned int j,
-                     const vector_t *par);
-
-int model_set_data (model_t *mdl, data_t *dat);
-
-int model_add_factor (model_t *mdl, factor_t *f);
-
-double model_mean (const model_t *mdl,
-                   const vector_t *x, const unsigned int p,
-                   const unsigned int j, const unsigned int k);
-
-double model_var (const model_t *mdl,
-                  const vector_t *x, const unsigned int p,
-                  const unsigned int j1, const unsigned int j2,
-                  const unsigned int k1, const unsigned int k2);
-
-double model_cov (const model_t *mdl,
-                  const vector_t *x1,
-                  const vector_t *x2,
-                  const unsigned int p1,
-                  const unsigned int p2);
-
-char *model_kernel (const model_t *mdl);
-
-double model_bound (const model_t *mdl);
-
-double model_eval (const model_t *mdl, const vector_t *x,
-                   const unsigned int p);
-
-int model_predict (const model_t *mdl, const vector_t *x,
-                   const unsigned int p,
-                   double *mean,
-                   double *var);
-
-int model_eval_all (const model_t *mdl, data_t *dat);
-
-int model_predict_all (const model_t *mdl, data_t *mean, data_t *var);
-
-int model_reset (model_t *mdl);
-
-int model_infer (model_t *mdl);
-
-int model_update (model_t *mdl, const unsigned int j);
-
-int model_gradient (const model_t *mdl, const unsigned int i,
-                    const unsigned int j, vector_t *grad);
-
-int model_meanfield (const model_t *mdl, const unsigned int j);
-
-*/
-/* global, yet internally used function declarations (model.c): */
-/*
-
-unsigned int model_weight_idx (const model_t *mdl,
-                               const unsigned int j,
-                               const unsigned int k);
-
-void model_weight_adjust_init (const model_t *mdl, const unsigned int j);
-
-int model_weight_adjust (model_t *mdl, const unsigned int j);
-
-*/
-/* function declarations (model/tauvfr.c): */
-/*
-
-int tauvfr_set_tau (model_t *mdl, const double tau);
-*/
+int model_weight_adjust (Model *mdl, size_t j);
 
 #endif /* !__VFL_MODEL_H__ */
 

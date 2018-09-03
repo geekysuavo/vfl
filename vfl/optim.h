@@ -128,74 +128,27 @@ struct optim {
   Matrix *Fs;
 };
 
-/* function declarations (optim-obj.c): */
-/*
+/* function declarations (optim-core.c): */
 
-#define optim_alloc(T) \
-  (optim_t*) obj_alloc((object_type_t*) T)
+int optim_set_model (Optim *opt, Model *mdl);
 
-int optim_init (optim_t *opt);
+int optim_set_max_steps (Optim *opt, size_t n);
 
-void optim_free (optim_t *opt);
+int optim_set_max_iters (Optim *opt, size_t n);
 
-object_t *optim_getprop_bound (const optim_t *opt);
+int optim_set_lipschitz_init (Optim *opt, double l0);
 
-model_t *optim_getprop_model (const optim_t *opt);
+int optim_set_lipschitz_step (Optim *opt, double dl);
 
-object_t *optim_getprop_maxiters (const optim_t *opt);
+int optim_set_log_iters (Optim *opt, size_t n);
 
-object_t *optim_getprop_maxsteps (const optim_t *opt);
+int optim_set_log_parms (Optim *opt, int b);
 
-object_t *optim_getprop_l0 (const optim_t *opt);
+int optim_set_log_file (Optim *opt, const char *fname);
 
-object_t *optim_getprop_dl (const optim_t *opt);
+int optim_iterate (Optim *opt);
 
-object_t *optim_getprop_logiters (const optim_t *opt);
-
-object_t *optim_getprop_logparms (const optim_t *opt);
-
-int optim_setprop_model (optim_t *opt, object_t *val);
-
-int optim_setprop_maxiters (optim_t *opt, object_t *val);
-
-int optim_setprop_maxsteps (optim_t *opt, object_t *val);
-
-int optim_setprop_l0 (optim_t *opt, object_t *val);
-
-int optim_setprop_dl (optim_t *opt, object_t *val);
-
-int optim_setprop_logiters (optim_t *opt, object_t *val);
-
-int optim_setprop_logparms (optim_t *opt, object_t *val);
-
-int optim_setprop_logfile (optim_t *opt, object_t *val);
-
-object_t *optim_method_execute (optim_t *opt, object_t *args);
-
-*/
-/* function declarations (optim.c): */
-/*
-
-int optim_set_model (optim_t *opt, model_t *mdl);
-
-int optim_set_max_steps (optim_t *opt, const int n);
-
-int optim_set_max_iters (optim_t *opt, const int n);
-
-int optim_set_lipschitz_init (optim_t *opt, const double l0);
-
-int optim_set_lipschitz_step (optim_t *opt, const double dl);
-
-int optim_set_log_iters (optim_t *opt, const int n);
-
-int optim_set_log_parms (optim_t *opt, const int b);
-
-int optim_set_log_file (optim_t *opt, const char *fname);
-
-int optim_iterate (optim_t *opt);
-
-int optim_execute (optim_t *opt);
-*/
+int optim_execute (Optim *opt);
 
 #endif /* !__VFL_OPTIM_H__ */
 

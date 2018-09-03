@@ -1,6 +1,6 @@
 
-/* include the optimizer header. */
-#include <vfl/optim.h>
+/* include the vfl header. */
+#include <vfl/vfl.h>
 
 /* optim_set_model(): associate a variational feature model with an
  * optimizer.
@@ -12,7 +12,7 @@
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-int optim_set_model (optim_t *opt, model_t *mdl) {
+int optim_set_model (Optim *opt, Model *mdl) {
   /* check the structure pointers. */
   if (!opt || !mdl)
     return 0;
@@ -22,7 +22,7 @@ int optim_set_model (optim_t *opt, model_t *mdl) {
     return 0;
 
   /* drop the current model. */
-  obj_release((object_t*) opt->mdl);
+  Py_XDECREF(opt->mdl);
   opt->mdl = NULL;
 
   /* free the iteration vectors. */
@@ -64,7 +64,7 @@ int optim_set_model (optim_t *opt, model_t *mdl) {
   opt->bound0 = opt->bound = model_bound(mdl);
 
   /* store the associated model. */
-  obj_retain(mdl);
+  Py_INCREF(mdl);
   opt->mdl = mdl;
 
   /* return success. */
@@ -81,13 +81,13 @@ int optim_set_model (optim_t *opt, model_t *mdl) {
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-int optim_set_max_steps (optim_t *opt, const int n) {
+int optim_set_max_steps (Optim *opt, size_t n) {
   /* check the input arguments. */
-  if (!opt || n <= 0)
+  if (!opt || n == 0)
     return 0;
 
   /* set the parameter and return success. */
-  opt->max_steps = (unsigned int) n;
+  opt->max_steps = n;
   return 1;
 }
 
@@ -101,13 +101,13 @@ int optim_set_max_steps (optim_t *opt, const int n) {
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-int optim_set_max_iters (optim_t *opt, const int n) {
+int optim_set_max_iters (Optim *opt, size_t n) {
   /* check the input arguments. */
-  if (!opt || n <= 0)
+  if (!opt || n == 0)
     return 0;
 
   /* set the parameter and return success. */
-  opt->max_iters = (unsigned int) n;
+  opt->max_iters = n;
   return 1;
 }
 
@@ -121,7 +121,7 @@ int optim_set_max_iters (optim_t *opt, const int n) {
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-int optim_set_lipschitz_init (optim_t *opt, const double l0) {
+int optim_set_lipschitz_init (Optim *opt, double l0) {
   /* check the input arguments. */
   if (!opt || l0 <= 0.0)
     return 0;
@@ -141,7 +141,7 @@ int optim_set_lipschitz_init (optim_t *opt, const double l0) {
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-int optim_set_lipschitz_step (optim_t *opt, const double dl) {
+int optim_set_lipschitz_step (Optim *opt, double dl) {
   /* check the input arguments. */
   if (!opt || dl <= 0.0)
     return 0;
@@ -161,13 +161,13 @@ int optim_set_lipschitz_step (optim_t *opt, const double dl) {
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-int optim_set_log_iters (optim_t *opt, const int n) {
+int optim_set_log_iters (Optim *opt, size_t n) {
   /* check the input arguments. */
-  if (!opt || n <= 0)
+  if (!opt || n == 0)
     return 0;
 
   /* set the parameter and return success. */
-  opt->log_iters = (unsigned int) n;
+  opt->log_iters = n;
   return 1;
 }
 
@@ -181,7 +181,7 @@ int optim_set_log_iters (optim_t *opt, const int n) {
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-int optim_set_log_parms (optim_t *opt, const int b) {
+int optim_set_log_parms (Optim *opt, int b) {
   /* check the input arguments. */
   if (!opt)
     return 0;
@@ -201,7 +201,7 @@ int optim_set_log_parms (optim_t *opt, const int b) {
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-int optim_set_log_file (optim_t *opt, const char *fname) {
+int optim_set_log_file (Optim *opt, const char *fname) {
   /* check the input arguments. */
   if (!opt)
     return 0;
@@ -228,18 +228,17 @@ int optim_set_log_file (optim_t *opt, const char *fname) {
 /* optim_iterate(): perform a single optimization iteration.
  *  - see optim_iterate_fn() for more information.
  */
-int optim_iterate (optim_t *opt) {
+int optim_iterate (Optim *opt) {
   /* check the input pointer. */
   if (!opt)
     return 0;
 
   /* check the function pointer. */
-  optim_iterate_fn iterate_fn = OPTIM_TYPE(opt)->iterate;
-  if (!iterate_fn)
+  if (!opt->iterate)
     return 0;
 
   /* run the iteration function. */
-  const int ret = iterate_fn(opt);
+  const int ret = opt->iterate(opt);
   opt->iters++;
 
   /* check if a log file handle is open. */
@@ -247,17 +246,17 @@ int optim_iterate (optim_t *opt) {
     /* check if the current iteration should be logged. */
     if (opt->log_iters <= 1 || opt->iters % (opt->log_iters - 1) == 0) {
       /* print the basic log information. */
-      fprintf(opt->log_fh, "%6u %16.9le", opt->iters, opt->bound);
+      fprintf(opt->log_fh, "%6zu %16.9le", opt->iters, opt->bound);
 
       /* check if the parameters should be logged. */
       if (opt->log_parms) {
         /* loop over the model factors. */
-        for (unsigned int j = 0; j < opt->mdl->M; j++) {
+        for (size_t j = 0; j < opt->mdl->M; j++) {
           /* get the current factor structure pointer. */
-          const factor_t *fj = opt->mdl->factors[j];
+          const Factor *fj = opt->mdl->factors[j];
 
           /* print each of the factor parameters. */
-          for (unsigned int p = 0; p < fj->P; p++)
+          for (size_t p = 0; p < fj->P; p++)
             fprintf(opt->log_fh, " %16.9le", factor_get(fj, p));
         }
       }
@@ -275,19 +274,18 @@ int optim_iterate (optim_t *opt) {
 /* optim_execute(): perform multiple free-run optimization iterations.
  *  - see optim_iterate_fn() for more information.
  */
-int optim_execute (optim_t *opt) {
+int optim_execute (Optim *opt) {
   /* check the input pointer. */
   if (!opt)
     return 0;
 
   /* check the function pointer. */
-  optim_iterate_fn execute_fn = OPTIM_TYPE(opt)->execute;
-  if (!execute_fn)
+  if (!opt->execute)
     return 0;
 
   /* run the execution function. */
   opt->iters = 0;
-  const int ret = execute_fn(opt);
+  const int ret = opt->execute(opt);
 
   /* return the execution result. */
   return ret;

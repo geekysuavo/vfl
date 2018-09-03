@@ -1,6 +1,6 @@
 
-/* include the model header. */
-#include <vfl/model.h>
+/* include the vfl header. */
+#include <vfl/vfl.h>
 
 /* model_tmp(): determine the number of temporary scalars required
  * by a variational feature model with a certain set of sizes.
@@ -11,24 +11,24 @@
  * returns:
  *  required number of temporary scalars.
  */
-static inline unsigned int model_tmp (const model_t *mdl) {
+static inline size_t model_tmp (const Model *mdl) {
   /* declare required variables:
    *  @ntmp: computed number of scalars.
    *  @kmax: largest number of per-factor weights.
    */
-  unsigned int ntmp, kmax;
+  size_t ntmp, kmax;
 
   /* gain access to the parameter, factor, and weight counts.
    */
-  const unsigned int P = mdl->P;
-  const unsigned int M = mdl->M;
-  const unsigned int K = mdl->K;
+  const size_t P = mdl->P;
+  const size_t M = mdl->M;
+  const size_t K = mdl->K;
 
   /* in order to conserve memory, determine the largest number of
    * factor weights that will be updated at the same time.
    */
   kmax = 0;
-  for (unsigned int j = 0; j < M; j++)
+  for (size_t j = 0; j < M; j++)
     kmax = (mdl->factors[j]->K > kmax ? mdl->factors[j]->K : kmax);
 
   /* the scalars are laid out as follows:
@@ -53,7 +53,7 @@ static inline unsigned int model_tmp (const model_t *mdl) {
  * returns:
  *  integer indicating assignment success (1) or failure (0).
  */
-int model_set_alpha0 (model_t *mdl, const double alpha0) {
+int model_set_alpha0 (Model *mdl, double alpha0) {
   /* check that the model is valid and the parameter is in bounds. */
   if (!mdl || alpha0 <= 0.0)
     return 0;
@@ -73,7 +73,7 @@ int model_set_alpha0 (model_t *mdl, const double alpha0) {
  * returns:
  *  integer indicating assignment success (1) or failure (0).
  */
-int model_set_beta0 (model_t *mdl, const double beta0) {
+int model_set_beta0 (Model *mdl, double beta0) {
   /* check that the model is valid and the parameter is in bounds. */
   if (!mdl || beta0 <= 0.0)
     return 0;
@@ -93,7 +93,7 @@ int model_set_beta0 (model_t *mdl, const double beta0) {
  * returns:
  *  integer indicating assignment success (1) or failure (0).
  */
-int model_set_nu (model_t *mdl, const double nu) {
+int model_set_nu (Model *mdl, double nu) {
   /* check that the model is valid and the parameter is in bounds. */
   if (!mdl || nu <= 0.0)
     return 0;
@@ -114,14 +114,13 @@ int model_set_nu (model_t *mdl, const double nu) {
  *  integer indicating whether (1) or not (0) assignment was successful.
  *  this check includes the bounds-check for each factor parameter.
  */
-int model_set_parms (model_t *mdl, const unsigned int j,
-                     const vector_t *par) {
+int model_set_parms (Model *mdl, size_t j, const Vector *par) {
   /* check the pointers, indices and sizes. */
   if (!mdl || !par || j >= mdl->M || par->len != mdl->factors[j]->P)
     return 0;
 
   /* loop over each parameter. */
-  for (unsigned int p = 0; p < par->len; p++) {
+  for (size_t p = 0; p < par->len; p++) {
     /* return failure if any single parameter update fails. */
     if (!factor_set(mdl->factors[j], p, vector_get(par, p)))
       return 0;
@@ -141,7 +140,7 @@ int model_set_parms (model_t *mdl, const unsigned int j,
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-int model_set_data (model_t *mdl, data_t *dat) {
+int model_set_data (Model *mdl, Data *dat) {
   /* check the structure pointers. */
   if (!mdl || !dat)
     return 0;
@@ -153,7 +152,7 @@ int model_set_data (model_t *mdl, data_t *dat) {
     return 0;
 
   /* drop the current dataset. */
-  obj_release((object_t*) mdl->dat);
+  Py_XDECREF(mdl->dat);
   mdl->dat = NULL;
 
   /* free the logistic parameters and temporary coefficients. */
@@ -172,7 +171,7 @@ int model_set_data (model_t *mdl, data_t *dat) {
   vector_set_all(mdl->xi, 1.0);
 
   /* store the new dataset. */
-  obj_retain(dat);
+  Py_INCREF(dat);
   mdl->dat = dat;
 
   /* return succes. */
@@ -189,28 +188,26 @@ int model_set_data (model_t *mdl, data_t *dat) {
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-int model_add_factor (model_t *mdl, factor_t *f) {
+int model_add_factor (Model *mdl, Factor *f) {
   /* check the input pointers. */
   if (!mdl || !f)
     return 0;
 
   /* determine the new sizes of the model. */
-  const unsigned int D = (mdl->D > f->D ? mdl->D : f->D);
-  const unsigned int P = mdl->P + f->P;
-  const unsigned int K = mdl->K + f->K;
-  const unsigned int M = mdl->M + 1;
+  const size_t D = (mdl->D > f->D ? mdl->D : f->D);
+  const size_t P = mdl->P + f->P;
+  const size_t K = mdl->K + f->K;
+  const size_t M = mdl->M + 1;
 
   /* reallocate the array of posterior factors. */
-  factor_t **factors = (factor_t**)
-    realloc(mdl->factors, M * sizeof(factor_t*));
+  Factor **factors = (Factor**) realloc(mdl->factors, M * sizeof(Factor*));
 
   /* check that reallocation was successful. */
   if (!factors)
     return 0;
 
   /* reallocate the array of prior factors. */
-  factor_t **priors = (factor_t**)
-    realloc(mdl->priors, M * sizeof(factor_t*));
+  Factor **priors = (Factor**) realloc(mdl->priors, M * sizeof(Factor*));
 
   /* check that reallocation was successful. */
   if (!priors) {
@@ -230,11 +227,11 @@ int model_add_factor (model_t *mdl, factor_t *f) {
 
   /* store the posterior factor and make a copy for the prior. */
   mdl->factors[M - 1] = f;
-  mdl->priors[M - 1] = (factor_t*) obj_copy((object_t*) f);
+  mdl->priors[M - 1] = (Factor*) obj_copy(f); /* FIXME: PYTHON! */
 
   /* retain references to the factor and copied prior. */
-  obj_retain(mdl->factors[M - 1]);
-  obj_retain(mdl->priors[M - 1]);
+  Py_INCREF(mdl->factors[M - 1]);
+  Py_XINCREF(mdl->priors[M - 1]);
 
   /* check that factor duplication was successful. */
   if (!mdl->priors[M - 1])
@@ -292,9 +289,8 @@ int model_add_factor (model_t *mdl, factor_t *f) {
  * returns:
  *  expectation of the requested basis element.
  */
-double model_mean (const model_t *mdl,
-                   const vector_t *x, const unsigned int p,
-                   const unsigned int j, const unsigned int k) {
+double model_mean (const Model *mdl, const Vector *x,
+                   size_t p, size_t j, size_t k) {
   /* check the input pointers and indices. */
   if (!mdl || !x || j >= mdl->M || k >= mdl->factors[j]->K)
     return 0.0;
@@ -318,10 +314,8 @@ double model_mean (const model_t *mdl,
  * returns:
  *  expectation of the requested product of basis elements.
  */
-double model_var (const model_t *mdl,
-                  const vector_t *x, const unsigned int p,
-                  const unsigned int j1, const unsigned int j2,
-                  const unsigned int k1, const unsigned int k2) {
+double model_var (const Model *mdl, const Vector *x,
+                  size_t p, size_t j1, size_t j2, size_t k1, size_t k2) {
   /* check the input pointers and indices. */
   if (!mdl || !x || j1 >= mdl->M || j2 >= mdl->M ||
       k1 >= mdl->factors[j1]->K ||
@@ -352,11 +346,8 @@ double model_var (const model_t *mdl,
  * returns:
  *  expectation of the requested product of basis elements.
  */
-double model_cov (const model_t *mdl,
-                  const vector_t *x1,
-                  const vector_t *x2,
-                  const unsigned int p1,
-                  const unsigned int p2) {
+double model_cov (const Model *mdl, const Vector *x1, const Vector *x2,
+                  size_t p1, size_t p2) {
   /* check the input pointers. */
   if (!mdl || !x1 || !x2)
     return 0.0;
@@ -365,7 +356,7 @@ double model_cov (const model_t *mdl,
   double cov = 0.0;
 
   /* sum together the contributions from each factor. */
-  for (unsigned int j = 0; j < mdl->M; j++)
+  for (size_t j = 0; j < mdl->M; j++)
     cov += factor_cov(mdl->factors[j], x1, x2, p1, p2);
 
   /* return the computed result. */
@@ -383,7 +374,7 @@ double model_cov (const model_t *mdl,
  *  function code required to evaluate model covariances in
  *  opencl.
  */
-char *model_kernel (const model_t *mdl) {
+char *model_kernel (const Model *mdl) {
   /* check the input pointer. */
   if (!mdl)
     return NULL;
@@ -397,9 +388,9 @@ char *model_kernel (const model_t *mdl) {
     return NULL;
 
   /* get the strings of each factor. */
-  for (unsigned int j = 0, pj = 1; j < mdl->M; j++) {
+  for (size_t j = 0, pj = 1; j < mdl->M; j++) {
     /* get the current factor string. */
-    const factor_t *fj = mdl->factors[j];
+    const Factor *fj = mdl->factors[j];
     fstr[j] = factor_kernel(fj, pj);
 
     /* check for failure. */
@@ -411,8 +402,8 @@ char *model_kernel (const model_t *mdl) {
   }
 
   /* determine the length of the kernel code string. */
-  unsigned int len = 8;
-  for (unsigned int j = 0; j < mdl->M; j++)
+  size_t len = 8;
+  for (size_t j = 0; j < mdl->M; j++)
     len += strlen(fmt) + strlen(fstr[j]);
 
   /* allocate the kernel code string. */
@@ -422,7 +413,7 @@ char *model_kernel (const model_t *mdl) {
 
   /* write each factor string. */
   char *pos = kstr;
-  for (unsigned int j = 0; j < mdl->M; j++) {
+  for (size_t j = 0; j < mdl->M; j++) {
     pos += sprintf(pos, fmt, fstr[j]);
     free(fstr[j]);
   }
@@ -437,27 +428,26 @@ char *model_kernel (const model_t *mdl) {
 /* model_bound(): return the model variational lower bound.
  *  - see model_bound_fn() for more information.
  */
-double model_bound (const model_t *mdl) {
+double model_bound (const Model *mdl) {
   /* check the input pointer. */
   if (!mdl)
     return 0.0;
 
   /* check the function pointer. */
-  model_bound_fn bound_fn = MODEL_TYPE(mdl)->bound;
-  if (!bound_fn)
+  if (!mdl->bound)
     return 0.0;
 
   /* initialize a variable to hold the divergence penalty. */
   double div = 0.0;
 
   /* include the divergences of each factor into the penalty. */
-  for (unsigned int j = 0; j < mdl->M; j++)
+  for (size_t j = 0; j < mdl->M; j++)
     div += factor_div(mdl->factors[j], mdl->priors[j]);
 
   /* execute the assigned bound function and
    * include the divergence penalty.
    */
-  return bound_fn(mdl) - div;
+  return mdl->bound(mdl) - div;
 }
 
 /* model_eval(): evalute the underlying linear function of a model
@@ -471,20 +461,19 @@ double model_bound (const model_t *mdl) {
  * returns:
  *  maximum posterior estimate of the model function.
  */
-double model_eval (const model_t *mdl, const vector_t *x,
-                   const unsigned int p) {
+double model_eval (const Model *mdl, const Vector *x, size_t p) {
   /* check the input pointers. */
   if (!mdl || !x)
     return 0.0;
 
   /* compute the model estimate. */
   double mode = 0.0;
-  for (unsigned int j = 0, i = 0; j < mdl->M; j++) {
+  for (size_t j = 0, i = 0; j < mdl->M; j++) {
     /* get the current factor. */
-    const factor_t *fj = mdl->factors[j];
+    const Factor *fj = mdl->factors[j];
 
     /* loop over the weights assigned to the factor. */
-    for (unsigned int k = 0; k < fj->K; k++, i++)
+    for (size_t k = 0; k < fj->K; k++, i++)
       mode += vector_get(mdl->wbar, i) * factor_eval(fj, x, p, k);
   }
 
@@ -495,17 +484,14 @@ double model_eval (const model_t *mdl, const vector_t *x,
 /* model_predict(): return the model posterior prediction.
  *  - see model_predict_fn() for more information.
  */
-int model_predict (const model_t *mdl, const vector_t *x,
-                   const unsigned int p,
-                   double *mean,
-                   double *var) {
+int model_predict (const Model *mdl, const Vector *x, size_t p,
+                   double *mean, double *var) {
   /* check the input pointers. */
   if (!mdl || !x || !mean || !var)
     return 0;
 
   /* check the function pointer. */
-  model_predict_fn predict_fn = MODEL_TYPE(mdl)->predict;
-  if (!predict_fn)
+  if (!mdl->predict)
     return 0;
 
   /* check the vector size. */
@@ -513,7 +499,7 @@ int model_predict (const model_t *mdl, const vector_t *x,
     return 0;
 
   /* execute the assigned prediction function. */
-  return predict_fn(mdl, x, p, mean, var);
+  return mdl->predict(mdl, x, p, mean, var);
 }
 
 /* model_eval_all(): return model maximum posterior evaluations
@@ -526,7 +512,7 @@ int model_predict (const model_t *mdl, const vector_t *x,
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-int model_eval_all (const model_t *mdl, data_t *dat) {
+int model_eval_all (const Model *mdl, Data *dat) {
   /* check the input pointers. */
   if (!mdl || !dat)
     return 0;
@@ -536,9 +522,9 @@ int model_eval_all (const model_t *mdl, data_t *dat) {
     return 0;
 
   /* loop over each observation. */
-  for (unsigned int i = 0; i < dat->N; i++) {
+  for (size_t i = 0; i < dat->N; i++) {
     /* compute and store the model evaluation. */
-    datum_t *di = data_get(dat, i);
+    Datum *di = data_get(dat, i);
     di->y = model_eval(mdl, di->x, di->p);
   }
 
@@ -559,13 +545,13 @@ int model_eval_all (const model_t *mdl, data_t *dat) {
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-int model_predict_all (const model_t *mdl, data_t *mean, data_t *var) {
+int model_predict_all (const Model *mdl, Data *mean, Data *var) {
   /* declare required variables:
    *  @mu, @eta: individual means and variances.
    *  @xdata: dataset used for predictions.
    */
   double mu, eta;
-  data_t *xdata;
+  Data *xdata;
 
   /* check the input pointers. */
   if (!mdl)
@@ -588,9 +574,9 @@ int model_predict_all (const model_t *mdl, data_t *mean, data_t *var) {
     return 0;
 
   /* loop over each observation. */
-  for (unsigned int i = 0; i < xdata->N; i++) {
+  for (size_t i = 0; i < xdata->N; i++) {
     /* compute the posterior mean and variance. */
-    datum_t *xdatum = data_get(xdata, i);
+    Datum *xdatum = data_get(xdata, i);
     model_predict(mdl, xdatum->x, xdatum->p, &mu, &eta);
 
     /* store the predictions. */
@@ -611,15 +597,15 @@ int model_predict_all (const model_t *mdl, data_t *mean, data_t *var) {
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-int model_reset (model_t *mdl) {
+int model_reset (Model *mdl) {
   /* check the input pointer. */
   if (!mdl)
     return 0;
 
   /* loop over the factors, copying parameters from the priors. */
-  for (unsigned int j = 0; j < mdl->M; j++) {
+  for (size_t j = 0; j < mdl->M; j++) {
     /* set the factor parameters from the prior. */
-    const factor_t *fp = mdl->priors[j];
+    const Factor *fp = mdl->priors[j];
     if (!model_set_parms(mdl, j, fp->par))
       return 0;
   }
@@ -631,37 +617,34 @@ int model_reset (model_t *mdl) {
 /* model_infer(): fully update the nuisance parameters of a model.
  *  - see model_infer_fn() for more information.
  */
-int model_infer (model_t *mdl) {
+int model_infer (Model *mdl) {
   /* check the input pointer. */
   if (!mdl)
     return 0;
 
   /* check the function pointer. */
-  model_infer_fn infer_fn = MODEL_TYPE(mdl)->infer;
-  if (!infer_fn)
+  if (!mdl->infer)
     return 0;
 
   /* execute the assigned inference function. */
-  return infer_fn(mdl);
+  return mdl->infer(mdl);
 }
 
 /* model_update(): efficiently update the nuisance parameters of a model.
  *  - see model_update_fn() for more information.
  */
-int model_update (model_t *mdl, const unsigned int j) {
+int model_update (Model *mdl, size_t j) {
   /* check the input pointer and factor index. */
   if (!mdl || j >= mdl->M)
     return 0;
 
   /* if an update function is assigned, execute it. */
-  model_update_fn update_fn = MODEL_TYPE(mdl)->update;
-  if (update_fn && update_fn(mdl, j))
+  if (mdl->update && mdl->update(mdl, j))
     return 1;
 
   /* fall back to the infer function, if assigned. */
-  model_infer_fn infer_fn = MODEL_TYPE(mdl)->infer;
-  if (infer_fn)
-    return infer_fn(mdl);
+  if (mdl->infer)
+    return mdl->infer(mdl);
 
   /* neither function is assigned. fail. */
   return 0;
@@ -670,8 +653,7 @@ int model_update (model_t *mdl, const unsigned int j) {
 /* model_gradient(): return the gradient of the lower bound.
  *  - see model_gradient_fn() for more information.
  */
-int model_gradient (const model_t *mdl, const unsigned int i,
-                    const unsigned int j, vector_t *grad) {
+int model_gradient (const Model *mdl, size_t i, size_t j, Vector *grad) {
   /* check the input pointers and factor index. */
   if (!mdl || !mdl->dat || !grad || i >= mdl->dat->N || j >= mdl->M)
     return 0;
@@ -685,12 +667,11 @@ int model_gradient (const model_t *mdl, const unsigned int i,
     return 0;
 
   /* check the function pointer. */
-  model_gradient_fn gradient_fn = MODEL_TYPE(mdl)->gradient;
-  if (!gradient_fn)
+  if (!mdl->gradient)
     return 0;
 
   /* execute the assigned gradient function. */
-  return gradient_fn(mdl, i, j, grad);
+  return mdl->gradient(mdl, i, j, grad);
 }
 
 /* model_meanfield(): perform an assumed-density mean-field factor update.
@@ -702,50 +683,48 @@ int model_gradient (const model_t *mdl, const unsigned int i,
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-int model_meanfield (const model_t *mdl, const unsigned int j) {
+int model_meanfield (const Model *mdl, size_t j) {
   /* check the input pointers and factor index. */
   if (!mdl || !mdl->dat || j >= mdl->M)
     return 0;
 
   /* gain access to the factor and its number of weights and parameters. */
-  factor_t *f = mdl->factors[j];
-  const unsigned int K = f->K;
-  const unsigned int P = f->P;
+  Factor *f = mdl->factors[j];
+  const size_t K = f->K;
+  const size_t P = f->P;
 
   /* check if the factor has no parameters. */
   if (P == 0)
     return 1;
 
   /* check the model and factor function pointers. */
-  model_meanfield_fn mdl_fn = MODEL_TYPE(mdl)->meanfield;
-  factor_meanfield_fn fac_fn = FACTOR_TYPE(f)->meanfield;
-  if (!mdl_fn || !fac_fn)
+  if (!mdl->meanfield || !f->meanfield)
     return 0;
 
   /* gain access to the associated prior. */
-  const factor_t *fp = mdl->priors[j];
+  const Factor *fp = mdl->priors[j];
 
   /* create sets of coefficients for mean-field updates. */
-  vector_view_t b = vector_view_array(mdl->tmp->data, K);
-  matrix_view_t B = matrix_view_array(mdl->tmp->data + K, K, K);
+  VectorView b = vector_view_array(mdl->tmp->data, K);
+  MatrixView B = matrix_view_array(mdl->tmp->data + K, K, K);
 
   /* initialize the factor update. */
-  if (!fac_fn(f, NULL, NULL, NULL, NULL))
+  if (!f->meanfield(f, NULL, NULL, NULL, NULL))
     return 0;
 
   /* loop over each data point. */
-  datum_t *di = mdl->dat->data;
-  const unsigned int N = mdl->dat->N;
-  for (unsigned int i = 0; i < N; i++, di++) {
+  Datum *di = mdl->dat->data;
+  const size_t N = mdl->dat->N;
+  for (size_t i = 0; i < N; i++, di++) {
     /* 1. compute the coefficients of the data point.
      * 2. stream the data point and coefficients to the factor.
      */
-    mdl_fn(mdl, i, j, &b, &B);
-    fac_fn(f, fp, di, &b, &B);
+    mdl->meanfield(mdl, i, j, &b, &B);
+    f->meanfield(f, fp, di, &b, &B);
   }
 
   /* finalize the factor update. */
-  return fac_fn(f, fp, NULL, NULL, NULL);
+  return f->meanfield(f, fp, NULL, NULL, NULL);
 }
 
 /* --- */
@@ -761,16 +740,14 @@ int model_meanfield (const model_t *mdl, const unsigned int j) {
  * returns:
  *  corresponding model weight index.
  */
-unsigned int model_weight_idx (const model_t *mdl,
-                               const unsigned int j,
-                               const unsigned int k) {
+size_t model_weight_idx (const Model *mdl, size_t j, size_t k) {
   /* check the input pointers and indices. */
   if (!mdl || j >= mdl->M || k >= mdl->factors[j]->K)
     return 0;
 
   /* compute the weight offset for the specified factor. */
-  unsigned int idx = 0;
-  for (unsigned int j2 = 0; j2 < j; j2++)
+  size_t idx = 0;
+  for (size_t j2 = 0; j2 < j; j2++)
     idx += mdl->factors[j2]->K;
 
   /* return the weight index. */
@@ -786,20 +763,20 @@ unsigned int model_weight_idx (const model_t *mdl,
  *  @mdl: model structure pointer to access.
  *  @j: model factor index.
  */
-void model_weight_adjust_init (const model_t *mdl, const unsigned int j) {
+void model_weight_adjust_init (const Model *mdl, size_t j) {
   /* get the weight offset and count of the current factor. */
-  const unsigned int k0 = model_weight_idx(mdl, j, 0);
-  const unsigned int K = mdl->factors[j]->K;
+  const size_t k0 = model_weight_idx(mdl, j, 0);
+  const size_t K = mdl->factors[j]->K;
 
   /* declare vector views for tracking precision matrix modifications. */
-  vector_view_t u;
-  matrix_view_t U;
+  VectorView u;
+  MatrixView U;
 
   /* create the matrix view for storing updates. */
   U = matrix_view_array(mdl->tmp->data + mdl->K + mdl->P, K, mdl->K);
 
   /* copy the initial rows of the precision matrix. */
-  for (unsigned int k = 0; k < K; k++) {
+  for (size_t k = 0; k < K; k++) {
     u = matrix_row(&U, k);
     matrix_copy_row(&u, mdl->Sinv, k0 + k);
   }
@@ -815,14 +792,14 @@ void model_weight_adjust_init (const model_t *mdl, const unsigned int j) {
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-int model_weight_adjust (model_t *mdl, const unsigned int j) {
+int model_weight_adjust (Model *mdl, size_t j) {
   /* get the weight offset and count of the current factor. */
-  const unsigned int k0 = model_weight_idx(mdl, j, 0);
-  const unsigned int K = mdl->factors[j]->K;
+  const size_t k0 = model_weight_idx(mdl, j, 0);
+  const size_t K = mdl->factors[j]->K;
 
   /* declare vector views for tracking precision matrix modifications. */
-  vector_view_t u, v, z;
-  matrix_view_t U, V;
+  VectorView u, v, z;
+  MatrixView U, V;
 
   /* create the vector view for holding individual rows/columns. */
   double *ptr = mdl->tmp->data;
@@ -837,7 +814,7 @@ int model_weight_adjust (model_t *mdl, const unsigned int j) {
   V = matrix_view_array(ptr, K, mdl->K);
 
   /* copy the final rows of the precision matrix. */
-  for (unsigned int k = 0; k < K; k++) {
+  for (size_t k = 0; k < K; k++) {
     v = matrix_row(&V, k);
     matrix_copy_row(&v, mdl->Sinv, k0 + k);
   }
@@ -847,7 +824,7 @@ int model_weight_adjust (model_t *mdl, const unsigned int j) {
 
   /* compute the magnitude of the differences. */
   double vss = 0.0;
-  for (unsigned int k = 0; k < K; k++) {
+  for (size_t k = 0; k < K; k++) {
     v = matrix_row(&V, k);
     vss += blas_ddot(&v, &v);
   }
@@ -857,18 +834,18 @@ int model_weight_adjust (model_t *mdl, const unsigned int j) {
     return 0;
 
   /* adjust the row differences for use in rank-1 updates. */
-  for (unsigned int k = 0; k < K; k++) {
+  for (size_t k = 0; k < K; k++) {
     /* scale the main diagonal element by one-half, and zero
      * all off-diagonals that have already been updated.
      */
     v = matrix_row(&V, k);
     vector_set(&v, k0 + k, 0.5 * vector_get(&v, k0 + k));
-    for (unsigned int kk = 0; kk < k; kk++)
+    for (size_t kk = 0; kk < k; kk++)
       vector_set(&v, k0 + kk, 0.0);
   }
 
   /* transform the row differences into symmetric updates and downdates. */
-  for (unsigned int k = 0; k < K; k++) {
+  for (size_t k = 0; k < K; k++) {
     /* get views of the update and downdate row vectors. */
     u = matrix_row(&U, k);
     v = matrix_row(&V, k);
@@ -879,7 +856,7 @@ int model_weight_adjust (model_t *mdl, const unsigned int j) {
     const double beta = 1.0 / vnrm;
 
     /* symmetrize the vectors. */
-    for (unsigned int i = 0; i < mdl->K; i++) {
+    for (size_t i = 0; i < mdl->K; i++) {
       /* get the elements of the selector and asymmetric update. */
       const double ui = (i == k0 + k ? 1.0 : 0.0);
       const double vi = vector_get(&v, i);
@@ -895,7 +872,7 @@ int model_weight_adjust (model_t *mdl, const unsigned int j) {
   }
 
   /* apply the updates. */
-  for (unsigned int k = 0; k < K; k++) {
+  for (size_t k = 0; k < K; k++) {
     /* update the cholesky factors. */
     u = matrix_row(&U, k);
     matrix_copy_row(&z, &U, k);
@@ -905,8 +882,8 @@ int model_weight_adjust (model_t *mdl, const unsigned int j) {
     blas_dgemv(BLAS_NO_TRANS, 1.0, mdl->Sigma, &u, 0.0, &z);
     double zudot = blas_ddot(&z, &u);
     zudot = 1.0 / (1.0 + zudot);
-    for (unsigned int i = 0; i < mdl->K; i++)
-      for (unsigned int j = 0; j < mdl->K; j++)
+    for (size_t i = 0; i < mdl->K; i++)
+      for (size_t j = 0; j < mdl->K; j++)
         matrix_set(mdl->Sigma, i, j,
           matrix_get(mdl->Sigma, i, j) -
           zudot * vector_get(&z, i) *
@@ -914,7 +891,7 @@ int model_weight_adjust (model_t *mdl, const unsigned int j) {
   }
 
   /* apply the downdates. */
-  for (unsigned int k = 0; k < K; k++) {
+  for (size_t k = 0; k < K; k++) {
     /* downdate the cholesky factors. */
     v = matrix_row(&V, k);
     matrix_copy_row(&z, &V, k);
@@ -924,8 +901,8 @@ int model_weight_adjust (model_t *mdl, const unsigned int j) {
     blas_dgemv(BLAS_NO_TRANS, 1.0, mdl->Sigma, &v, 0.0, &z);
     double zvdot = blas_ddot(&z, &v);
     zvdot = 1.0 / (1.0 - zvdot);
-    for (unsigned int i = 0; i < mdl->K; i++)
-      for (unsigned int j = 0; j < mdl->K; j++)
+    for (size_t i = 0; i < mdl->K; i++)
+      for (size_t j = 0; j < mdl->K; j++)
         matrix_set(mdl->Sigma, i, j,
           matrix_get(mdl->Sigma, i, j) +
           zvdot * vector_get(&z, i) *
