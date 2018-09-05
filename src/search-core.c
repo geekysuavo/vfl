@@ -1,6 +1,6 @@
 
-/* include the search and gridding headers. */
-#include <vfl/search.h>
+/* include the vfl header. */
+#include <vfl/vfl.h>
 #include <vfl/util/grid.h>
 
 /* * * * documentation of opencl kernel code: * * * */
@@ -138,7 +138,7 @@
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-static int set_kernel (search_t *S) {
+static int set_kernel (Search *S) {
 #ifdef __VFL_USE_OPENCL
   /* generate the model kernel code. */
   char *ksrc = model_kernel(S->mdl);
@@ -216,7 +216,7 @@ static int set_kernel (search_t *S) {
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-static int set_arguments (search_t *S) {
+static int set_arguments (Search *S) {
 #ifdef __VFL_USE_OPENCL
   /* initialize the status code. */
   int ret = CL_SUCCESS;
@@ -247,7 +247,7 @@ static int set_arguments (search_t *S) {
  * arguments:
  *  @S: search structure pointer.
  */
-void free_kernel (search_t *S) {
+void free_kernel (Search *S) {
 #ifdef __VFL_USE_OPENCL
   /* release the opencl variables. */
   clReleaseProgram(S->prog);
@@ -273,7 +273,7 @@ void free_kernel (search_t *S) {
  * arguments:
  *  @S: search structure pointer.
  */
-void free_buffers (search_t *S) {
+void free_buffers (Search *S) {
   /* free the dense covariance matrix. */
   matrix_free(S->cov);
   S->cov = NULL;
@@ -315,20 +315,20 @@ void free_buffers (search_t *S) {
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-static int refresh_buffers (search_t *S) {
+static int refresh_buffers (Search *S) {
   /* get the new sizes. */
 #ifdef __VFL_USE_OPENCL
-  const unsigned int P = S->mdl->P + 1;
-  const unsigned int D = S->mdl->D;
+  const size_t P = S->mdl->P + 1;
+  const size_t D = S->mdl->D;
 #endif
-  const unsigned int n = S->dat->N;
+  const size_t n = S->dat->N;
 
   /* determine the total grid size. */
-  unsigned int G;
+  size_t G;
   grid_iterator_alloc(S->grid, &G, NULL, NULL, NULL);
 
   /* check if the grid size exceeds the maximum grid size. */
-  unsigned int N = G;
+  size_t N = G;
   if (N > SEARCH_MAX_GRID)
     N = SEARCH_MAX_GRID;
 
@@ -461,18 +461,18 @@ static int refresh_buffers (search_t *S) {
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-static int fill_buffers (search_t *S) {
+static int fill_buffers (Search *S) {
 #ifdef __VFL_USE_OPENCL
   /* store the current noise precision and weight ratio. */
   S->par[0] = 1.0 / (S->mdl->nu * S->mdl->tau);
 
   /* store the current factor parameters. */
-  for (unsigned int j = 0, p0 = 1; j < S->mdl->M; j++) {
+  for (size_t j = 0, p0 = 1; j < S->mdl->M; j++) {
     /* get the current factor parameter vector. */
-    const vector_t *par = S->mdl->factors[j]->par;
+    const Vector *par = S->mdl->factors[j]->par;
 
     /* copy the vector elements into the local array. */
-    for (unsigned int p = 0; p < par->len; p++)
+    for (size_t p = 0; p < par->len; p++)
       S->par[p0 + p] = vector_get(par, p);
 
     /* increment the array offset. */
@@ -481,21 +481,21 @@ static int fill_buffers (search_t *S) {
 #endif
 
   /* compute the covariance matrix elements. */
-  for (unsigned int i = 0; i < S->n; i++) {
+  for (size_t i = 0; i < S->n; i++) {
     /* get the row-wise observation. */
-    datum_t *di = data_get(S->dat, i);
+    Datum *di = data_get(S->dat, i);
 
 #ifdef __VFL_USE_OPENCL
     /* while we're here, store the data array values. */
     S->pdat[i] = di->p;
-    for (unsigned int d = 0; d < S->D; d++)
+    for (size_t d = 0; d < S->D; d++)
       S->xdat[i * S->D + d] = vector_get(di->x, d);
 #endif
 
     /* loop over the elements of each row. */
-    for (unsigned int j = 0; j <= i; j++) {
+    for (size_t j = 0; j <= i; j++) {
       /* get the column-wise observation. */
-      datum_t *dj = data_get(S->dat, j);
+      Datum *dj = data_get(S->dat, j);
 
       /* compute the covariance matrix element. */
       const double cij = model_cov(S->mdl, di->x, dj->x, di->p, dj->p);
@@ -508,7 +508,7 @@ static int fill_buffers (search_t *S) {
   }
 
   /* compute the current model->data fit error estimate. */
-  vector_view_t z = vector_subvector(S->mdl->tmp, 0, S->mdl->K);
+  VectorView z = vector_subvector(S->mdl->tmp, 0, S->mdl->K);
   blas_dtrmv(BLAS_TRANS, S->mdl->L, S->mdl->wbar, &z);
   const double wSw = blas_ddot(&z, &z);
   const double yy = data_inner(S->dat);
@@ -523,7 +523,7 @@ static int fill_buffers (search_t *S) {
   /* compute the cholesky decomposition of the covariance matrix. */
   if (!chol_decomp(S->cov) || !chol_invert(S->cov, S->cov)) {
     /* output a warning message. */
-    fprintf(stderr, "cov (%ux%u) is singular!\n",
+    fprintf(stderr, "cov (%zux%zu) is singular!\n",
             S->cov->rows, S->cov->cols);
     fflush(stderr);
 
@@ -533,8 +533,8 @@ static int fill_buffers (search_t *S) {
 
 #ifdef __VFL_USE_OPENCL
   /* pack the inverted matrix into the host-side array. */
-  for (unsigned int i = 0, cidx = 0; i < S->n; i++)
-    for (unsigned int j = 0; j <= i; j++, cidx++)
+  for (size_t i = 0, cidx = 0; i < S->n; i++)
+    for (size_t j = 0; j <= i; j++, cidx++)
       S->C[cidx] = matrix_get(S->cov, i, j);
 #endif
 
@@ -552,7 +552,7 @@ static int fill_buffers (search_t *S) {
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-static int write_buffers (search_t *S) {
+static int write_buffers (Search *S) {
 #ifdef __VFL_USE_OPENCL
   /* write xdat to the device. */
   int ret = clEnqueueWriteBuffer(S->queue, S->dev_xdat, CL_FALSE, 0,
@@ -590,7 +590,7 @@ static int write_buffers (search_t *S) {
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-static int write_grid (search_t *S) {
+static int write_grid (Search *S) {
 #ifdef __VFL_USE_OPENCL
   /* write xgrid to the device. */
   int ret = clEnqueueWriteBuffer(S->queue, S->dev_xgrid, CL_TRUE, 0,
@@ -613,7 +613,7 @@ static int write_grid (search_t *S) {
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-static int read_buffers (search_t *S) {
+static int read_buffers (Search *S) {
 #ifdef __VFL_USE_OPENCL
   /* read the results from the device. */
   int ret = clEnqueueReadBuffer(S->queue, S->dev_var, CL_TRUE, 0,
@@ -637,7 +637,7 @@ static int read_buffers (search_t *S) {
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-static int launch_kernel (search_t *S, size_t *Ntask) {
+static int launch_kernel (Search *S, size_t *Ntask) {
 #ifdef __VFL_USE_OPENCL
   /* enqueue the kernel. */
   int ret = clEnqueueNDRangeKernel(S->queue, S->kern, 1, NULL,
@@ -667,7 +667,7 @@ static int launch_kernel (search_t *S, size_t *Ntask) {
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-int search_set_model (search_t *S, model_t *mdl) {
+int search_set_model (Search *S, Model *mdl) {
   /* check the input pointers. */
   if (!S || !mdl)
     return 0;
@@ -678,12 +678,12 @@ int search_set_model (search_t *S, model_t *mdl) {
     free_buffers(S);
     free_kernel(S);
 
-    /* release the assigned model. */
-    obj_release((object_t*) S->mdl);
+    /* release the reference to the current model. */
+    Py_DECREF(S->mdl);
   }
 
   /* store the new model. */
-  obj_retain(mdl);
+  Py_INCREF(mdl);
   S->mdl = mdl;
 
 #ifndef __VFL_USE_OPENCL
@@ -705,17 +705,16 @@ int search_set_model (search_t *S, model_t *mdl) {
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-int search_set_data (search_t *S, data_t *dat) {
+int search_set_data (Search *S, Data *dat) {
   /* check the input pointers. */
   if (!S || !dat)
     return 0;
 
-  /* release the assigned dataset. */
-  if (S->dat)
-    obj_release((object_t*) S->dat);
+  /* release the reference to the current dataset. */
+  Py_XDECREF(S->dat);
 
   /* store the new dataset and return success. */
-  obj_retain(dat);
+  Py_INCREF(dat);
   S->dat = dat;
   return 1;
 }
@@ -729,7 +728,7 @@ int search_set_data (search_t *S, data_t *dat) {
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-int search_set_grid (search_t *S, matrix_t *grid) {
+int search_set_grid (Search *S, Matrix *grid) {
   /* check the input pointers. */
   if (!S || !grid)
     return 0;
@@ -757,7 +756,7 @@ int search_set_grid (search_t *S, matrix_t *grid) {
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-int search_set_outputs (search_t *S, const unsigned int num) {
+int search_set_outputs (Search *S, size_t num) {
   /* check the input arguments. */
   if (!S || !num)
     return 0;
@@ -778,15 +777,15 @@ int search_set_outputs (search_t *S, const unsigned int num) {
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-int search_execute (search_t *S, vector_t *x) {
+int search_execute (Search *S, Vector *x) {
   /* declare required variables:
    *  @idx: grid iteration index.
    *  @sz: grid dimension sizes.
    *  @gx: grid iteration point.
    */
-  unsigned int N, Nrem;
-  unsigned int *idx, *sz;
-  vector_t *gx;
+  size_t N, Nrem;
+  size_t *idx, *sz;
+  Vector *gx;
 
   /* check the input structure pointers. */
   if (!S || !x)
@@ -817,8 +816,8 @@ int search_execute (search_t *S, vector_t *x) {
     return 0;
 
   /* initialize the maximum variance datum. */
-  vector_view_t xview;
-  datum_t dmax;
+  VectorView xview;
+  Datum dmax;
   dmax.x = &xview;
   dmax.y = 0.0;
   dmax.p = 0;
@@ -830,10 +829,10 @@ int search_execute (search_t *S, vector_t *x) {
     N = (Nrem > S->N ? S->N : Nrem);
 
     /* fill the required amount of grid array elements. */
-    for (unsigned int i = 0; i < N; i++) {
+    for (size_t i = 0; i < N; i++) {
 #ifdef __VFL_USE_OPENCL
       /* copy the grid point into the array. */
-      for (unsigned int d = 0; d < S->D; d++)
+      for (size_t d = 0; d < S->D; d++)
         S->xgrid[i * S->D + d] = vector_get(gx, d);
 #else
       /* initialize variables for checking for new maxima. */
@@ -841,18 +840,18 @@ int search_execute (search_t *S, vector_t *x) {
       dmax.x = gx;
 
       /* loop over the outputs. */
-      for (unsigned int ps = 0; ps < S->K; ps++) {
+      for (size_t ps = 0; ps < S->K; ps++) {
         /* include the first term. */
         sum += model_cov(S->mdl, gx, gx, ps, ps);
 
         /* compute the kernel vector elements. */
-        datum_t *dj = S->dat->data;
-        for (unsigned int j = 0; j < S->n; j++, dj++)
+        Datum *dj = S->dat->data;
+        for (size_t j = 0; j < S->n; j++, dj++)
           vector_set(S->cs, j, model_cov(S->mdl, dj->x, gx, dj->p, ps));
 
         /* include the second term. */
-        for (unsigned int j = 0; j < S->n; j++)
-          for (unsigned int k = 0; k < S->n; k++)
+        for (size_t j = 0; j < S->n; j++)
+          for (size_t k = 0; k < S->n; k++)
             sum -= vector_get(S->cs, j)
                  * vector_get(S->cs, k)
                  * matrix_get(S->cov, j, k);
@@ -890,7 +889,7 @@ int search_execute (search_t *S, vector_t *x) {
 #ifdef __VFL_USE_OPENCL
     /* loop over the array of computed variances. */
     cl_double *xi = S->xgrid;
-    for (unsigned int i = 0; i < N; i++, xi += S->D) {
+    for (size_t i = 0; i < N; i++, xi += S->D) {
       /* initialize the datum to search for existing observations. */
       xview = vector_view_array(xi, S->D);
 
@@ -912,7 +911,7 @@ int search_execute (search_t *S, vector_t *x) {
 
 #ifdef __VFL_USE_OPENCL
   /* store the identified location in the output vector. */
-  for (unsigned int d = 0; d < S->D; d++)
+  for (size_t d = 0; d < S->D; d++)
     vector_set(x, d, S->xmax[d]);
 #endif
 

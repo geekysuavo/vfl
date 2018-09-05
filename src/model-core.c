@@ -42,7 +42,174 @@ static inline size_t model_tmp (const Model *mdl) {
   return ntmp;
 }
 
+/* model_internal_refresh(): refresh the internal state of a model.
+ *
+ * arguments:
+ *  @mdl: model structure pointer to access.
+ *
+ * returns:
+ *  integer indicating whether (1) or not (0) the refresh succeeded.
+ */
+static inline int
+model_internal_refresh (Model *mdl, size_t D, size_t P,
+                                    size_t M, size_t K) {
+  /* allocate new vectors. */
+  Vector *wbar = vector_alloc(K);
+  Vector *h = vector_alloc(K);
+  Vector *tmp = vector_alloc(model_tmp(mdl));
+
+  /* allocate new matrices. */
+  Matrix *Sigma = matrix_alloc(K, K);
+  Matrix *Sinv = matrix_alloc(K, K);
+  Matrix *L = matrix_alloc(K, K);
+
+  /* if the factor count changed, allocate new factor arrays. */
+  Factor **factors = NULL;
+  if (M != mdl->M)
+    factors = malloc(2 * M * sizeof(Factor*));
+  else
+    factors = mdl->factors;
+
+  /* check if any single allocation failed. */
+  if (!wbar || !h || !tmp || !Sigma || !Sinv || !L || !factors) {
+    /* free everything. */
+    vector_free(wbar);
+    vector_free(h);
+    vector_free(tmp);
+    matrix_free(Sigma);
+    matrix_free(Sinv);
+    matrix_free(L);
+    if (factors != mdl->factors)
+      free(factors);
+
+    /* return failure. */
+    return 0;
+  }
+
+  /* get the prior factor array. */
+  Factor **priors = factors + M;
+
+  /* if the factor count changed, initialize the contents
+   * of the new factor array.
+   */
+  if (factors != mdl->factors) {
+    /* initialize the new array contents. */
+    for (size_t j = 0; j < M; j++) {
+      if (j < mdl->M) {
+        /* copy factors that will remain from the old array. */
+        factors[j] = mdl->factors[j];
+        priors[j] = mdl->priors[j];
+      }
+      else {
+        /* initialize extra factors to null. */
+        factors[j] = NULL;
+        priors[j] = NULL;
+      }
+    }
+
+    /* drop references to all lost factors. */
+    for (size_t j = M; j < mdl->M; j++) {
+      Py_DECREF(mdl->factors[j]);
+      Py_DECREF(mdl->priors[j]);
+    }
+
+    /* free the old factor array. */
+    free(mdl->factors);
+  }
+
+  /* free the model vectors. */
+  vector_free(mdl->wbar);
+  vector_free(mdl->h);
+  vector_free(mdl->tmp);
+
+  /* free the model matrices. */
+  matrix_free(mdl->Sigma);
+  matrix_free(mdl->Sinv);
+  matrix_free(mdl->L);
+
+  /* set the new factor array. */
+  mdl->factors = factors;
+  mdl->priors = priors;
+
+  /* set the new vectors. */
+  mdl->wbar = wbar;
+  mdl->h = h;
+  mdl->tmp = tmp;
+
+  /* set the new matrices. */
+  mdl->Sigma = Sigma;
+  mdl->Sinv = Sinv;
+  mdl->L = L;
+
+  /* store the new sizes into the model. */
+  mdl->D = D;
+  mdl->P = P;
+  mdl->M = M;
+  mdl->K = K;
+
+  /* return success. */
+  return 1;
+}
+
 /* --- */
+
+/* Model_reset(): reset the contents of a model structure.
+ *
+ * arguments:
+ *  @mdl: model structure pointer to modify.
+ */
+void Model_reset (Model *mdl) {
+  /* return if the struct pointer is null. */
+  if (!mdl)
+    return;
+
+  /* initialize the function pointers. */
+  mdl->init      = NULL;
+  mdl->bound     = NULL;
+  mdl->predict   = NULL;
+  mdl->infer     = NULL;
+  mdl->update    = NULL;
+  mdl->gradient  = NULL;
+  mdl->meanfield = NULL;
+
+  /* initialize the sizes. */
+  mdl->D = 0;
+  mdl->P = 0;
+  mdl->M = 0;
+  mdl->K = 0;
+
+  /* initialize the prior parameters. */
+  mdl->alpha0 = 1.0;
+  mdl->beta0 = 1.0;
+  mdl->nu = 1.0;
+
+  /* initialize the posterior noise parameters. */
+  mdl->alpha = mdl->alpha0;
+  mdl->beta = mdl->beta0;
+  mdl->tau = mdl->alpha / mdl->beta;
+
+  /* initialize the posterior weight parameters. */
+  mdl->wbar = NULL;
+  mdl->Sigma = NULL;
+
+  /* initialize the posterior logistic parameters. */
+  mdl->xi = NULL;
+
+  /* initialize the intermediates. */
+  mdl->Sinv = NULL;
+  mdl->L = NULL;
+  mdl->h = NULL;
+
+  /* initialize the prior and posterior factor arrays. */
+  mdl->factors = NULL;
+  mdl->priors = NULL;
+
+  /* initialize the associated dataset. */
+  mdl->dat = NULL;
+
+  /* initialize the temporary vector. */
+  mdl->tmp = NULL;
+}
 
 /* model_set_alpha0(): set the noise precision shape-prior of a model.
  *
@@ -151,30 +318,84 @@ int model_set_data (Model *mdl, Data *dat) {
   if (mdl->D && dat->N && dat->D < mdl->D)
     return 0;
 
-  /* drop the current dataset. */
-  Py_XDECREF(mdl->dat);
-  mdl->dat = NULL;
+  /* allocate new logistic parameters and temporary coefficients. */
+  Vector *tmp = vector_alloc(model_tmp(mdl));
+  Vector *xi = vector_alloc(dat->N);
+  if (!tmp || !xi)
+    return 0;
 
-  /* free the logistic parameters and temporary coefficients. */
+  /* replace the logistic parameters and temporary coefficients. */
   vector_free(mdl->tmp);
   vector_free(mdl->xi);
-  mdl->tmp = NULL;
-  mdl->xi = NULL;
-
-  /* reallocate the logistic parameters and temporary coefficients. */
-  mdl->tmp = vector_alloc(model_tmp(mdl));
-  mdl->xi = vector_alloc(dat->N);
-  if (!mdl->tmp || !mdl->xi)
-    return 0;
+  mdl->tmp = tmp;
+  mdl->xi = xi;
 
   /* initialize the logistic parameters. */
   vector_set_all(mdl->xi, 1.0);
 
   /* store the new dataset. */
+  Py_XDECREF(mdl->dat);
   Py_INCREF(dat);
   mdl->dat = dat;
 
   /* return succes. */
+  return 1;
+}
+
+/* model_set_factor(): replace a variational feature/factor in a model.
+ *
+ * arguments:
+ *  @mdl: model structure pointer to modify.
+ *  @i: factor array index to modify.
+ *  @f: new variational factor.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int model_set_factor (Model *mdl, size_t i, Factor *f) {
+  /* check the input pointers. */
+  if (!mdl || !f)
+    return 0;
+
+  /* check the factor index. */
+  if (i >= mdl->M)
+    return 0;
+
+  /* get the (old) replaced factor and its prior. */
+  Factor *fi = mdl->factors[i];
+  Factor *pi = mdl->priors[i];
+
+  /* determine the new sizes of the model. */
+  const size_t P = mdl->P - fi->P + f->P;
+  const size_t K = mdl->K - fi->K + f->K;
+  const size_t M = mdl->M;
+
+  /* determine the new dimensionality of the model. */
+  size_t D = 0;
+  for (size_t j = 0; j < M; j++) {
+    if (j == i)
+      D = (D > f->D ? D : f->D);
+    else
+      D = (D > mdl->factors[j]->D ? D : mdl->factors[j]->D);
+  }
+
+  /* update the factor-dependent model internals. */
+  if (!model_internal_refresh(mdl, D, P, M, K))
+    return 0;
+
+  /* create a prior copy of the factor. */
+  Factor *p = factor_copy(f);
+  if (!p)
+    return 0;
+
+  /* set the new factor and prior. */
+  Py_DECREF(fi);
+  Py_DECREF(pi);
+  Py_INCREF(f);
+  mdl->factors[i] = f;
+  mdl->priors[i] = p;
+
+  /* return success. */
   return 1;
 }
 
@@ -199,82 +420,43 @@ int model_add_factor (Model *mdl, Factor *f) {
   const size_t K = mdl->K + f->K;
   const size_t M = mdl->M + 1;
 
-  /* reallocate the array of posterior factors. */
-  Factor **factors = (Factor**) realloc(mdl->factors, M * sizeof(Factor*));
-
-  /* check that reallocation was successful. */
-  if (!factors)
+  /* update the factor-dependent model internals. */
+  if (!model_internal_refresh(mdl, D, P, M, K))
     return 0;
 
-  /* reallocate the array of prior factors. */
-  Factor **priors = (Factor**) realloc(mdl->priors, M * sizeof(Factor*));
-
-  /* check that reallocation was successful. */
-  if (!priors) {
-    mdl->factors = factors;
+  /* create a prior copy of the factor. */
+  Factor *p = factor_copy(f);
+  if (!p)
     return 0;
-  }
 
-  /* store the factor arrays into the model. */
-  mdl->factors = factors;
-  mdl->priors = priors;
-
-  /* store the new sizes into the model. */
-  mdl->D = D;
-  mdl->P = P;
-  mdl->M = M;
-  mdl->K = K;
-
-  /* store the posterior factor and make a copy for the prior. */
+  /* store the factor and its prior. */
+  Py_INCREF(f);
   mdl->factors[M - 1] = f;
-  mdl->priors[M - 1] = factor_copy(f);
-
-  /* retain references to the factor and copied prior. */
-  Py_INCREF(mdl->factors[M - 1]);
-  Py_XINCREF(mdl->priors[M - 1]);
-
-  /* check that factor duplication was successful. */
-  if (!mdl->priors[M - 1])
-    return 0;
-
-  /* reallocate the weight means. */
-  vector_free(mdl->wbar);
-  mdl->wbar = vector_alloc(K);
-  if (!mdl->wbar)
-    return 0;
-
-  /* reallocate the weight covariances. */
-  matrix_free(mdl->Sigma);
-  mdl->Sigma = matrix_alloc(K, K);
-  if (!mdl->Sigma)
-    return 0;
-
-  /* reallocate the weight precisions. */
-  matrix_free(mdl->Sinv);
-  mdl->Sinv = matrix_alloc(K, K);
-  if (!mdl->Sinv)
-    return 0;
-
-  /* reallocate the weight cholesky factors. */
-  matrix_free(mdl->L);
-  mdl->L = matrix_alloc(K, K);
-  if (!mdl->L)
-    return 0;
-
-  /* reallocate the projections. */
-  vector_free(mdl->h);
-  mdl->h = vector_alloc(K);
-  if (!mdl->h)
-    return 0;
-
-  /* reallocate the temporary vector. */
-  vector_free(mdl->tmp);
-  mdl->tmp = vector_alloc(model_tmp(mdl));
-  if (!mdl->tmp)
-    return 0;
+  mdl->priors[M - 1] = p;
 
   /* return success. */
   return 1;
+}
+
+/* model_clear_factors(): remove all factors from a model.
+ *
+ * arguments:
+ *  @mdl: model structure pointer to modify.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int model_clear_factors (Model *mdl) {
+  /* check the input pointer. */
+  if (!mdl)
+    return 0;
+
+  /* if the factor list is already empty, return. */
+  if (mdl->M == 0)
+    return 1;
+
+  /* return the result of zeroing the factor count. */
+  return model_internal_refresh(mdl, 0, 0, 0, 0);
 }
 
 /* model_mean(): return the first moment of a model basis element.

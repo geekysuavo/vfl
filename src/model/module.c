@@ -8,6 +8,8 @@ int VFC_Type_init (PyObject *mod);
 int VFR_Type_init (PyObject *mod);
 int TauVFR_Type_init (PyObject *mod);
 
+/* define documentation strings: */
+
 PyDoc_STRVAR(
   model_module_doc,
 "VFL -- Models.\n"
@@ -36,7 +38,11 @@ PyInit_model (void) {
   if (!model)
     return NULL;
 
-  /* FIXME: initialize the model types. */
+  /* initialize the model types. */
+  if (VFC_Type_init(model) < 0 ||
+      VFR_Type_init(model) < 0 ||
+      TauVFR_Type_init(model))
+    return NULL;
 
   /* return the new module. */
   return model;

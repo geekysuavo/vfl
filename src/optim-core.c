@@ -2,6 +2,49 @@
 /* include the vfl header. */
 #include <vfl/vfl.h>
 
+/* Optim_reset(): reset the contents of an optimizer structure.
+ *
+ * arguments:
+ *  @opt: model structure pointer to modify.
+ */
+void Optim_reset (Optim *opt) {
+  /* return if the struct pointer is null. */
+  if (!opt)
+    return;
+
+  /* initialize the function pointers. */
+  opt->init    = NULL;
+  opt->iterate = NULL;
+  opt->execute = NULL;
+  opt->free    = NULL;
+
+  /* initialize the associated model. */
+  opt->mdl = NULL;
+
+  /* initialize the iteration vectors. */
+  opt->xa = NULL;
+  opt->xb = NULL;
+  opt->x = NULL;
+  opt->g = NULL;
+
+  /* allocate the temporaries. */
+  opt->Fs = NULL;
+
+  /* initialize the control parameters. */
+  opt->max_steps = 10;
+  opt->max_iters = 1000;
+  opt->l0 = 1.0;
+  opt->dl = 0.1;
+
+  /* initialize the logging parameters. */
+  opt->log_iters = 1;
+  opt->log_parms = 0;
+  opt->log_fh = NULL;
+
+  /* initialize the lower bound. */
+  opt->bound0 = opt->bound = -INFINITY;
+}
+
 /* optim_set_model(): associate a variational feature model with an
  * optimizer.
  *
@@ -17,7 +60,7 @@ int optim_set_model (Optim *opt, Model *mdl) {
   if (!opt || !mdl)
     return 0;
 
-  /* check that the model is incapable of inference. */
+  /* ensure that the model is capable of inference. */
   if (!model_infer(mdl))
     return 0;
 
@@ -40,9 +83,9 @@ int optim_set_model (Optim *opt, Model *mdl) {
   opt->Fs = NULL;
 
   /* determine the maximum parameter count of the model factors. */
-  unsigned int pmax = 0;
-  for (unsigned int j = 0; j < mdl->M; j++) {
-    const unsigned int pj = mdl->factors[j]->P;
+  size_t pmax = 0;
+  for (size_t j = 0; j < mdl->M; j++) {
+    const size_t pj = mdl->factors[j]->P;
     if (pj > pmax)
       pmax = pj;
   }

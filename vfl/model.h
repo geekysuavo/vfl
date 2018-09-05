@@ -9,7 +9,12 @@
 
 /* Model_Check(): macro to check if a PyObject is a Model.
  */
-#define Model_Check(v) (Py_TYPE(v) == &Model_Type)
+#define Model_Check(v) PyObject_TypeCheck(v, &Model_Type)
+
+/* Model_CheckExact(): macro to check if a PyObject is
+ * precisely a Model.
+ */
+#define Model_CheckExact(v) (Py_TYPE(v) == &Model_Type)
 
 /* Model_Type: globally available model type structure.
  */
@@ -245,6 +250,8 @@ struct model {
 
 /* function declarations (model-core.c): */
 
+void Model_reset (Model *mdl);
+
 int model_set_alpha0 (Model *mdl, double alpha0);
 
 int model_set_beta0 (Model *mdl, double beta0);
@@ -255,7 +262,11 @@ int model_set_parms (Model *mdl, size_t j, const Vector *par);
 
 int model_set_data (Model *mdl, Data *dat);
 
+int model_set_factor (Model *mdl, size_t i, Factor *f);
+
 int model_add_factor (Model *mdl, Factor *f);
+
+int model_clear_factors (Model *mdl);
 
 double model_mean (const Model *mdl, const Vector *x,
                    size_t p, size_t j, size_t k);

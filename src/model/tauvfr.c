@@ -1,21 +1,43 @@
 
-/* include the model header. */
-#include <vfl/model.h>
+/* include the vfl header. */
+#include <vfl/vfl.h>
 
-/* tauvfr_bound(): return the lower bound of a fixed-tau vfr model.
+/* TauVFR: structure for holding fixed-tau vfr models.
+ */
+typedef struct {
+  /* model superclass. */
+  Model super;
+
+  /* subclass struct members. */
+}
+TauVFR;
+
+/* define documentation strings: */
+
+PyDoc_STRVAR(
+  TauVFR_doc,
+"TauVFR() -> TauVFR object\n"
+"\n");
+
+PyDoc_STRVAR(
+  TauVFR_getset_tau_doc,
+"Fixed noise precision (read/write)\n"
+"\n");
+
+/* TauVFR_bound(): return the lower bound of a fixed-tau vfr model.
  *  - see model_bound_fn() for more information.
  */
-MODEL_BOUND (tauvfr) {
+MODEL_BOUND (TauVFR) {
   /* initialize the computation. */
   const double tau = mdl->tau;
   double bound = 0.0;
 
   /* include the complexity term. */
-  for (unsigned int k = 0; k < mdl->K; k++)
+  for (size_t k = 0; k < mdl->K; k++)
     bound -= log(matrix_get(mdl->L, k, k));
 
   /* include the data fit term. */
-  vector_view_t b = vector_subvector(mdl->tmp, 0, mdl->K);
+  VectorView b = vector_subvector(mdl->tmp, 0, mdl->K);
   blas_dtrmv(BLAS_TRANS, mdl->L, mdl->wbar, &b);
   bound += 0.5 * tau * blas_ddot(&b, &b);
 
@@ -23,16 +45,16 @@ MODEL_BOUND (tauvfr) {
   return bound;
 }
 
-/* tauvfr_predict(): return the prediction of a fixed-tau vfr model.
+/* TauVFR_predict(): return the prediction of a fixed-tau vfr model.
  *  - see model_predict_fn() for more information.
  */
-MODEL_PREDICT (tauvfr) {
+MODEL_PREDICT (TauVFR) {
   /* initialize the predicted mean. */
   double mu = 0.0;
 
   /* loop over the terms of the inner product. */
-  for (unsigned int j = 0, i = 0; j < mdl->M; j++) {
-    for (unsigned int k = 0; k < mdl->factors[j]->K; k++, i++) {
+  for (size_t j = 0, i = 0; j < mdl->M; j++) {
+    for (size_t k = 0; k < mdl->factors[j]->K; k++, i++) {
       /* include the current contribution from the inner product. */
       mu += vector_get(mdl->wbar, i) * model_mean(mdl, x, p, j, k);
     }
@@ -45,11 +67,11 @@ MODEL_PREDICT (tauvfr) {
   double eta = tauinv - mu * mu;
 
   /* loop over the first trace dimension. */
-  for (unsigned int j1 = 0, i1 = 0; j1 < mdl->M; j1++) {
-    for (unsigned int k1 = 0; k1 < mdl->factors[j1]->K; k1++, i1++) {
+  for (size_t j1 = 0, i1 = 0; j1 < mdl->M; j1++) {
+    for (size_t k1 = 0; k1 < mdl->factors[j1]->K; k1++, i1++) {
       /* loop over the second trace dimension. */
-      for (unsigned int j2 = 0, i2 = 0; j2 < mdl->M; j2++) {
-        for (unsigned int k2 = 0; k2 < mdl->factors[j2]->K; k2++, i2++) {
+      for (size_t j2 = 0, i2 = 0; j2 < mdl->M; j2++) {
+        for (size_t k2 = 0; k2 < mdl->factors[j2]->K; k2++, i2++) {
           /* include the current contribution from the trace. */
           eta += (matrix_get(mdl->Sigma, i1, i2) +
                   vector_get(mdl->wbar, i1) *
@@ -66,32 +88,32 @@ MODEL_PREDICT (tauvfr) {
   return 1;
 }
 
-/* tauvfr_infer(): perform complete inference in a fixed-tau vfr model.
+/* TauVFR_infer(): perform complete inference in a fixed-tau vfr model.
  *  - see model_infer_fn() for more information.
  */
-MODEL_INFER (tauvfr) {
+MODEL_INFER (TauVFR) {
   /* gain access to the dataset structure members. */
-  const unsigned int N = mdl->dat->N;
-  data_t *dat = mdl->dat;
-  datum_t *di;
+  const size_t N = mdl->dat->N;
+  Data *dat = mdl->dat;
+  Datum *di;
 
   /* declare views into the weight precisions and the projections. */
-  matrix_view_t G;
-  vector_view_t h;
+  MatrixView G;
+  VectorView h;
 
   /* loop over the factors. */
-  for (unsigned int j1 = 0, i1 = 0; j1 < mdl->M; j1++) {
+  for (size_t j1 = 0, i1 = 0; j1 < mdl->M; j1++) {
     /* get the projection subvector. */
-    const unsigned int K1 = mdl->factors[j1]->K;
+    const size_t K1 = mdl->factors[j1]->K;
     h = vector_subvector(mdl->h, i1, K1);
 
     /* loop over the weights of the current factor. */
-    for (unsigned int k1 = 0; k1 < K1; k1++) {
+    for (size_t k1 = 0; k1 < K1; k1++) {
       /* initialize the projection subvector element. */
       double hk = 0.0;
 
       /* compute the contributions of each observation. */
-      for (unsigned int i = 0; i < N; i++) {
+      for (size_t i = 0; i < N; i++) {
         di = data_get(dat, i);
         hk += di->y * model_mean(mdl, di->x, di->p, j1, k1);
       }
@@ -100,18 +122,18 @@ MODEL_INFER (tauvfr) {
       vector_set(&h, k1, hk);
 
       /* loop again over the factors. */
-      for (unsigned int j2 = 0, i2 = 0; j2 < mdl->M; j2++) {
+      for (size_t j2 = 0, i2 = 0; j2 < mdl->M; j2++) {
         /* get the precision submatrix. */
-        const unsigned int K2 = mdl->factors[j2]->K;
+        const size_t K2 = mdl->factors[j2]->K;
         G = matrix_submatrix(mdl->Sinv, i1, i2, K1, K2);
 
         /* loop again over the factor weights. */
-        for (unsigned int k2 = 0; k2 < K2; k2++) {
+        for (size_t k2 = 0; k2 < K2; k2++) {
           /* initialize the precision submatrix element. */
           double gkk = 0.0;
 
           /* compute the contributions of each observation. */
-          for (unsigned int i = 0; i < N; i++) {
+          for (size_t i = 0; i < N; i++) {
             di = data_get(dat, i);
             gkk += model_var(mdl, di->x, di->p, j1, j2, k1, k2);
           }
@@ -130,7 +152,7 @@ MODEL_INFER (tauvfr) {
   }
 
   /* include the diagonal term into the weight precisions. */
-  vector_view_t Gdiag = matrix_diag(mdl->Sinv);
+  VectorView Gdiag = matrix_diag(mdl->Sinv);
   vector_add_const(&Gdiag, mdl->nu);
 
   /* compute the cholesky decomposition of the weight precisions. */
@@ -145,30 +167,30 @@ MODEL_INFER (tauvfr) {
   return 1;
 }
 
-/* tauvfr_update(): perform efficient low-rank inference in a
+/* TauVFR_update(): perform efficient low-rank inference in a
  * fixed-tau vfr model.
  *  - see model_update_fn() for more information.
  */
-MODEL_UPDATE (tauvfr) {
+MODEL_UPDATE (TauVFR) {
   /* get the weight offset and count of the current factor. */
-  const unsigned int k0 = model_weight_idx(mdl, j, 0);
-  const unsigned int K = mdl->factors[j]->K;
+  const size_t k0 = model_weight_idx(mdl, j, 0);
+  const size_t K = mdl->factors[j]->K;
 
   /* gain access to the dataset structure members. */
-  const unsigned int N = mdl->dat->N;
-  data_t *dat = mdl->dat;
-  datum_t *di;
+  const size_t N = mdl->dat->N;
+  Data *dat = mdl->dat;
+  Datum *di;
 
   /* prepare for low-rank adjustment. */
   model_weight_adjust_init(mdl, j);
 
   /* loop over the weights of the current factor. */
-  for (unsigned int k = 0; k < K; k++) {
+  for (size_t k = 0; k < K; k++) {
     /* initialize the projection subvector element. */
     double hk = 0.0;
 
     /* compute the contributions of each observation. */
-    for (unsigned int i = 0; i < N; i++) {
+    for (size_t i = 0; i < N; i++) {
       di = data_get(dat, i);
       hk += di->y * model_mean(mdl, di->x, di->p, j, k);
     }
@@ -177,17 +199,17 @@ MODEL_UPDATE (tauvfr) {
     vector_set(mdl->h, k0 + k, hk);
 
     /* loop again over the factors. */
-    for (unsigned int j2 = 0, i2 = 0; j2 < mdl->M; j2++) {
+    for (size_t j2 = 0, i2 = 0; j2 < mdl->M; j2++) {
       /* get the precision submatrix. */
-      const unsigned int K2 = mdl->factors[j2]->K;
+      const size_t K2 = mdl->factors[j2]->K;
 
       /* loop again over the factor weights. */
-      for (unsigned int k2 = 0; k2 < K2; k2++) {
+      for (size_t k2 = 0; k2 < K2; k2++) {
         /* initialize the precision submatrix element. */
         double gkk = 0.0;
 
         /* compute the contributions of each observation. */
-        for (unsigned int i = 0; i < N; i++) {
+        for (size_t i = 0; i < N; i++) {
           di = data_get(dat, i);
           gkk += model_var(mdl, di->x, di->p, j, j2, k, k2);
         }
@@ -203,7 +225,7 @@ MODEL_UPDATE (tauvfr) {
   }
 
   /* include the diagonal term into the weight precisions. */
-  for (unsigned int k = 0; k < K; k++) {
+  for (size_t k = 0; k < K; k++) {
     double gkk = matrix_get(mdl->Sinv, k0 + k, k0 + k);
     matrix_set(mdl->Sinv, k0 + k, k0 + k, gkk + mdl->nu);
   }
@@ -219,37 +241,37 @@ MODEL_UPDATE (tauvfr) {
   return 1;
 }
 
-/* tauvfr_gradient(): return the gradient of a single factor in a
+/* TauVFR_gradient(): return the gradient of a single factor in a
  * fixed-tau vfr model.
  *  - see model_gradient_fn() for more information.
  */
-MODEL_GRADIENT (tauvfr) {
+MODEL_GRADIENT (TauVFR) {
   /* determine the weight index offset of the current factor. */
-  const unsigned int k0 = model_weight_idx(mdl, j, 0);
+  const size_t k0 = model_weight_idx(mdl, j, 0);
 
   /* gain access to the factor weight count. */
-  const factor_t *fj = mdl->factors[j];
-  const unsigned int K = fj->K;
+  const Factor *fj = mdl->factors[j];
+  const size_t K = fj->K;
 
   /* gain access to the specified observation. */
-  datum_t *di = data_get(mdl->dat, i);
-  const unsigned int p = di->p;
-  const vector_t *x = di->x;
+  Datum *di = data_get(mdl->dat, i);
+  const size_t p = di->p;
+  const Vector *x = di->x;
   const double y = di->y;
 
   /* gain access to the fixed noise precision. */
   const double tau = mdl->tau;
 
   /* create the vector view for individual gradient terms. */
-  vector_view_t g = vector_subvector(mdl->tmp, mdl->K, grad->len);
+  VectorView g = vector_subvector(mdl->tmp, mdl->K, grad->len);
 
   /* loop over the weights of the current factor. */
-  for (unsigned int k = 0; k < K; k++) {
+  for (size_t k = 0; k < K; k++) {
     /* compute the weight first moment. */
     const double wk = vector_get(mdl->wbar, k0 + k);
 
     /* loop over the other weights of the current factor. */
-    for (unsigned int kk = 0; kk < K; kk++) {
+    for (size_t kk = 0; kk < K; kk++) {
       /* compute the weight second moment. */
       const double wwT = matrix_get(mdl->Sigma, k0 + k, k0 + kk) +
                          tau * wk * vector_get(mdl->wbar, k0 + kk);
@@ -264,9 +286,9 @@ MODEL_GRADIENT (tauvfr) {
     blas_daxpy(tau * wk * y, &g, grad);
 
     /* loop over the other factors. */
-    for (unsigned int j2 = 0, i2 = 0; j2 < mdl->M; j2++) {
+    for (size_t j2 = 0, i2 = 0; j2 < mdl->M; j2++) {
       /* get the weight count of the other factor. */
-      const unsigned int K2 = mdl->factors[j2]->K;
+      const size_t K2 = mdl->factors[j2]->K;
 
       /* the diagonal second-order contribution was already included. */
       if (j2 == j) {
@@ -275,7 +297,7 @@ MODEL_GRADIENT (tauvfr) {
       }
 
       /* loop over the other factor weights. */
-      for (unsigned int k2 = 0; k2 < K2; k2++) {
+      for (size_t k2 = 0; k2 < K2; k2++) {
         /* compute the weight second moment. */
         const double wwT = matrix_get(mdl->Sigma, k0 + k, i2 + k2) +
                            tau * wk * vector_get(mdl->wbar, i2 + k2);
@@ -294,38 +316,38 @@ MODEL_GRADIENT (tauvfr) {
   return 1;
 }
 
-/* tauvfr_meanfield(): return the coefficients required for an
+/* TauVFR_meanfield(): return the coefficients required for an
  * assumed-density mean-field update of a factor in a
  * fixed-tau vfr model.
  *  - see model_meanfield_fn() for more information.
  */
-MODEL_MEANFIELD (tauvfr) {
+MODEL_MEANFIELD (TauVFR) {
   /* get the weight offset and count of the current factor. */
-  const unsigned int k0 = model_weight_idx(mdl, j, 0);
-  const unsigned int K = mdl->factors[j]->K;
+  const size_t k0 = model_weight_idx(mdl, j, 0);
+  const size_t K = mdl->factors[j]->K;
 
   /* gain access to the dataset structure members. */
-  datum_t *dat = mdl->dat->data + i;
-  const unsigned int M = mdl->M;
+  Datum *dat = mdl->dat->data + i;
+  const size_t M = mdl->M;
 
   /* gain access to the fixed noise precision. */
   const double tau = mdl->tau;
 
   /* create views into the factor weight means and covariances. */
-  vector_view_t wk = vector_subvector(mdl->wbar, k0, K);
-  matrix_view_t Sk = matrix_submatrix(mdl->Sigma, k0, k0, K, K);
+  VectorView wk = vector_subvector(mdl->wbar, k0, K);
+  MatrixView Sk = matrix_submatrix(mdl->Sigma, k0, k0, K, K);
 
   /* loop over the weights of the current factor. */
-  for (unsigned int k = 0; k < K; k++) {
+  for (size_t k = 0; k < K; k++) {
     /* compute and store the contribution. */
     const double bk = tau * dat->y * vector_get(&wk, k);
     vector_set(b, k, bk);
   }
 
   /* loop over the model factors. */
-  for (unsigned int j2 = 0, i2 = 0; j2 < M; j2++) {
+  for (size_t j2 = 0, i2 = 0; j2 < M; j2++) {
     /* get the number of other-factor weights. */
-    const unsigned int K2 = mdl->factors[j2]->K;
+    const size_t K2 = mdl->factors[j2]->K;
 
     /* exclude the factor being updated. */
     if (j2 == j) {
@@ -334,12 +356,12 @@ MODEL_MEANFIELD (tauvfr) {
     }
 
     /* loop over the weights of the other factor. */
-    for (unsigned int k2 = 0; k2 < K2; k2++) {
+    for (size_t k2 = 0; k2 < K2; k2++) {
       /* get the other factor mean. */
       const double phi2 = model_mean(mdl, dat->x, dat->p, j2, k2);
 
       /* loop over the weights of the current factor. */
-      for (unsigned int k = 0; k < K; k++) {
+      for (size_t k = 0; k < K; k++) {
         /* compute the weight second moment. */
         const double w2 = matrix_get(mdl->Sigma, k0 + k, i2 + k2) +
                           vector_get(mdl->wbar, k0 + k) *
@@ -356,8 +378,8 @@ MODEL_MEANFIELD (tauvfr) {
   }
 
   /* compute second-order contributions. */
-  for (unsigned int k = 0; k < K; k++) {
-    for (unsigned int k2 = 0; k2 < K; k2++) {
+  for (size_t k = 0; k < K; k++) {
+    for (size_t k2 = 0; k2 < K; k2++) {
       /* compute the current matrix element. */
       const double bkk = -0.5 * tau * (matrix_get(&Sk, k, k2) +
                                        vector_get(&wk, k) *
@@ -372,83 +394,92 @@ MODEL_MEANFIELD (tauvfr) {
   return 1;
 }
 
-/* tauvfr_set_tau(): set the noise precision of a fixed-tau vfr model.
- *
- * arguments:
- *  @mdl: model structure pointer.
- *  @tau: noise precision value.
- *
- * returns:
- *  integer indicating success (1) or failure (0).
+/* --- */
+
+/* TauVFR_get_tau(): method to get model precision parameters.
  */
-int tauvfr_set_tau (model_t *mdl, const double tau) {
-  /* check the input pointer and value. */
-  if (!mdl || tau <= 0.0)
-    return 0;
+static PyObject*
+TauVFR_get_tau (Model *mdl) {
+  /* return the precision parameter as a float. */
+  return PyFloat_FromDouble(mdl->tau);
+}
+
+/* TauVFR_set_tau(): method to set model precision parameters.
+ */
+static int
+TauVFR_set_tau (Model *mdl, PyObject *value, void *closure) {
+  /* get the new value. */
+  const double tau = PyFloat_AsDouble(value);
+  if (PyErr_Occurred())
+    return -1;
+
+  /* check that the value is positive. */
+  if (tau <= 0.0) {
+    PyErr_SetString(PyExc_ValueError, "expected positive precision");
+    return -1;
+  }
 
   /* set the noise precision. */
   mdl->tau = tau;
 
   /* set the noise parameters to 'spoof' a fixed precision. */
-  mdl->alpha = 1.0e6;
-  mdl->beta = 1.0e6 / tau;
+  mdl->alpha0 = mdl->alpha = 1.0e6;
+  mdl->beta0  = mdl->beta  = 1.0e6 / tau;
 
   /* return success. */
-  return 1;
+  return 0;
 }
 
-/* tauvfr_properties: array of accessible fixed-tau vfr
- * model object properties.
+/* --- */
+
+/* TauVFR_new(): allocate a new fixed-tau vfr model.
+ *  - see PyTypeObject.tp_new for details.
  */
-static object_property_t tauvfr_properties[] = {
-  MODEL_PROP_BASE,
-  MODEL_PROP_TAU,
-  MODEL_PROP_NU,
-  { NULL, NULL, NULL }
-};
+VFL_TYPE_NEW (TauVFR) {
+  /* allocate a new fixed-tau model. */
+  TauVFR *self = (TauVFR*) type->tp_alloc(type, 0);
+  Model_reset((Model*) self);
+  if (!self)
+    return NULL;
 
-/* tauvfr_methods: array of callable fixed-tau vfr model object methods.
+  /* set the function pointers. */
+  Model *mdl = (Model*) self;
+  mdl->bound     = TauVFR_bound;
+  mdl->predict   = TauVFR_predict;
+  mdl->infer     = TauVFR_infer;
+  mdl->update    = TauVFR_update;
+  mdl->gradient  = TauVFR_gradient;
+  mdl->meanfield = TauVFR_meanfield;
+
+  /* set the precision parameters. */
+  mdl->alpha0 = mdl->alpha = 1.0e6;
+  mdl->beta0 = mdl->beta = 1.0e6;
+  mdl->tau = 1.0;
+
+  /* return the new object. */
+  return (PyObject*) self;
+}
+
+/* TauVFR_getset: property definition structure for
+ * fixed-tau vfr models.
  */
-static object_method_t tauvfr_methods[] = {
-  MODEL_METHOD_BASE,
-  { NULL, NULL }
-};
-
-/* tauvfr_type: model type structure for fixed-tau
- * variational feature regression.
- */
-static model_type_t tauvfr_type = {
-  { /* base: */
-    "tauvfr",                                    /* name      */
-    sizeof(model_t),                             /* size      */
-
-    (object_init_fn) model_init,                 /* init      */
-    NULL,                                        /* copy      */
-    (object_free_fn) model_free,                 /* free      */
-    NULL,                                        /* test      */
-    NULL,                                        /* cmp       */
-
-    NULL,                                        /* add       */
-    NULL,                                        /* sub       */
-    NULL,                                        /* mul       */
-    NULL,                                        /* div       */
-    NULL,                                        /* pow       */
-
-    NULL,                                        /* get       */
-    NULL,                                        /* set       */
-    tauvfr_properties,                           /* props     */
-    tauvfr_methods                               /* methods   */
+static PyGetSetDef TauVFR_getset[] = {
+  { "tau",
+    (getter) TauVFR_get_tau,
+    (setter) TauVFR_set_tau,
+    TauVFR_getset_tau_doc,
+    NULL
   },
-
-  NULL,                                          /* init      */
-  tauvfr_bound,                                  /* bound     */
-  tauvfr_predict,                                /* predict   */
-  tauvfr_infer,                                  /* infer     */
-  tauvfr_update,                                 /* update    */
-  tauvfr_gradient,                               /* gradient  */
-  tauvfr_meanfield                               /* meanfield */
+  { NULL }
 };
 
-/* vfl_model_tauvfr: address of the tauvfr_type structure. */
-const model_type_t *vfl_model_tauvfr = &tauvfr_type;
+/* TauVFR_methods: method definition structure for
+ * fixed-tau vfr models.
+ */
+static PyMethodDef TauVFR_methods[] = {
+  { NULL }
+};
+
+/* TauVFR_Type, TauVFR_Type_init() */
+VFL_TYPE (TauVFR, Model, model)
 

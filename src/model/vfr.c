@@ -1,16 +1,58 @@
 
-/* include the model header. */
-#include <vfl/model.h>
+/* include the vfl header. */
+#include <vfl/vfl.h>
 
-/* vfr_bound(): return the lower bound of a vfr model.
+/* VFR: structure for holding vfr models.
+ */
+typedef struct {
+  /* model superclass. */
+  Model super;
+
+  /* subclass struct members. */
+}
+VFR;
+
+/* define documentation strings: */
+
+PyDoc_STRVAR(
+  VFR_doc,
+"VFR() -> VFR object\n"
+"\n");
+
+PyDoc_STRVAR(
+  VFR_getset_alpha0_doc,
+"Prior noise shape (read/write)\n"
+"\n");
+
+PyDoc_STRVAR(
+  VFR_getset_beta0_doc,
+"Prior noise rate (read/write)\n"
+"\n");
+
+PyDoc_STRVAR(
+  VFR_getset_alpha_doc,
+"Posterior noise shape (read-only)\n"
+"\n");
+
+PyDoc_STRVAR(
+  VFR_getset_beta_doc,
+"Posterior noise rate (read-only)\n"
+"\n");
+
+PyDoc_STRVAR(
+  VFR_getset_tau_doc,
+"Posterior noise precision (read-only)\n"
+"\n");
+
+/* VFR_bound(): return the lower bound of a vfr model.
  *  - see model_bound_fn() for more information.
  */
-MODEL_BOUND (vfr) {
+MODEL_BOUND (VFR) {
   /* initialize the computation. */
   double bound = 0.0;
 
   /* include the complexity term. */
-  for (unsigned int k = 0; k < mdl->K; k++)
+  for (size_t k = 0; k < mdl->K; k++)
     bound -= log(matrix_get(mdl->L, k, k));
 
   /* include the data fit term. */
@@ -20,16 +62,16 @@ MODEL_BOUND (vfr) {
   return bound;
 }
 
-/* vfr_predict(): return the prediction of a vfr model.
+/* VFR_predict(): return the prediction of a vfr model.
  *  - see model_predict_fn() for more information.
  */
-MODEL_PREDICT (vfr) {
+MODEL_PREDICT (VFR) {
   /* initialize the predicted mean. */
   double mu = 0.0;
 
   /* loop over the terms of the inner product. */
-  for (unsigned int j = 0, i = 0; j < mdl->M; j++) {
-    for (unsigned int k = 0; k < mdl->factors[j]->K; k++, i++) {
+  for (size_t j = 0, i = 0; j < mdl->M; j++) {
+    for (size_t k = 0; k < mdl->factors[j]->K; k++, i++) {
       /* include the current contribution from the inner product. */
       mu += vector_get(mdl->wbar, i) * model_mean(mdl, x, p, j, k);
     }
@@ -42,11 +84,11 @@ MODEL_PREDICT (vfr) {
   double eta = tauinv - mu * mu;
 
   /* loop over the first trace dimension. */
-  for (unsigned int j1 = 0, i1 = 0; j1 < mdl->M; j1++) {
-    for (unsigned int k1 = 0; k1 < mdl->factors[j1]->K; k1++, i1++) {
+  for (size_t j1 = 0, i1 = 0; j1 < mdl->M; j1++) {
+    for (size_t k1 = 0; k1 < mdl->factors[j1]->K; k1++, i1++) {
       /* loop over the second trace dimension. */
-      for (unsigned int j2 = 0, i2 = 0; j2 < mdl->M; j2++) {
-        for (unsigned int k2 = 0; k2 < mdl->factors[j2]->K; k2++, i2++) {
+      for (size_t j2 = 0, i2 = 0; j2 < mdl->M; j2++) {
+        for (size_t k2 = 0; k2 < mdl->factors[j2]->K; k2++, i2++) {
           /* include the current contribution from the trace. */
           eta += (matrix_get(mdl->Sigma, i1, i2) +
                   vector_get(mdl->wbar, i1) *
@@ -63,32 +105,32 @@ MODEL_PREDICT (vfr) {
   return 1;
 }
 
-/* vfr_infer(): perform complete inference in a vfr model.
+/* VFR_infer(): perform complete inference in a vfr model.
  *  - see model_infer_fn() for more information.
  */
-MODEL_INFER (vfr) {
+MODEL_INFER (VFR) {
   /* gain access to the dataset structure members. */
-  const unsigned int N = mdl->dat->N;
-  data_t *dat = mdl->dat;
-  datum_t *di;
+  const size_t N = mdl->dat->N;
+  Data *dat = mdl->dat;
+  Datum *di;
 
   /* declare views into the weight precisions and the projections. */
-  matrix_view_t G;
-  vector_view_t h;
+  MatrixView G;
+  VectorView h;
 
   /* loop over the factors. */
-  for (unsigned int j1 = 0, i1 = 0; j1 < mdl->M; j1++) {
+  for (size_t j1 = 0, i1 = 0; j1 < mdl->M; j1++) {
     /* get the projection subvector. */
-    const unsigned int K1 = mdl->factors[j1]->K;
+    const size_t K1 = mdl->factors[j1]->K;
     h = vector_subvector(mdl->h, i1, K1);
 
     /* loop over the weights of the current factor. */
-    for (unsigned int k1 = 0; k1 < K1; k1++) {
+    for (size_t k1 = 0; k1 < K1; k1++) {
       /* initialize the projection subvector element. */
       double hk = 0.0;
 
       /* compute the contributions of each observation. */
-      for (unsigned int i = 0; i < N; i++) {
+      for (size_t i = 0; i < N; i++) {
         di = data_get(dat, i);
         hk += di->y * model_mean(mdl, di->x, di->p, j1, k1);
       }
@@ -97,18 +139,18 @@ MODEL_INFER (vfr) {
       vector_set(&h, k1, hk);
 
       /* loop again over the factors. */
-      for (unsigned int j2 = 0, i2 = 0; j2 < mdl->M; j2++) {
+      for (size_t j2 = 0, i2 = 0; j2 < mdl->M; j2++) {
         /* get the precision submatrix. */
-        const unsigned int K2 = mdl->factors[j2]->K;
+        const size_t K2 = mdl->factors[j2]->K;
         G = matrix_submatrix(mdl->Sinv, i1, i2, K1, K2);
 
         /* loop again over the factor weights. */
-        for (unsigned int k2 = 0; k2 < K2; k2++) {
+        for (size_t k2 = 0; k2 < K2; k2++) {
           /* initialize the precision submatrix element. */
           double gkk = 0.0;
 
           /* compute the contributions of each observation. */
-          for (unsigned int i = 0; i < N; i++) {
+          for (size_t i = 0; i < N; i++) {
             di = data_get(dat, i);
             gkk += model_var(mdl, di->x, di->p, j1, j2, k1, k2);
           }
@@ -127,7 +169,7 @@ MODEL_INFER (vfr) {
   }
 
   /* include the diagonal term into the weight precisions. */
-  vector_view_t Gdiag = matrix_diag(mdl->Sinv);
+  VectorView Gdiag = matrix_diag(mdl->Sinv);
   vector_add_const(&Gdiag, mdl->nu);
 
   /* compute the cholesky decomposition of the weight precisions. */
@@ -139,7 +181,7 @@ MODEL_INFER (vfr) {
   chol_invert(mdl->L, mdl->Sigma);
 
   /* compute the model and data inner products. */
-  vector_view_t z = vector_subvector(mdl->tmp, 0, mdl->K);
+  VectorView z = vector_subvector(mdl->tmp, 0, mdl->K);
   blas_dtrmv(BLAS_TRANS, mdl->L, mdl->wbar, &z);
   const double wSw = blas_ddot(&z, &z);
   const double yy = data_inner(dat);
@@ -155,29 +197,29 @@ MODEL_INFER (vfr) {
   return 1;
 }
 
-/* vfr_update(): perform efficient low-rank inference in a vfr model.
+/* VFR_update(): perform efficient low-rank inference in a vfr model.
  *  - see model_update_fn() for more information.
  */
-MODEL_UPDATE (vfr) {
+MODEL_UPDATE (VFR) {
   /* get the weight offset and count of the current factor. */
-  const unsigned int k0 = model_weight_idx(mdl, j, 0);
-  const unsigned int K = mdl->factors[j]->K;
+  const size_t k0 = model_weight_idx(mdl, j, 0);
+  const size_t K = mdl->factors[j]->K;
 
   /* gain access to the dataset structure members. */
-  const unsigned int N = mdl->dat->N;
-  data_t *dat = mdl->dat;
-  datum_t *di;
+  const size_t N = mdl->dat->N;
+  Data *dat = mdl->dat;
+  Datum *di;
 
   /* prepare for low-rank adjustment. */
   model_weight_adjust_init(mdl, j);
 
   /* loop over the weights of the current factor. */
-  for (unsigned int k = 0; k < K; k++) {
+  for (size_t k = 0; k < K; k++) {
     /* initialize the projection subvector element. */
     double hk = 0.0;
 
     /* compute the contributions of each observation. */
-    for (unsigned int i = 0; i < N; i++) {
+    for (size_t i = 0; i < N; i++) {
       di = data_get(dat, i);
       hk += di->y * model_mean(mdl, di->x, di->p, j, k);
     }
@@ -186,17 +228,17 @@ MODEL_UPDATE (vfr) {
     vector_set(mdl->h, k0 + k, hk);
 
     /* loop again over the factors. */
-    for (unsigned int j2 = 0, i2 = 0; j2 < mdl->M; j2++) {
+    for (size_t j2 = 0, i2 = 0; j2 < mdl->M; j2++) {
       /* get the precision submatrix. */
-      const unsigned int K2 = mdl->factors[j2]->K;
+      const size_t K2 = mdl->factors[j2]->K;
 
       /* loop again over the factor weights. */
-      for (unsigned int k2 = 0; k2 < K2; k2++) {
+      for (size_t k2 = 0; k2 < K2; k2++) {
         /* initialize the precision submatrix element. */
         double gkk = 0.0;
 
         /* compute the contributions of each observation. */
-        for (unsigned int i = 0; i < N; i++) {
+        for (size_t i = 0; i < N; i++) {
           di = data_get(dat, i);
           gkk += model_var(mdl, di->x, di->p, j, j2, k, k2);
         }
@@ -212,7 +254,7 @@ MODEL_UPDATE (vfr) {
   }
 
   /* include the diagonal term into the weight precisions. */
-  for (unsigned int k = 0; k < K; k++) {
+  for (size_t k = 0; k < K; k++) {
     double gkk = matrix_get(mdl->Sinv, k0 + k, k0 + k);
     matrix_set(mdl->Sinv, k0 + k, k0 + k, gkk + mdl->nu);
   }
@@ -225,13 +267,13 @@ MODEL_UPDATE (vfr) {
   chol_solve(mdl->L, mdl->h, mdl->wbar);
 
   /* compute the model inner product. */
-  vector_view_t z = vector_subvector(mdl->tmp, 0, mdl->K);
+  VectorView z = vector_subvector(mdl->tmp, 0, mdl->K);
   blas_dtrmv(BLAS_TRANS, mdl->L, mdl->wbar, &z);
   const double wSw = blas_ddot(&z, &z);
 
   /* compute the data inner product. */
   double yy = 0.0;
-  for (unsigned int i = 0; i < N; i++) {
+  for (size_t i = 0; i < N; i++) {
     di = data_get(dat, i);
     yy += di->y * di->y;
   }
@@ -247,42 +289,42 @@ MODEL_UPDATE (vfr) {
    * a full re-inference.
    */
   if (!isfinite(mdl->beta))
-    return vfr_infer(mdl);
+    return VFR_infer(mdl);
 
   /* return success. */
   return 1;
 }
 
-/* vfr_gradient(): return the gradient of a single factor in a vfr model.
+/* VFR_gradient(): return the gradient of a single factor in a vfr model.
  *  - see model_gradient_fn() for more information.
  */
-MODEL_GRADIENT (vfr) {
+MODEL_GRADIENT (VFR) {
   /* determine the weight index offset of the current factor. */
-  const unsigned int k0 = model_weight_idx(mdl, j, 0);
+  const size_t k0 = model_weight_idx(mdl, j, 0);
 
   /* gain access to the factor weight count. */
-  const factor_t *fj = mdl->factors[j];
-  const unsigned int K = fj->K;
+  const Factor *fj = mdl->factors[j];
+  const size_t K = fj->K;
 
   /* gain access to the specified observation. */
-  datum_t *di = data_get(mdl->dat, i);
-  const unsigned int p = di->p;
-  const vector_t *x = di->x;
+  Datum *di = data_get(mdl->dat, i);
+  const size_t p = di->p;
+  const Vector *x = di->x;
   const double y = di->y;
 
   /* gain access to the expected noise precision. */
   const double tau = mdl->tau;
 
   /* create the vector view for individual gradient terms. */
-  vector_view_t g = vector_subvector(mdl->tmp, mdl->K, grad->len);
+  VectorView g = vector_subvector(mdl->tmp, mdl->K, grad->len);
 
   /* loop over the weights of the current factor. */
-  for (unsigned int k = 0; k < K; k++) {
+  for (size_t k = 0; k < K; k++) {
     /* compute the weight first moment. */
     const double wk = vector_get(mdl->wbar, k0 + k);
 
     /* loop over the other weights of the current factor. */
-    for (unsigned int kk = 0; kk < K; kk++) {
+    for (size_t kk = 0; kk < K; kk++) {
       /* compute the weight second moment. */
       const double wwT = matrix_get(mdl->Sigma, k0 + k, k0 + kk) +
                          tau * wk * vector_get(mdl->wbar, k0 + kk);
@@ -297,9 +339,9 @@ MODEL_GRADIENT (vfr) {
     blas_daxpy(tau * wk * y, &g, grad);
 
     /* loop over the other factors. */
-    for (unsigned int j2 = 0, i2 = 0; j2 < mdl->M; j2++) {
+    for (size_t j2 = 0, i2 = 0; j2 < mdl->M; j2++) {
       /* get the weight count of the other factor. */
-      const unsigned int K2 = mdl->factors[j2]->K;
+      const size_t K2 = mdl->factors[j2]->K;
 
       /* the diagonal second-order contribution was already included. */
       if (j2 == j) {
@@ -308,7 +350,7 @@ MODEL_GRADIENT (vfr) {
       }
 
       /* loop over the other factor weights. */
-      for (unsigned int k2 = 0; k2 < K2; k2++) {
+      for (size_t k2 = 0; k2 < K2; k2++) {
         /* compute the weight second moment. */
         const double wwT = matrix_get(mdl->Sigma, k0 + k, i2 + k2) +
                            tau * wk * vector_get(mdl->wbar, i2 + k2);
@@ -327,37 +369,37 @@ MODEL_GRADIENT (vfr) {
   return 1;
 }
 
-/* vfr_meanfield(): return the coefficients required for an
+/* VFR_meanfield(): return the coefficients required for an
  * assumed-density mean-field update of a factor in a vfr model.
  *  - see model_meanfield_fn() for more information.
  */
-MODEL_MEANFIELD (vfr) {
+MODEL_MEANFIELD (VFR) {
   /* get the weight offset and count of the current factor. */
-  const unsigned int k0 = model_weight_idx(mdl, j, 0);
-  const unsigned int K = mdl->factors[j]->K;
+  const size_t k0 = model_weight_idx(mdl, j, 0);
+  const size_t K = mdl->factors[j]->K;
 
   /* gain access to the dataset structure members. */
-  datum_t *dat = mdl->dat->data + i;
-  const unsigned int M = mdl->M;
+  Datum *dat = mdl->dat->data + i;
+  const size_t M = mdl->M;
 
   /* gain access to the expected noise precision. */
   const double tau = mdl->tau;
 
   /* create views into the factor weight means and covariances. */
-  vector_view_t wk = vector_subvector(mdl->wbar, k0, K);
-  matrix_view_t Sk = matrix_submatrix(mdl->Sigma, k0, k0, K, K);
+  VectorView wk = vector_subvector(mdl->wbar, k0, K);
+  MatrixView Sk = matrix_submatrix(mdl->Sigma, k0, k0, K, K);
 
   /* loop over the weights of the current factor. */
-  for (unsigned int k = 0; k < K; k++) {
+  for (size_t k = 0; k < K; k++) {
     /* compute and store the contribution. */
     const double bk = tau * dat->y * vector_get(&wk, k);
     vector_set(b, k, bk);
   }
 
   /* loop over the model factors. */
-  for (unsigned int j2 = 0, i2 = 0; j2 < M; j2++) {
+  for (size_t j2 = 0, i2 = 0; j2 < M; j2++) {
     /* get the number of other-factor weights. */
-    const unsigned int K2 = mdl->factors[j2]->K;
+    const size_t K2 = mdl->factors[j2]->K;
 
     /* exclude the factor being updated. */
     if (j2 == j) {
@@ -366,12 +408,12 @@ MODEL_MEANFIELD (vfr) {
     }
 
     /* loop over the weights of the other factor. */
-    for (unsigned int k2 = 0; k2 < K2; k2++) {
+    for (size_t k2 = 0; k2 < K2; k2++) {
       /* get the other factor mean. */
       const double phi2 = model_mean(mdl, dat->x, dat->p, j2, k2);
 
       /* loop over the weights of the current factor. */
-      for (unsigned int k = 0; k < K; k++) {
+      for (size_t k = 0; k < K; k++) {
         /* compute the weight second moment. */
         const double w2 = matrix_get(mdl->Sigma, k0 + k, i2 + k2) +
                           vector_get(mdl->wbar, k0 + k) *
@@ -388,8 +430,8 @@ MODEL_MEANFIELD (vfr) {
   }
 
   /* compute second-order contributions. */
-  for (unsigned int k = 0; k < K; k++) {
-    for (unsigned int k2 = 0; k2 < K; k2++) {
+  for (size_t k = 0; k < K; k++) {
+    for (size_t k2 = 0; k2 < K; k2++) {
       /* compute the current matrix element. */
       const double bkk = -0.5 * tau * (matrix_get(&Sk, k, k2) +
                                        vector_get(&wk, k) *
@@ -406,60 +448,151 @@ MODEL_MEANFIELD (vfr) {
 
 /* --- */
 
-/* vfr_properties: array of accessible vfr model object properties.
+/* VFR_get_alpha0(): method to get model prior noise shape parameters.
  */
-static object_property_t vfr_properties[] = {
-  MODEL_PROP_BASE,
-  MODEL_PROP_TAU_READONLY,
-  MODEL_PROP_ALPHA0,
-  MODEL_PROP_BETA0,
-  MODEL_PROP_ALPHA,
-  MODEL_PROP_BETA,
-  MODEL_PROP_NU,
-  { NULL, NULL, NULL }
-};
+static PyObject*
+VFR_get_alpha0 (Model *mdl) {
+  /* return the shape parameter as a float. */
+  return PyFloat_FromDouble(mdl->alpha0);
+}
 
-/* vfr_methods: array of callable vfr model object methods.
+/* VFR_set_alpha0(): method to set model prior noise shape parameters.
  */
-static object_method_t vfr_methods[] = {
-  MODEL_METHOD_BASE,
-  { NULL, NULL }
-};
+static int
+VFR_set_alpha0 (Model *mdl, PyObject *value, void *closure) {
+  /* get the new value. */
+  const double a0 = PyFloat_AsDouble(value);
+  if (PyErr_Occurred())
+    return -1;
 
-/* vfr_type: model type structure for variational feature regression.
+  /* set the shape. */
+  if (!model_set_alpha0(mdl, a0)) {
+    PyErr_SetString(PyExc_ValueError, "expected positive shape");
+    return -1;
+  }
+
+  /* return success. */
+  return 0;
+}
+
+/* VFR_get_beta(): method to get model prior noise rate parameters.
  */
-static model_type_t vfr_type = {
-  { /* base: */
-    "vfr",                                       /* name      */
-    sizeof(model_t),                             /* size      */
+static PyObject*
+VFR_get_beta0 (Model *mdl) {
+  /* return the rate parameter as a float. */
+  return PyFloat_FromDouble(mdl->beta0);
+}
 
-    (object_init_fn) model_init,                 /* init      */
-    NULL,                                        /* copy      */
-    (object_free_fn) model_free,                 /* free      */
-    NULL,                                        /* test      */
-    NULL,                                        /* cmp       */
+/* VFR_set_beta0(): method to set model prior noise rate parameters.
+ */
+static int
+VFR_set_beta0 (Model *mdl, PyObject *value, void *closure) {
+  /* get the new value. */
+  const double b0 = PyFloat_AsDouble(value);
+  if (PyErr_Occurred())
+    return -1;
 
-    NULL,                                        /* add       */
-    NULL,                                        /* sub       */
-    NULL,                                        /* mul       */
-    NULL,                                        /* div       */
-    NULL,                                        /* pow       */
+  /* set the rate. */
+  if (!model_set_beta0(mdl, b0)) {
+    PyErr_SetString(PyExc_ValueError, "expected positive rate");
+    return -1;
+  }
 
-    NULL,                                        /* get       */
-    NULL,                                        /* set       */
-    vfr_properties,                              /* props     */
-    vfr_methods                                  /* methods   */
+  /* return success. */
+  return 0;
+}
+
+/* VFR_get_alpha(): method to get model noise shape parameters.
+ */
+static PyObject*
+VFR_get_alpha (Model *mdl) {
+  /* return the shape parameter as a float. */
+  return PyFloat_FromDouble(mdl->alpha);
+}
+
+/* VFR_get_beta(): method to get model noise rate parameters.
+ */
+static PyObject*
+VFR_get_beta (Model *mdl) {
+  /* return the rate parameter as a float. */
+  return PyFloat_FromDouble(mdl->beta);
+}
+
+/* VFR_get_tau(): method to get model precision parameters.
+ */
+static PyObject*
+VFR_get_tau (Model *mdl) {
+  /* return the precision parameter as a float. */
+  return PyFloat_FromDouble(mdl->tau);
+}
+
+/* --- */
+
+/* VFR_new(): allocate a new vfr model.
+ *  - see PyTypeObject.tp_new for details.
+ */
+VFL_TYPE_NEW (VFR) {
+  /* allocate a new model. */
+  VFR *self = (VFR*) type->tp_alloc(type, 0);
+  Model_reset((Model*) self);
+  if (!self)
+    return NULL;
+
+  /* set the function pointers. */
+  Model *mdl = (Model*) self;
+  mdl->bound     = VFR_bound;
+  mdl->predict   = VFR_predict;
+  mdl->infer     = VFR_infer;
+  mdl->update    = VFR_update;
+  mdl->gradient  = VFR_gradient;
+  mdl->meanfield = VFR_meanfield;
+
+  /* return the new object. */
+  return (PyObject*) self;
+}
+
+/* VFR_getset: property definition structure for vfr models.
+ */
+static PyGetSetDef VFR_getset[] = {
+  { "alpha0",
+    (getter) VFR_get_alpha0,
+    (setter) VFR_set_alpha0,
+    VFR_getset_alpha0_doc,
+    NULL
   },
-
-  NULL,                                          /* init      */
-  vfr_bound,                                     /* bound     */
-  vfr_predict,                                   /* predict   */
-  vfr_infer,                                     /* infer     */
-  vfr_update,                                    /* update    */
-  vfr_gradient,                                  /* gradient  */
-  vfr_meanfield                                  /* meanfield */
+  { "beta0",
+    (getter) VFR_get_beta0,
+    (setter) VFR_set_beta0,
+    VFR_getset_beta0_doc,
+    NULL
+  },
+  { "alpha",
+    (getter) VFR_get_alpha,
+    NULL,
+    VFR_getset_alpha_doc,
+    NULL
+  },
+  { "beta",
+    (getter) VFR_get_beta,
+    NULL,
+    VFR_getset_beta_doc,
+    NULL
+  },
+  { "tau",
+    (getter) VFR_get_tau,
+    NULL,
+    VFR_getset_tau_doc,
+    NULL
+  },
+  { NULL }
 };
 
-/* vfl_model_vfr: address of the vfr_type structure. */
-const model_type_t *vfl_model_vfr = &vfr_type;
+/* VFR_methods: method definition structure for vfr models.
+ */
+static PyMethodDef VFR_methods[] = {
+  { NULL }
+};
+
+/* VFR_Type, VFR_Type_init() */
+VFL_TYPE (VFR, Model, model)
 

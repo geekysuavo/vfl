@@ -124,22 +124,17 @@ typedef struct {
 }
 Search;
 
-/* function declarations (search.c): */
-/*
+/* function declarations (search-core.c): */
 
-#define search_alloc() \
-  (search_t*) obj_alloc(vfl_object_search);
+int search_set_model (Search *S, Model *mdl);
 
-int search_set_model (search_t *S, model_t *mdl);
+int search_set_data (Search *S, Data *dat);
 
-int search_set_data (search_t *S, data_t *dat);
+int search_set_grid (Search *S, Matrix *grid);
 
-int search_set_grid (search_t *S, matrix_t *grid);
+int search_set_outputs (Search *S, size_t num);
 
-int search_set_outputs (search_t *S, const unsigned int num);
-
-int search_execute (search_t *S, vector_t *x);
-*/
+int search_execute (Search *S, Vector *x);
 
 #endif /* !__VFL_SEARCH_H__ */
 

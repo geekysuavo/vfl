@@ -235,10 +235,10 @@ FACTOR_SET (Cosine) {
 /* Cosine_new(): allocate a new cosine factor.
  *  - see PyTypeObject.tp_new for details.
  */
-FACTOR_NEW (Cosine) {
+VFL_TYPE_NEW (Cosine) {
   /* allocate a new cosine factor. */
   Cosine *self = (Cosine*) type->tp_alloc(type, 0);
-  factor_reset((Factor*) self);
+  Factor_reset((Factor*) self);
   if (!self)
     return NULL;
 
@@ -287,5 +287,5 @@ static PyMethodDef Cosine_methods[] = {
 };
 
 /* Cosine_Type, Cosine_Type_init() */
-FACTOR_TYPE (Cosine)
+VFL_TYPE (Cosine, Factor, factor)
 

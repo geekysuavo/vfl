@@ -39,18 +39,18 @@ PyDoc_STRVAR(
 "Kullback-Liebler divergence from another factor.\n"
 "\n");
 
-/* factor_get_dim(): method for getting factor dimension indices.
+/* Factor_get_dim(): method for getting factor dimension indices.
  */
 static PyObject*
-factor_get_dim (Factor *self) {
+Factor_get_dim (Factor *self) {
   /* return the dimension index as an integer. */
   return PyLong_FromSize_t(self->d);
 }
 
-/* factor_set_dim(): method for setting factor dimension indices.
+/* Factor_set_dim(): method for setting factor dimension indices.
  */
 static int
-factor_set_dim (Factor *self, PyObject *value, void *closure) {
+Factor_set_dim (Factor *self, PyObject *value, void *closure) {
   /* get the new value. */
   const size_t d = PyLong_AsSize_t(value);
   if (PyErr_Occurred())
@@ -61,18 +61,18 @@ factor_set_dim (Factor *self, PyObject *value, void *closure) {
   return 0;
 }
 
-/* factor_get_fixed(): method for getting factor fixed flags.
+/* Factor_get_fixed(): method for getting factor fixed flags.
  */
 static PyObject*
-factor_get_fixed (Factor *self) {
+Factor_get_fixed (Factor *self) {
   /* return the fixed flag as a boolean. */
   return PyBool_FromLong(self->fixed);
 }
 
-/* factor_set_fixed(): method for setting factor fixed flags.
+/* Factor_set_fixed(): method for setting factor fixed flags.
  */
 static int
-factor_set_fixed (Factor *self, PyObject *value, void *closure) {
+Factor_set_fixed (Factor *self, PyObject *value, void *closure) {
   /* check that the value is a boolean. */
   if (!PyBool_Check(value)) {
     PyErr_SetString(PyExc_TypeError, "'fixed' expects bool");
@@ -86,10 +86,10 @@ factor_set_fixed (Factor *self, PyObject *value, void *closure) {
 
 /* --- */
 
-/* factor_method_mean(): compute the mean value of a factor.
+/* Factor_method_mean(): compute the mean value of a factor.
  */
 static PyObject*
-factor_method_mean (Factor *self, PyObject *args) {
+Factor_method_mean (Factor *self, PyObject *args) {
   /* return nothing if the factor doesn't have a mean method. */
   if (!self->mean)
     Py_RETURN_NONE;
@@ -105,10 +105,10 @@ factor_method_mean (Factor *self, PyObject *args) {
   return PyFloat_FromDouble(self->mean(self, dat->x, dat->p, i));
 }
 
-/* factor_method_var(): compute the variance of a factor.
+/* Factor_method_var(): compute the variance of a factor.
  */
 static PyObject*
-factor_method_var (Factor *self, PyObject *args) {
+Factor_method_var (Factor *self, PyObject *args) {
   /* return nothing if the factor doesn't have a variance method. */
   if (!self->var)
     Py_RETURN_NONE;
@@ -125,10 +125,10 @@ factor_method_var (Factor *self, PyObject *args) {
   return PyFloat_FromDouble(self->var(self, dat->x, dat->p, i, j));
 }
 
-/* factor_method_cov(): compute the covariance of a factor.
+/* Factor_method_cov(): compute the covariance of a factor.
  */
 static PyObject*
-factor_method_cov (Factor *self, PyObject *args) {
+Factor_method_cov (Factor *self, PyObject *args) {
   /* return nothing is the factor doesn't have a covariance method. */
   if (!self->cov)
     Py_RETURN_NONE;
@@ -144,10 +144,10 @@ factor_method_cov (Factor *self, PyObject *args) {
   return PyFloat_FromDouble(self->cov(self, d1->x, d2->x, d1->p, d2->p));
 }
 
-/* factor_method_div(): compute the divergence to another factor.
+/* Factor_method_div(): compute the divergence to another factor.
  */
 static PyObject*
-factor_method_div (Factor *self, PyObject *args) {
+Factor_method_div (Factor *self, PyObject *args) {
   /* return nothing if the factor doesn't have a divergence method. */
   if (!self->div)
     Py_RETURN_NONE;
@@ -163,28 +163,28 @@ factor_method_div (Factor *self, PyObject *args) {
 
 /* --- */
 
-/* factor_new(): allocation method for factors.
+/* Factor_new(): allocation method for factors.
  */
 static PyObject*
-factor_new (PyTypeObject *type, PyObject *args, PyObject *kwargs) {
+Factor_new (PyTypeObject *type, PyObject *args, PyObject *kwargs) {
   /* allocate a new factor. */
   Factor *self = (Factor*) type->tp_alloc(type, 0);
-  factor_reset(self);
+  Factor_reset(self);
   if (!self)
     return NULL;
 
   /* if the factor has an init function assigned, call it. */
   if (self->init && !self->init(self))
-    return 0;
+    return NULL;
 
   /* initialize and return the new object. */
   return (PyObject*) self;
 }
 
-/* factor_dealloc(): deallocation method for factors.
+/* Factor_dealloc(): deallocation method for factors.
  */
 static void
-factor_dealloc (Factor *self) {
+Factor_dealloc (Factor *self) {
   /* if the factor has a free function assigned, call it. */
   if (self->free)
     self->free(self);
@@ -197,19 +197,19 @@ factor_dealloc (Factor *self) {
   Py_TYPE(self)->tp_free((PyObject*) self);
 }
 
-/* factor_repr(): representation method for factors.
+/* Factor_repr(): representation method for factors.
  */
 static PyObject*
-factor_repr (Factor *self) {
+Factor_repr (Factor *self) {
   /* build and return the representation string. */
   return PyUnicode_FromFormat("<%s at 0x%x>", Py_TYPE(self)->tp_name,
                               (long) self);
 }
 
-/* factor_call(): evaluation method for factors.
+/* Factor_call(): evaluation method for factors.
  */
 static PyObject*
-factor_call (Factor *self, PyObject *args, PyObject *kwargs) {
+Factor_call (Factor *self, PyObject *args, PyObject *kwargs) {
   /* return nothing if the factor doesn't have an evaluation method. */
   if (!self->eval)
     Py_RETURN_NONE;
@@ -229,14 +229,14 @@ factor_call (Factor *self, PyObject *args, PyObject *kwargs) {
  */
 static PyGetSetDef Factor_getset[] = {
   { "dim",
-    (getter) factor_get_dim,
-    (setter) factor_set_dim,
+    (getter) Factor_get_dim,
+    (setter) Factor_set_dim,
     Factor_getset_dim_doc,
     NULL
   },
   { "fixed",
-    (getter) factor_get_fixed,
-    (setter) factor_set_fixed,
+    (getter) Factor_get_fixed,
+    (setter) Factor_set_fixed,
     Factor_getset_fixed_doc,
     NULL
   },
@@ -247,22 +247,22 @@ static PyGetSetDef Factor_getset[] = {
  */
 static PyMethodDef Factor_methods[] = {
   { "mean",
-    (PyCFunction) factor_method_mean,
+    (PyCFunction) Factor_method_mean,
     METH_VARARGS,
     Factor_method_mean_doc
   },
   { "var",
-    (PyCFunction) factor_method_var,
+    (PyCFunction) Factor_method_var,
     METH_VARARGS,
     Factor_method_var_doc
   },
   { "cov",
-    (PyCFunction) factor_method_cov,
+    (PyCFunction) Factor_method_cov,
     METH_VARARGS,
     Factor_method_cov_doc
   },
   { "div",
-    (PyCFunction) factor_method_div,
+    (PyCFunction) Factor_method_div,
     METH_VARARGS,
     Factor_method_div_doc
   },
@@ -276,18 +276,18 @@ PyTypeObject Factor_Type = {
   "vfl.Factor",                                  /* tp_name           */
   sizeof(Factor),                                /* tp_basicsize      */
   0,                                             /* tp_itemsize       */
-  (destructor) factor_dealloc,                   /* tp_dealloc        */
+  (destructor) Factor_dealloc,                   /* tp_dealloc        */
   0,                                             /* tp_print          */
   0,                                             /* tp_getattr        */
   0,                                             /* tp_setattr        */
   0,                                             /* tp_reserved       */
-  (reprfunc) factor_repr,                        /* tp_repr           */
+  (reprfunc) Factor_repr,                        /* tp_repr           */
   0,                                             /* tp_as_number      */
   0,                                             /* tp_as_sequence    */
   0,                                             /* tp_as_mapping     */
   0,                                             /* tp_hash           */
-  (ternaryfunc) factor_call,                     /* tp_call           */
-  (reprfunc) factor_repr,                        /* tp_str            */
+  (ternaryfunc) Factor_call,                     /* tp_call           */
+  (reprfunc) Factor_repr,                        /* tp_str            */
   0,                                             /* tp_getattro       */
   0,                                             /* tp_setattro       */
   0,                                             /* tp_as_buffer      */
@@ -310,7 +310,7 @@ PyTypeObject Factor_Type = {
   0,                                             /* tp_dictoffset     */
   vfl_base_init,                                 /* tp_init           */
   0,                                             /* tp_alloc          */
-  factor_new                                     /* tp_new            */
+  Factor_new                                     /* tp_new            */
 };
 
 /* Factor_Type_init(): type initialization function for factors.

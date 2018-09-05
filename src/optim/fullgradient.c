@@ -1,16 +1,33 @@
 
-/* include the optimizer header. */
-#include <vfl/optim.h>
+/* include the vfl header. */
+#include <vfl/vfl.h>
 
-/* fg_iterate(): iteration function for full-gradient optimization.
+/* FullGradient: structure for holding full-gradient optimizers.
+ */
+typedef struct {
+  /* optimizer superclass. */
+  Optim super;
+
+  /* subclass struct members. */
+}
+FullGradient;
+
+/* define documentation strings: */
+
+PyDoc_STRVAR(
+  FullGradient_doc,
+"FullGradient() -> FullGradient object\n"
+"\n");
+
+/* FullGradient_iterate(): iteration function for FullGradient.
  *  - see optim_iterate_fn() for more information.
  */
-OPTIM_ITERATE (fg) {
+OPTIM_ITERATE (FullGradient) {
   /* gain references to commonly accessed variables. */
-  factor_t **factors = opt->mdl->factors;
-  factor_t **priors = opt->mdl->priors;
-  const unsigned int N = opt->mdl->dat->N;
-  const unsigned int M = opt->mdl->M;
+  Factor **factors = opt->mdl->factors;
+  Factor **priors = opt->mdl->priors;
+  const size_t N = opt->mdl->dat->N;
+  const size_t M = opt->mdl->M;
 
   /* declare variables to track the bound between steps and iterations,
    * and a variable to hold step length.
@@ -21,20 +38,20 @@ OPTIM_ITERATE (fg) {
   /* declare variables for holding factor parameters, gradients,
    * and their associated fisher information matrices.
    */
-  vector_view_t xa, xb, x, g;
-  matrix_view_t Fs;
+  VectorView xa, xb, x, g;
+  MatrixView Fs;
 
   /* initialize the model using a full inference. */
   model_infer(opt->mdl);
   bound = bound_init = model_bound(opt->mdl);
 
   /* loop over each factor in the model. */
-  for (unsigned int j = 0; j < M; j++) {
+  for (size_t j = 0; j < M; j++) {
     /* store the current bound. */
     bound_prev = bound;
 
     /* gain a reference to the current factor parameter count. */
-    const unsigned int P = factors[j]->P;
+    const size_t P = factors[j]->P;
     if (P == 0 || factors[j]->fixed)
       continue;
 
@@ -53,7 +70,7 @@ OPTIM_ITERATE (fg) {
 
     /* compute the parameter gradient from all observations. */
     vector_set_zero(&x);
-    for (unsigned int i = 0; i < N; i++)
+    for (size_t i = 0; i < N; i++)
       model_gradient(opt->mdl, i, j, &x);
 
     /* copy and decompose the fisher information in order to compute
@@ -73,7 +90,8 @@ OPTIM_ITERATE (fg) {
     gamma /= opt->l0;
 
     /* perform a back-tracking line search. */
-    unsigned int valid = 0, steps = 0;
+    size_t steps = 0;
+    int valid = 0;
     do {
       /* compute the coefficients of the convex combination between
        * current parameters and (prior + nat. grad.).
@@ -121,17 +139,17 @@ OPTIM_ITERATE (fg) {
   return (bound != bound_init);
 }
 
-/* fg_execute(): execution function for full-gradient optimization.
+/* FullGradient_execute(): execution function for FullGradient.
  *  - see optim_iterate_fn() for more information.
  */
-OPTIM_EXECUTE (fg) {
+OPTIM_EXECUTE (FullGradient) {
   /* declare a variable for storing the lower
    * bound from the previous iteration.
    */
   double bound_prev = opt->bound;
 
   /* loop for the specified number of iterations. */
-  for (unsigned int iter = 0; iter < opt->max_iters; iter++) {
+  for (size_t iter = 0; iter < opt->max_iters; iter++) {
     /* store the previous value of the lower bound. */
     bound_prev = opt->bound;
 
@@ -152,53 +170,39 @@ OPTIM_EXECUTE (fg) {
 
 /* --- */
 
-/* fg_properties: array of accessible full gradient
- * optimizer object properties.
+/* FullGradient_new(): allocate a new full-gradient optimizer.
+ *  - see PyTypeObject.tp_new for details.
  */
-static object_property_t fg_properties[] = {
-  OPTIM_PROP_BASE,
-  { NULL, NULL, NULL }
+VFL_TYPE_NEW (FullGradient) {
+  /* allocate a new full-gradient optimizer. */
+  FullGradient *self = (FullGradient*) type->tp_alloc(type, 0);
+  Optim_reset((Optim*) self);
+  if (!self)
+    return NULL;
+
+  /* set the function pointers. */
+  Optim *opt = (Optim*) self;
+  opt->iterate = FullGradient_iterate;
+  opt->execute = FullGradient_execute;
+
+  /* return the new object. */
+  return (PyObject*) self;
+}
+
+/* FullGradient_getset: property definition structure for
+ * full-gradient optimizers.
+ */
+static PyGetSetDef FullGradient_getset[] = {
+  { NULL }
 };
 
-/* fg_methods: array of callable full gradient
- * optimizer object methods.
+/* FullGradient_methods: method definition structure for
+ * full-gradient optimizers.
  */
-static object_method_t fg_methods[] = {
-  OPTIM_METHOD_BASE,
-  { NULL, NULL }
+static PyMethodDef FullGradient_methods[] = {
+  { NULL }
 };
 
-/* fg_type: optimizer type structure for full-gradient training.
- */
-static optim_type_t fg_type = {
-  { /* base: */
-    "fg",                                        /* name    */
-    sizeof(optim_t),                             /* size    */
-
-    (object_init_fn) optim_init,                 /* init    */
-    NULL,                                        /* copy    */
-    (object_free_fn) optim_free,                 /* free    */
-    NULL,                                        /* test    */
-    NULL,                                        /* cmp     */
-
-    NULL,                                        /* add     */
-    NULL,                                        /* sub     */
-    NULL,                                        /* mul     */
-    NULL,                                        /* div     */
-    NULL,                                        /* pow     */
-
-    NULL,                                        /* get     */
-    NULL,                                        /* set     */
-    fg_properties,                               /* props   */
-    fg_methods                                   /* methods */
-  },
-
-  NULL,                                          /* init    */
-  fg_iterate,                                    /* iterate */
-  fg_execute,                                    /* execute */
-  NULL                                           /* free    */
-};
-
-/* vfl_optim_fg: address of the fg_type structure. */
-const optim_type_t *vfl_optim_fg = &fg_type;
+/* FullGradient_Type, FullGradient_Type_init() */
+VFL_TYPE (FullGradient, Optim, optim)
 

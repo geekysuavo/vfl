@@ -9,7 +9,12 @@
 
 /* Optim_Check(): macro to check if a PyObject is an Optim.
  */
-#define Optim_Check(v) (Py_TYPE(v) == &Optim_Type)
+#define Optim_Check(v) PyObject_TypeCheck(v, &Optim_Type)
+
+/* Optim_CheckExact(): macro to check if a PyObject is
+ * precisely an Optim.
+ */
+#define Optim_CheckExact(v) (Py_TYPE(v) == &Optim_Type)
 
 /* Optim_Type: globally available optimizer type structure.
  */
@@ -129,6 +134,8 @@ struct optim {
 };
 
 /* function declarations (optim-core.c): */
+
+void Optim_reset (Optim *opt);
 
 int optim_set_model (Optim *opt, Model *mdl);
 

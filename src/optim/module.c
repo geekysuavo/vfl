@@ -35,7 +35,10 @@ PyInit_optim (void) {
   if (!optim)
     return NULL;
 
-  /* FIXME: initialize the optimizer types. */
+  /* initialize the optimizer types. */
+  if (FullGradient_Type_init(optim) < 0 ||
+      MeanField_Type_init(optim) < 0)
+    return NULL;
 
   /* return the new module. */
   return optim;

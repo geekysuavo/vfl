@@ -2,12 +2,12 @@
 /* include the vfl header. */
 #include <vfl/vfl.h>
 
-/* factor_reset(): reset the contents of a factor structure.
+/* Factor_reset(): reset the contents of a factor structure.
  *
  * arguments:
  *  @f: factor structure pointer to modify.
  */
-void factor_reset (Factor *f) {
+void Factor_reset (Factor *f) {
   /* return if the struct pointer is null. */
   if (!f)
     return;

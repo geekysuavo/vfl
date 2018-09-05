@@ -24,20 +24,20 @@ PyDoc_STRVAR(
 "Write the contents of a dataset to a file.\n"
 "\n");
 
-/* data_seq_len(): method for getting dataset sizes.
+/* Data_seq_len(): method for getting dataset sizes.
  */
 static Py_ssize_t
-data_seq_len (Data *self) {
+Data_seq_len (Data *self) {
   /* return the current size of the input vector. */
   return (Py_ssize_t) self->N;
 }
 
-/* data_seq_get(): method for getting dataset entries.
+/* Data_seq_get(): method for getting dataset entries.
  */
 static PyObject*
-data_seq_get (Data *self, Py_ssize_t i) {
+Data_seq_get (Data *self, Py_ssize_t i) {
   /* check that the index is in bounds. */
-  const Py_ssize_t n = data_seq_len(self);
+  const Py_ssize_t n = Data_seq_len(self);
   if (n == 0 || i < 0 || i >= n) {
     PyErr_SetNone(PyExc_IndexError);
     return NULL;
@@ -64,12 +64,12 @@ data_seq_get (Data *self, Py_ssize_t i) {
   return (PyObject*) d;
 }
 
-/* data_seq_set(): method for setting dataset entries.
+/* Data_seq_set(): method for setting dataset entries.
  */
 static int
-data_seq_set (Data *self, Py_ssize_t i, PyObject *v) {
+Data_seq_set (Data *self, Py_ssize_t i, PyObject *v) {
   /* check that the index is in bounds. */
-  const Py_ssize_t n = data_seq_len(self);
+  const Py_ssize_t n = Data_seq_len(self);
   if (n == 0 || i < 0 || i >= n) {
     PyErr_SetNone(PyExc_IndexError);
     return -1;
@@ -91,20 +91,22 @@ data_seq_set (Data *self, Py_ssize_t i, PyObject *v) {
   return 0;
 }
 
-/* data_get_dims(): method for getting dataset dimensionalities.
+/* --- */
+
+/* Data_get_dims(): method for getting dataset dimensionalities.
  */
 static PyObject*
-data_get_dims (Data *self) {
+Data_get_dims (Data *self) {
   /* return the dimensionality as an integer. */
   return PyLong_FromSize_t(self->D);
 }
 
 /* --- */
 
-/* data_method_augment(): augment a dataset with new points.
+/* Data_method_augment(): augment a dataset with new points.
  */
 static PyObject*
-data_method_augment (Data *self, PyObject *args, PyObject *kwargs) {
+Data_method_augment (Data *self, PyObject *args, PyObject *kwargs) {
   /* define the keyword argument list. */
   static char *kwlist[] = {
     "file", "datum", "data", "grid", "output", "outputs", NULL
@@ -220,10 +222,10 @@ data_method_augment (Data *self, PyObject *args, PyObject *kwargs) {
   Py_RETURN_NONE;
 }
 
-/* data_method_write(): write the contents of a dataset to a file.
+/* Data_method_write(): write the contents of a dataset to a file.
  */
 static PyObject*
-data_method_write (Data *self, PyObject *args, PyObject *kwargs) {
+Data_method_write (Data *self, PyObject *args, PyObject *kwargs) {
   /* define the keyword argument list. */
   static char *kwlist[] = { "file", NULL };
 
@@ -245,10 +247,10 @@ data_method_write (Data *self, PyObject *args, PyObject *kwargs) {
 
 /* --- */
 
-/* data_new(): allocation method for datasets.
+/* Data_new(): allocation method for datasets.
  */
 static PyObject*
-data_new (PyTypeObject *type, PyObject *args, PyObject *kwargs) {
+Data_new (PyTypeObject *type, PyObject *args, PyObject *kwargs) {
   /* allocate a new dataset. */
   Data *self = (Data*) type->tp_alloc(type, 0);
   if (!self)
@@ -270,12 +272,12 @@ data_new (PyTypeObject *type, PyObject *args, PyObject *kwargs) {
   return (PyObject*) self;
 }
 
-/* data_init(): initialization method for datasets.
+/* Data_init(): initialization method for datasets.
  */
 static int
-data_init (Data *self, PyObject *args, PyObject *kwargs) {
+Data_init (Data *self, PyObject *args, PyObject *kwargs) {
   /* creation and calling augment() behave exactly the same. */
-  PyObject *obj = data_method_augment(self, args, kwargs);
+  PyObject *obj = Data_method_augment(self, args, kwargs);
   if (!obj)
     return -1;
 
@@ -284,10 +286,10 @@ data_init (Data *self, PyObject *args, PyObject *kwargs) {
   return 0;
 }
 
-/* data_dealloc(): deallocation method for datasets.
+/* Data_dealloc(): deallocation method for datasets.
  */
 static void
-data_dealloc (Data *self) {
+Data_dealloc (Data *self) {
   /* free the array of observations. */
   free(self->data);
 
@@ -298,10 +300,10 @@ data_dealloc (Data *self) {
   Py_TYPE(self)->tp_free((PyObject*) self);
 }
 
-/* data_repr(): representation method for datasets.
+/* Data_repr(): representation method for datasets.
  */
 static PyObject*
-data_repr (Data *self) {
+Data_repr (Data *self) {
   /* build and return the representation string. */
   return PyUnicode_FromFormat("<vfl.Data at 0x%x>", (long) self);
 }
@@ -309,12 +311,12 @@ data_repr (Data *self) {
 /* Data_sequence: sequence definition structure for datasets.
  */
 static PySequenceMethods Data_sequence = {
-  (lenfunc) data_seq_len,                        /* sq_length         */
+  (lenfunc) Data_seq_len,                        /* sq_length         */
   NULL,                                          /* sq_concat         */
   NULL,                                          /* sq_repeat         */
-  (ssizeargfunc) data_seq_get,                   /* sq_item           */
+  (ssizeargfunc) Data_seq_get,                   /* sq_item           */
   NULL,
-  (ssizeobjargproc) data_seq_set,                /* sq_ass_item       */
+  (ssizeobjargproc) Data_seq_set,                /* sq_ass_item       */
   NULL,
   NULL,                                          /* sq_contains       */
   NULL,                                          /* sq_inplace_concat */
@@ -325,7 +327,7 @@ static PySequenceMethods Data_sequence = {
  */
 static PyGetSetDef Data_getset[] = {
   { "dims",
-    (getter) data_get_dims,
+    (getter) Data_get_dims,
     NULL,
     Data_getset_dims_doc,
     NULL
@@ -337,12 +339,12 @@ static PyGetSetDef Data_getset[] = {
  */
 static PyMethodDef Data_methods[] = {
   { "augment",
-    (PyCFunction) data_method_augment,
+    (PyCFunction) Data_method_augment,
     METH_VARARGS | METH_KEYWORDS,
     Data_method_augment_doc
   },
   { "write",
-    (PyCFunction) data_method_write,
+    (PyCFunction) Data_method_write,
     METH_VARARGS | METH_KEYWORDS,
     Data_method_write_doc
   },
@@ -356,18 +358,18 @@ PyTypeObject Data_Type = {
   "vfl.Data",                                    /* tp_name           */
   sizeof(Data),                                  /* tp_basicsize      */
   0,                                             /* tp_itemsize       */
-  (destructor) data_dealloc,                     /* tp_dealloc        */
+  (destructor) Data_dealloc,                     /* tp_dealloc        */
   0,                                             /* tp_print          */
   0,                                             /* tp_getattr        */
   0,                                             /* tp_setattr        */
   0,                                             /* tp_reserved       */
-  (reprfunc) data_repr,                          /* tp_repr           */
+  (reprfunc) Data_repr,                          /* tp_repr           */
   0,                                             /* tp_as_number      */
   &Data_sequence,                                /* tp_as_sequence    */
   0,                                             /* tp_as_mapping     */
   0,                                             /* tp_hash           */
   0,                                             /* tp_call           */
-  (reprfunc) data_repr,                          /* tp_str            */
+  (reprfunc) Data_repr,                          /* tp_str            */
   0,                                             /* tp_getattro       */
   0,                                             /* tp_setattro       */
   0,                                             /* tp_as_buffer      */
@@ -388,9 +390,9 @@ PyTypeObject Data_Type = {
   0,                                             /* tp_descr_get      */
   0,                                             /* tp_descr_set      */
   0,                                             /* tp_dictoffset     */
-  (initproc) data_init,                          /* tp_init           */
+  (initproc) Data_init,                          /* tp_init           */
   0,                                             /* tp_alloc          */
-  data_new                                       /* tp_new            */
+  Data_new                                       /* tp_new            */
 };
 
 /* Data_Type_init(): type initialization function for datasets.

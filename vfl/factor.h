@@ -10,7 +10,12 @@
 
 /* Factor_Check(): macro to check if a PyObject is a Factor.
  */
-#define Factor_Check(v) (Py_TYPE(v) == &Factor_Type)
+#define Factor_Check(v) PyObject_TypeCheck(v, &Factor_Type)
+
+/* Factor_CheckExact(): macro to check if a PyObject is
+ * precisely a Factor.
+ */
+#define Factor_CheckExact(v) (Py_TYPE(v) == &Factor_Type)
 
 /* Factor_Type: globally available factor type structure.
  */
@@ -306,13 +311,6 @@ int name ## _copy (const Factor *f, Factor *fdup)
 #define FACTOR_FREE(name) \
 void name ## _free (Factor *f)
 
-/* FACTOR_NEW(): macro function for declaring and defining
- * functions conforming to PyTypeObject->tp_new().
- */
-#define FACTOR_NEW(Typ) \
-static PyObject* \
-Typ ## _new (PyTypeObject *type, PyObject *args, PyObject *kwargs)
-
 /* FACTOR_PROP(): macro function for inserting a static factor
  * property into a PyGetSetDef array.
  */
@@ -349,42 +347,6 @@ static int Typ ## _set_ ## name (Typ *self, PyObject *value, void *cl) { \
       "failed to set '" #name "' parameter"); \
     return -1; } \
   return 0; }
-
-/* FACTOR_TYPE_INIT(): macro function for defining a PyTypeInit function
- * for subclasses of Factor.
- */
-#define FACTOR_TYPE_INIT(Typ) \
-int Typ ## _Type_init (PyObject *mod) { \
-  if (PyType_Ready(&Typ ## _Type) < 0) return -1; \
-  Py_INCREF(&Typ ## _Type); \
-  PyModule_AddObject(mod, #Typ, (PyObject*) &Typ ## _Type); \
-  return 0; }
-
-/* FACTOR_TYPE_DEF(): macro function for defining a PyTypeObject
- * structure for subclasses of factor.
- */
-#define FACTOR_TYPE_DEF(Typ) \
-PyTypeObject Typ ## _Type = { \
-  PyVarObject_HEAD_INIT(NULL, 0) \
-  "factor." #Typ, \
-  sizeof(Typ), \
-  0, 0, 0, 0, 0, 0, 0, 0, \
-  0, 0, 0, 0, 0, 0, 0, 0, \
-  Py_TPFLAGS_DEFAULT, \
-  Typ ## _doc, \
-  0, 0, 0, 0, 0, 0, \
-  Typ ## _methods, \
-  0, \
-  Typ ## _getset, \
-  &Factor_Type, \
-  0, 0, 0, 0, 0, 0, \
-  Typ ## _new };
-
-/* FACTOR_TYPE(): macro function for defining a subtype of Factor.
- */
-#define FACTOR_TYPE(Typ) \
-  FACTOR_TYPE_DEF(Typ) \
-  FACTOR_TYPE_INIT(Typ)
 
 /* struct factor: structure for holding a variational factor.
  *
@@ -465,7 +427,7 @@ struct factor {
 
 /* function declarations (factor-core.c): */
 
-void factor_reset (Factor *f);
+void Factor_reset (Factor *f);
 
 Factor *factor_copy (const Factor *f);
 

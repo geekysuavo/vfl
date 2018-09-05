@@ -18,6 +18,9 @@
 #include <vfl/util/list.h>
 #include <vfl/util/size_t.h>
 
+/* include vfl type macros. */
+#include <vfl/types.h>
+
 /* function declarations: */
 
 int vfl_base_init (PyObject *self, PyObject *args, PyObject *kwargs);
