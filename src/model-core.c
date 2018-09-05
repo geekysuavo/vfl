@@ -7,22 +7,17 @@
  *
  * arguments:
  *  @mdl: model structure pointer to access.
+ *  @P, @M, @K: new sizes to use for the computation.
  *
  * returns:
  *  required number of temporary scalars.
  */
-static inline size_t model_tmp (const Model *mdl) {
+static inline size_t model_tmp (Model *mdl, size_t P, size_t M, size_t K) {
   /* declare required variables:
    *  @ntmp: computed number of scalars.
    *  @kmax: largest number of per-factor weights.
    */
   size_t ntmp, kmax;
-
-  /* gain access to the parameter, factor, and weight counts.
-   */
-  const size_t P = mdl->P;
-  const size_t M = mdl->M;
-  const size_t K = mdl->K;
 
   /* in order to conserve memory, determine the largest number of
    * factor weights that will be updated at the same time.
@@ -56,7 +51,7 @@ model_internal_refresh (Model *mdl, size_t D, size_t P,
   /* allocate new vectors. */
   Vector *wbar = vector_alloc(K);
   Vector *h = vector_alloc(K);
-  Vector *tmp = vector_alloc(model_tmp(mdl));
+  Vector *tmp = vector_alloc(model_tmp(mdl, P, M, K));
 
   /* allocate new matrices. */
   Matrix *Sigma = matrix_alloc(K, K);
@@ -319,7 +314,7 @@ int model_set_data (Model *mdl, Data *dat) {
     return 0;
 
   /* allocate new logistic parameters and temporary coefficients. */
-  Vector *tmp = vector_alloc(model_tmp(mdl));
+  Vector *tmp = vector_alloc(model_tmp(mdl, mdl->P, mdl->M, mdl->K));
   Vector *xi = vector_alloc(dat->N);
   if (!tmp || !xi)
     return 0;
