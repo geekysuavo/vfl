@@ -2,36 +2,51 @@
 /* include the vfl header. */
 #include <vfl/vfl.h>
 
+/* model_kmax(): determine the maximum weight count from an array
+ * of factors.
+ *
+ * arguments:
+ *  @fv: array of factors, or null.
+ *  @M: size of the array of factors.
+ *
+ * returns:
+ *  maximum weight count. if @fv is null, the count is zero.
+ *  if any fv[j] is null, its weight count is treated as zero.
+ */
+static inline size_t
+model_kmax (Factor **fv, size_t M) {
+  /* find the largest weight count from all non-null factors. */
+  size_t kmax = 0;
+  for (size_t j = 0; j < M; j++)
+    kmax = (fv && fv[j] && fv[j]->K > kmax ? fv[j]->K : kmax);
+
+  /* return the identified value. */
+  return kmax;
+}
+
 /* model_tmp(): determine the number of temporary scalars required
  * by a variational feature model with a certain set of sizes.
  *
  * arguments:
- *  @mdl: model structure pointer to access.
+ *  @fv: array of factors to use for weight counting.
  *  @P, @M, @K: new sizes to use for the computation.
  *
  * returns:
  *  required number of temporary scalars.
  */
-static inline size_t model_tmp (Model *mdl, size_t P, size_t M, size_t K) {
-  /* declare required variables:
-   *  @ntmp: computed number of scalars.
-   *  @kmax: largest number of per-factor weights.
-   */
-  size_t ntmp, kmax;
-
+static inline size_t
+model_tmp (Factor **fv, size_t P, size_t M, size_t K) {
   /* in order to conserve memory, determine the largest number of
    * factor weights that will be updated at the same time.
    */
-  kmax = 0;
-  for (size_t j = 0; j < M; j++)
-    kmax = (mdl->factors[j]->K > kmax ? mdl->factors[j]->K : kmax);
+  const size_t kmax = model_kmax(fv, M);
 
   /* the scalars are laid out as follows:
    *  z: (K, 1)         | b: (max(k), 1)
    *  U: (max(k), K)    | B: (max(k), max(k))
    *  V: (max(k), K)    |
    */
-  ntmp = K + P + 2 * kmax * K;
+  const size_t ntmp = K + P + 2 * kmax * K;
 
   /* return the computed scalar count. */
   return ntmp;
@@ -51,7 +66,7 @@ model_internal_refresh (Model *mdl, size_t D, size_t P,
   /* allocate new vectors. */
   Vector *wbar = vector_alloc(K);
   Vector *h = vector_alloc(K);
-  Vector *tmp = vector_alloc(model_tmp(mdl, P, M, K));
+  Vector *tmp = NULL; /* will be allocated later. */
 
   /* allocate new matrices. */
   Matrix *Sigma = matrix_alloc(K, K);
@@ -66,20 +81,8 @@ model_internal_refresh (Model *mdl, size_t D, size_t P,
     factors = mdl->factors;
 
   /* check if any single allocation failed. */
-  if (!wbar || !h || !tmp || !Sigma || !Sinv || !L || !factors) {
-    /* free everything. */
-    vector_free(wbar);
-    vector_free(h);
-    vector_free(tmp);
-    matrix_free(Sigma);
-    matrix_free(Sinv);
-    matrix_free(L);
-    if (factors != mdl->factors)
-      free(factors);
-
-    /* return failure. */
-    return 0;
-  }
+  if (!wbar || !h || !Sigma || !Sinv || !L || !factors)
+    goto fail;
 
   /* get the prior factor array. */
   Factor **priors = factors + M;
@@ -101,7 +104,15 @@ model_internal_refresh (Model *mdl, size_t D, size_t P,
         priors[j] = NULL;
       }
     }
+  }
 
+  /* allocate the temporary array. last chance to fail. */
+  tmp = vector_alloc(model_tmp(factors, P, M, K));
+  if (!tmp)
+    goto fail;
+
+  /* if the factor count changed, free the old factor array. */
+  if (factors != mdl->factors) {
     /* drop references to all lost factors. */
     for (size_t j = M; j < mdl->M; j++) {
       Py_DECREF(mdl->factors[j]);
@@ -144,6 +155,24 @@ model_internal_refresh (Model *mdl, size_t D, size_t P,
 
   /* return success. */
   return 1;
+
+fail:
+  /* free the vectors. */
+  vector_free(wbar);
+  vector_free(h);
+  vector_free(tmp);
+
+  /* free the matrices. */
+  matrix_free(Sigma);
+  matrix_free(Sinv);
+  matrix_free(L);
+
+  /* free the factors, if they were allocated. */
+  if (factors != mdl->factors)
+    free(factors);
+
+  /* return failure. */
+  return 0;
 }
 
 /* --- */
@@ -314,7 +343,8 @@ int model_set_data (Model *mdl, Data *dat) {
     return 0;
 
   /* allocate new logistic parameters and temporary coefficients. */
-  Vector *tmp = vector_alloc(model_tmp(mdl, mdl->P, mdl->M, mdl->K));
+  const size_t ntmp = model_tmp(mdl->factors, mdl->P, mdl->M, mdl->K);
+  Vector *tmp = vector_alloc(ntmp);
   Vector *xi = vector_alloc(dat->N);
   if (!tmp || !xi)
     return 0;
