@@ -1,16 +1,42 @@
 
-/* include the factor and float headers. */
-#include <vfl/factor.h>
-#include <vfl/base/float.h>
+/* include the vfl header. */
+#include <vfl/vfl.h>
 
 /* define the parameter indices. */
 #define P_ALPHA  0
 #define P_BETA   1
 
-/* decay_eval(): evaluate the decay factor at its mode
+/* Decay: structure for holding decay factors.
+ */
+typedef struct {
+  /* factor superclass. */
+  Factor super;
+
+  /* subclass struct members. */
+}
+Decay;
+
+/* define documentation strings: */
+
+PyDoc_STRVAR(
+  Decay_doc,
+"Decay() -> Decay object\n"
+"\n");
+
+PyDoc_STRVAR(
+  Decay_getset_alpha_doc,
+"Decay rate, shape parameter (read/write)\n"
+"\n");
+
+PyDoc_STRVAR(
+  Decay_getset_beta_doc,
+"Decay rate, rate parameter (read/write)\n"
+"\n");
+
+/* Decay_eval(): evaluate the decay factor at its mode
  *  - see factor_mean_fn() for more information.
  */
-FACTOR_EVAL (decay) {
+FACTOR_EVAL (Decay) {
   /* get the input value along the factor dimension. */
   const double xd = vector_get(x, f->d);
 
@@ -25,10 +51,10 @@ FACTOR_EVAL (decay) {
   return exp(-rho * xd);
 }
 
-/* decay_mean(): evaluate the decay factor mean.
+/* Decay_mean(): evaluate the decay factor mean.
  *  - see factor_mean_fn() for more information.
  */
-FACTOR_MEAN (decay) {
+FACTOR_MEAN (Decay) {
   /* get the input value along the factor dimension. */
   const double xd = vector_get(x, f->d);
 
@@ -40,10 +66,10 @@ FACTOR_MEAN (decay) {
   return pow(beta / (beta + xd), alpha);
 }
 
-/* decay_var(): evaluate the decay factor variance.
+/* Decay_var(): evaluate the decay factor variance.
  *  - see factor_var_fn() for more information.
  */
-FACTOR_VAR (decay) {
+FACTOR_VAR (Decay) {
   /* get twice the input value along the factor dimension. */
   const double xp = 2.0 * vector_get(x, f->d);
 
@@ -55,10 +81,10 @@ FACTOR_VAR (decay) {
   return pow(beta / (beta + xp), alpha);
 }
 
-/* decay_cov(): evaluate the decay factor covariance.
+/* Decay_cov(): evaluate the decay factor covariance.
  *  - see factor_cov_fn() for more information.
  */
-FACTOR_COV (decay) {
+FACTOR_COV (Decay) {
   /* get the summed input values along the factor dimension. */
   const double xp = vector_get(x1, f->d) + vector_get(x2, f->d);
 
@@ -70,10 +96,10 @@ FACTOR_COV (decay) {
   return pow(beta / (beta + xp), alpha);
 }
 
-/* decay_diff_mean(): evaluate the decay factor mean gradient.
+/* Decay_diff_mean(): evaluate the decay factor mean gradient.
  *  - see factor_diff_mean_fn() for more information.
  */
-FACTOR_DIFF_MEAN (decay) {
+FACTOR_DIFF_MEAN (Decay) {
   /* get the input value along the factor dimension. */
   const double xd = vector_get(x, f->d);
 
@@ -94,10 +120,10 @@ FACTOR_DIFF_MEAN (decay) {
   vector_set(df, P_BETA, dbeta);
 }
 
-/* decay_diff_var(): evaluate the decay factor variance gradient.
+/* Decay_diff_var(): evaluate the decay factor variance gradient.
  *  - see factor_diff_var_fn() for more information.
  */
-FACTOR_DIFF_VAR (decay) {
+FACTOR_DIFF_VAR (Decay) {
   /* get twice the input value along the factor dimension. */
   const double xp = 2.0 * vector_get(x, f->d);
 
@@ -118,10 +144,10 @@ FACTOR_DIFF_VAR (decay) {
   vector_set(df, P_BETA, dbeta);
 }
 
-/* decay_div(): evaluate the decay factor divergence.
+/* Decay_div(): evaluate the decay factor divergence.
  *  - see factor_div_fn() for more information.
  */
-FACTOR_DIV (decay) {
+FACTOR_DIV (Decay) {
   /* get the first factor parameters. */
   const double alpha = vector_get(f->par, P_ALPHA);
   const double beta = vector_get(f->par, P_BETA);
@@ -137,10 +163,10 @@ FACTOR_DIV (decay) {
        + (beta - beta2) * (alpha / beta);
 }
 
-/* decay_kernel(): write the kernel code of a decay factor.
+/* Decay_kernel(): write the kernel code of a decay factor.
  *  - see factor_kernel_fn() for more information.
  */
-FACTOR_KERNEL (decay) {
+FACTOR_KERNEL (Decay) {
   /* define the kernel code format string. */
   const char *fmt = "\
 const double xd = x1[%u] + x2[%u];\n\
@@ -158,10 +184,10 @@ cov = pow(beta / (beta + xd), alpha);\n\
   return kstr;
 }
 
-/* decay_set(): store a parameter into a decay factor.
+/* Decay_set(): store a parameter into a decay factor.
  *  - see factor_set_fn() for more information.
  */
-FACTOR_SET (decay) {
+FACTOR_SET (Decay) {
   /* determine which parameter is being assigned. */
   switch (i) {
     /* shape parameter: in (0, inf) */
@@ -206,82 +232,60 @@ FACTOR_SET (decay) {
 
 /* --- */
 
-/* define the static decay factor properties. */
-FACTOR_PROP_GETSET (decay, alpha, P_ALPHA)
-FACTOR_PROP_GETSET (decay, beta,  P_BETA)
-
-/* decay_properties: array of accessible decay factor properties.
+/* Decay_new(): allocate a new decay factor.
+ *  - see PyTypeObject.tp_new for details.
  */
-static object_property_t decay_properties[] = {
-  FACTOR_PROP_BASE,
-  FACTOR_PROP (decay, alpha),
-  FACTOR_PROP (decay, beta),
-  { NULL, NULL, NULL }
+VFL_TYPE_NEW (Decay) {
+  /* allocate a new decay factor. */
+  Decay *self = (Decay*) type->tp_alloc(type, 0);
+  Factor_reset((Factor*) self);
+  if (!self)
+    return NULL;
+
+  /* initialize the function pointers. */
+  Factor *f = (Factor*) self;
+  f->eval      = Decay_eval;
+  f->mean      = Decay_mean;
+  f->var       = Decay_var;
+  f->cov       = Decay_cov;
+  f->diff_mean = Decay_diff_mean;
+  f->diff_var  = Decay_diff_var;
+  f->div       = Decay_div;
+  f->kernel    = Decay_kernel;
+  f->set       = Decay_set;
+
+  /* resize to the default size. */
+  if (!factor_resize(f, 1, 2, 1)) {
+    Py_DECREF(f);
+    return NULL;
+  }
+
+  /* set the default parameter values. */
+  factor_set(f, P_ALPHA, 1.0);
+  factor_set(f, P_BETA, 1.0);
+
+  /* return the new object. */
+  return (PyObject*) self;
+}
+
+/* decay factor properties. */
+FACTOR_PROP_GETSET (Decay, alpha, P_ALPHA)
+FACTOR_PROP_GETSET (Decay, beta,  P_BETA)
+
+/* Decay_getset: property definition structure for decay factors.
+ */
+static PyGetSetDef Decay_getset[] = {
+  FACTOR_PROP (Decay, alpha),
+  FACTOR_PROP (Decay, beta),
+  { NULL }
 };
 
-/* decay_names: table of decay factor parameter names.
+/* Decay_methods: method definition structure for decay factors.
  */
-char *decay_names[] = {
-  "alpha",
-  "beta"
+static PyMethodDef Decay_methods[] = {
+  { NULL }
 };
 
-/* --- */
-
-/* decay_methods: array of callable object methods.
- */
-static object_method_t decay_methods[] = {
-  FACTOR_METHOD_BASE,
-  { NULL, NULL }
-};
-
-/* --- */
-
-/* decay_type: decay factor type structure.
- */
-static factor_type_t decay_type = {
-  { /* base: */
-    "decay",                                     /* name      */
-    sizeof(factor_t),                            /* size      */
-
-    (object_init_fn) factor_init,                /* init      */
-    (object_copy_fn) factor_copy,                /* copy      */
-    (object_free_fn) factor_free,                /* free      */
-    NULL,                                        /* test      */
-    NULL,                                        /* cmp       */
-
-    (object_binary_fn) factor_add,               /* add       */
-    NULL,                                        /* sub       */
-    (object_binary_fn) factor_mul,               /* mul       */
-    NULL,                                        /* div       */
-    NULL,                                        /* pow       */
-
-    NULL,                                        /* get       */
-    NULL,                                        /* set       */
-    decay_properties,                            /* props     */
-    decay_methods                                /* methods   */
-  },
-
-  1,                                             /* initial D */
-  2,                                             /* initial P */
-  1,                                             /* initial K */
-  decay_names,                                   /* parnames  */
-  decay_eval,                                    /* eval      */
-  decay_mean,                                    /* mean      */
-  decay_var,                                     /* var       */
-  decay_cov,                                     /* cov       */
-  decay_diff_mean,                               /* diff_mean */
-  decay_diff_var,                                /* diff_var  */
-  NULL,                                          /* meanfield */
-  decay_div,                                     /* div       */
-  NULL,                                          /* init      */
-  NULL,                                          /* resize    */
-  decay_kernel,                                  /* kernel    */
-  decay_set,                                     /* set       */
-  NULL,                                          /* copy      */
-  NULL                                           /* free      */
-};
-
-/* vfl_factor_decay: address of the decay_type structure. */
-const factor_type_t *vfl_factor_decay = &decay_type;
+/* Decay_Type, Decay_Type_init() */
+VFL_TYPE (Decay, Factor, factor)
 

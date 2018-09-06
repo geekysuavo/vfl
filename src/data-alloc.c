@@ -27,6 +27,10 @@ int data_resize (Data *dat, size_t N, size_t D) {
   if (!data)
     return 0;
 
+  /* prepare each *new* datum for use within python. */
+  for (size_t i = dat->N; i < N; i++)
+    PyObject_INIT(data + i, &Datum_Type);
+
   /* create a pointer for indexing datum elements. */
   char *ptr = (char*) data;
   ptr += N * sizeof(Datum);
@@ -41,6 +45,7 @@ int data_resize (Data *dat, size_t N, size_t D) {
 
   /* copy any existing observations into the new array. */
   for (size_t i = 0; i < dat->N; i++) {
+    /* copy the observation data. */
     vector_copy(data[i].x, dat->data[i].x);
     data[i].y = dat->data[i].y;
     data[i].p = dat->data[i].p;

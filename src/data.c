@@ -43,25 +43,9 @@ Data_seq_get (Data *self, Py_ssize_t i) {
     return NULL;
   }
 
-  /* allocate a vector for the new datum. */
-  Vector *xsrc = vector_alloc(self->D);
-  if (!xsrc)
-    return NULL;
-
-  /* create a new datum to return. */
-  Datum *dsrc = data_get(self, i);
-  Datum *d = (Datum*) PyObject_CallObject((PyObject*) &Datum_Type, NULL);
-  if (!d)
-    return NULL;
-
-  /* copy the datum properties. */
-  d->p = dsrc->p;
-  d->y = dsrc->y;
-  d->x = xsrc;
-  vector_copy(d->x, dsrc->x);
-
-  /* return the new datum. */
-  return (PyObject*) d;
+  /* return a new reference to the datum. */
+  Py_INCREF(self->data + i);
+  return (PyObject*) (self->data + i);
 }
 
 /* Data_seq_set(): method for setting dataset entries.

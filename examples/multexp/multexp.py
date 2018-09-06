@@ -1,20 +1,19 @@
 
 # import the required modules.
-from random import normalvariate
 import vfl
 
 # create a model.
-mdl = vfl.model.TauVFR(
-  tau = 1,
-  nu = 1e-6,
-  data = vfl.Data(file = 'cosines.dat'),
-  factors = [vfl.factor.Cosine(mu = 0, tau = 1e-5)
-             for i in range(4)]
+mdl = vfl.model.VFR(
+  alpha0 = 10,
+  beta0 = 40,
+  nu = 1e-3,
+  data = vfl.Data(file = 'multexp.dat'),
+  factors = [vfl.factor.Decay(alpha = 10, beta =     1),
+             vfl.factor.Decay(alpha = 10, beta =    10),
+             vfl.factor.Decay(alpha = 10, beta =   100),
+             vfl.factor.Decay(alpha = 10, beta =  1000),
+             vfl.factor.Decay(alpha = 10, beta = 10000)]
 )
-
-# randomize the factor means.
-for f in mdl:
-  f.mu = normalvariate(0, 300)
 
 # create an optimizer.
 opt = vfl.optim.FullGradient(
@@ -26,7 +25,7 @@ opt = vfl.optim.FullGradient(
 opt.execute()
 
 # build gridded datasets for prediction.
-G = [[0, 1e-3, 0.5]]
+G = [[0, 0.1, 150]]
 mean = vfl.Data(grid = G)
 var = vfl.Data(grid = G)
 

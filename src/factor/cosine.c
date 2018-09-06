@@ -33,7 +33,7 @@ PyDoc_STRVAR(
 "Frequency precision (read/write)\n"
 "\n");
 
-/* cosine_eval(): evaluate the cosine factor at its mode.
+/* Cosine_eval(): evaluate the cosine factor at its mode.
  *  - see factor_mean_fn() for more information.
  */
 FACTOR_EVAL (Cosine) {
@@ -47,7 +47,7 @@ FACTOR_EVAL (Cosine) {
   return cos(mu * xd + M_PI_2 * (double) i);
 }
 
-/* cosine_mean(): evaluate the cosine factor mean.
+/* Cosine_mean(): evaluate the cosine factor mean.
  *  - see factor_mean_fn() for more information.
  */
 FACTOR_MEAN (Cosine) {
@@ -62,7 +62,7 @@ FACTOR_MEAN (Cosine) {
   return exp(-0.5 * xd * xd / tau) * cos(mu * xd + M_PI_2 * (double) i);
 }
 
-/* cosine_var(): evaluate the cosine factor variance.
+/* Cosine_var(): evaluate the cosine factor variance.
  *  - see factor_var_fn() for more information.
  */
 FACTOR_VAR (Cosine) {
@@ -85,7 +85,7 @@ FACTOR_VAR (Cosine) {
   return 0.5 * (ep + em);
 }
 
-/* cosine_cov(): evaluate the cosine factor covariance.
+/* Cosine_cov(): evaluate the cosine factor covariance.
  *  - see factor_cov_fn() for more information.
  */
 FACTOR_COV (Cosine) {
@@ -101,7 +101,7 @@ FACTOR_COV (Cosine) {
   return exp(-0.5 * xm * xm / tau) * cos(mu * xm + zm);
 }
 
-/* cosine_diff_mean(): evaluate the cosine factor mean gradient.
+/* Cosine_diff_mean(): evaluate the cosine factor mean gradient.
  *  - see factor_diff_mean_fn() for more information.
  */
 FACTOR_DIFF_MEAN (Cosine) {
@@ -129,7 +129,7 @@ FACTOR_DIFF_MEAN (Cosine) {
   vector_set(df, P_TAU, dtau);
 }
 
-/* cosine_diff_var(): evaluate the cosine factor variance gradient.
+/* Cosine_diff_var(): evaluate the cosine factor variance gradient.
  *  - see factor_diff_var_fn() for more information.
  */
 FACTOR_DIFF_VAR (Cosine) {
@@ -157,7 +157,7 @@ FACTOR_DIFF_VAR (Cosine) {
   vector_set(df, P_TAU, dtau);
 }
 
-/* cosine_div(): evaluate the cosine factor divergence.
+/* Cosine_div(): evaluate the cosine factor divergence.
  *  - see factor_div_fn() for more information.
  */
 FACTOR_DIV (Cosine) {
@@ -174,7 +174,7 @@ FACTOR_DIV (Cosine) {
        - 0.5 * log(tau2 / tau) - 0.5;
 }
 
-/* cosine_kernel(): write the kernel code of a cosine factor.
+/* Cosine_kernel(): write the kernel code of a cosine factor.
  *  - see factor_kernel_fn() for more information.
  */
 FACTOR_KERNEL (Cosine) {
@@ -201,7 +201,7 @@ cov = exp(-0.5 * xd * xd / tau) * cos(mu * xd + zd);\n\
   return kstr;
 }
 
-/* cosine_set(): store a parameter into a cosine factor.
+/* Cosine_set(): store a parameter into a cosine factor.
  *  - see factor_set_fn() for more information.
  */
 FACTOR_SET (Cosine) {
@@ -231,6 +231,8 @@ FACTOR_SET (Cosine) {
   /* invalid parameter index. */
   return 0;
 }
+
+/* --- */
 
 /* Cosine_new(): allocate a new cosine factor.
  *  - see PyTypeObject.tp_new for details.

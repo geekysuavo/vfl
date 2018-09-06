@@ -409,7 +409,7 @@ Model_set_factors (Model *self, PyObject *value, void *closure) {
   }
 
   /* return success. */
-  return 1;
+  return 0;
 }
 
 /* Model_get_priors(): method to get model prior factor lists.

@@ -7,6 +7,8 @@
 int FullGradient_Type_init (PyObject *mod);
 int MeanField_Type_init (PyObject *mod);
 
+/* define documentation strings: */
+
 PyDoc_STRVAR(
   optim_module_doc,
 "VFL -- Optimizers.\n"

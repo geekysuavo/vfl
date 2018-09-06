@@ -5,6 +5,13 @@
 /* declare type initialization functions: */
 
 int Cosine_Type_init (PyObject *mod);
+int Decay_Type_init (PyObject *mod);
+int FixedImpulse_Type_init (PyObject *mod);
+int Impulse_Type_init (PyObject *mod);
+int Polynomial_Type_init (PyObject *mod);
+int Product_Type_init (PyObject *mod);
+
+/* define documentation strings: */
 
 PyDoc_STRVAR(
   factor_module_doc,
@@ -34,8 +41,13 @@ PyInit_factor (void) {
   if (!factor)
     return NULL;
 
-  /* FIXME: initialize the factor types. */
-  if (Cosine_Type_init(factor) < 0)
+  /* initialize the factor types. */
+  if (Cosine_Type_init(factor) < 0 ||
+      Decay_Type_init(factor) < 0 ||
+      FixedImpulse_Type_init(factor) < 0 ||
+      Impulse_Type_init(factor) < 0 ||
+      Polynomial_Type_init(factor) < 0 ||
+      Product_Type_init(factor) < 0)
     return NULL;
 
   /* return the new module. */

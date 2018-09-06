@@ -49,8 +49,9 @@ PyInit_vfl (void) {
   if (!vfl)
     return NULL;
 
-  /* FIXME: intialize the core module types. */
-  if (Factor_Type_init(vfl) < 0 ||
+  /* intialize the core module types. */
+  if (Search_Type_init(vfl) < 0 ||
+      Factor_Type_init(vfl) < 0 ||
       Model_Type_init(vfl) < 0 ||
       Optim_Type_init(vfl) < 0 ||
       Datum_Type_init(vfl) < 0 ||
