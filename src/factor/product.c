@@ -520,6 +520,41 @@ FACTOR_FREE (Product) {
 
 /* --- */
 
+/* Product_seq_len(): method for getting product sub-factor counts.
+ */
+static Py_ssize_t
+Product_seq_len (Product *self) {
+  /* return the current size of the factors array. */
+  return (Py_ssize_t) self->F;
+}
+
+/* Product_seq_get(): method for getting product sub-factors.
+ */
+static PyObject*
+Product_seq_get (Product *self, Py_ssize_t i) {
+  /* check that the index is in bounds. */
+  const Py_ssize_t n = Product_seq_len(self);
+  if (n == 0 || i < 0 || i >= n) {
+    PyErr_SetNone(PyExc_IndexError);
+    return NULL;
+  }
+
+  /* return a new reference to the indexed factor. */
+  Py_INCREF(self->factors[i]);
+  return (PyObject*) self->factors[i];
+}
+
+/* --- */
+
+static PyObject*
+Product_method_update (Factor *f, PyObject *args) {
+  /* call the product factor update function. */
+  Product_update(f);
+  Py_RETURN_NONE;
+}
+
+/* --- */
+
 /* Product_new(): allocate a new product factor.
  *  - see PyTypeObject.tp_new for details.
  */
@@ -564,6 +599,21 @@ VFL_TYPE_NEW (Product) {
   return (PyObject*) self;
 }
 
+/* Product_sequence: sequence definition structure for product factors.
+ */
+static PySequenceMethods Product_sequence = {
+  (lenfunc) Product_seq_len,                     /* sq_length         */
+  NULL,                                          /* sq_concat         */
+  NULL,                                          /* sq_repeat         */
+  (ssizeargfunc) Product_seq_get,                /* sq_item           */
+  NULL,
+  NULL,                                          /* sq_ass_item       */
+  NULL,
+  NULL,                                          /* sq_contains       */
+  NULL,                                          /* sq_inplace_concat */
+  NULL                                           /* sq_inplace_repeat */
+};
+
 /* Product_getset: property definition structure for product factors.
  */
 static PyGetSetDef Product_getset[] = {
@@ -581,6 +631,49 @@ static PyMethodDef Product_methods[] = {
   { NULL }
 };
 
-/* Product_Type, Product_Type_init() */
-VFL_TYPE (Product, Factor, factor)
+/* Product_Type: type definition structure for product factors.
+ */
+PyTypeObject Product_Type = {
+  PyVarObject_HEAD_INIT(NULL, 0)
+  "factor.Product",                              /* tp_name           */
+  sizeof(Product),                               /* tp_basicsize      */
+  0,                                             /* tp_itemsize       */
+  0,                                             /* tp_dealloc        */
+  0,                                             /* tp_print          */
+  0,                                             /* tp_getattr        */
+  0,                                             /* tp_setattr        */
+  0,                                             /* tp_reserved       */
+  0,                                             /* tp_repr           */
+  0,                                             /* tp_as_number      */
+  &Product_sequence,                             /* tp_as_sequence    */
+  0,                                             /* tp_as_mapping     */
+  0,                                             /* tp_hash           */
+  0,                                             /* tp_call           */
+  0,                                             /* tp_str            */
+  0,                                             /* tp_getattro       */
+  0,                                             /* tp_setattro       */
+  0,                                             /* tp_as_buffer      */
+  Py_TPFLAGS_DEFAULT,                            /* tp_flags          */
+  Product_doc,                                   /* tp_doc            */
+  0,                                             /* tp_traverse       */
+  0,                                             /* tp_clear          */
+  0,                                             /* tp_richcompare    */
+  0,                                             /* tp_weaklistoffset */
+  0,                                             /* tp_iter           */
+  0,                                             /* tp_iternext       */
+  Product_methods,                               /* tp_methods        */
+  0,                                             /* tp_members        */
+  Product_getset,                                /* tp_getset         */
+  &Factor_Type,                                  /* tp_base           */
+  0,                                             /* tp_dict           */
+  0,                                             /* tp_descr_get      */
+  0,                                             /* tp_descr_set      */
+  0,                                             /* tp_dictoffset     */
+  0,                                             /* tp_init           */
+  0,                                             /* tp_alloc          */
+  Product_new                                    /* tp_new            */
+};
+
+/* Product_Type_init() */
+VFL_TYPE_INIT (Product)
 
