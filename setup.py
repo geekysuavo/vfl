@@ -2,16 +2,43 @@
 # import the required functionality.
 from setuptools import setup, Extension
 import unittest
-import os
+import os, sys
+
+# initialize the include directories list.
+inc = ['.']
 
 # walk the 'src' directory to find all source files.
 src = [os.path.join(d, f) for d, base, files in os.walk('src')
        for f in files if f.endswith('.c')]
 
+# initialize the extra compile arguments.
+cflags = ['-std=c99', '-O3', '-Wall']
+
+# initialize the libraries to link against.
+libs = []
+
+# initialize the macro definitions.
+defs = []
+
+# check if the user specified the use of ATLAS.
+if '--with-atlas' in sys.argv:
+  defs.append(('__VFL_USE_ATLAS', None))
+  libs.append('tatlas')
+  sys.argv.remove('--with-atlas')
+
+# check if the user specified the use of OpenCL.
+if '--with-opencl' in sys.argv:
+  defs.append(('__VFL_USE_OPENCL', None))
+  libs.append('OpenCL')
+  sys.argv.remove('--with-opencl')
+
 # define the vfl extension module.
 vfl_extension = Extension(
   name = 'vfl',
-  include_dirs = ['.'],
+  extra_compile_args = cflags,
+  define_macros = defs,
+  include_dirs = inc,
+  libraries = libs,
   sources = src
 )
 

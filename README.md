@@ -28,122 +28,76 @@ achieve radically different behavior.
 
 The current VFL framework supports the following built-in factors:
 
- * **cosine**: sinusoids, inferred phase.
- * **decay**: exponential decays.
- * **fixed-impulse**: delta functions, fixed location.
- * **impulse**: delta functions, inferred location.
- * **polynomial**: polynomials of fixed order.
- * **product**: products of two or more factors.
+ * **Cosine**: sinusoids, inferred phase.
+ * **Decay**: exponential decays.
+ * **FixedImpulse**: delta functions, fixed location.
+ * **Impulse**: delta functions, inferred location.
+ * **Polynomial**: polynomials of fixed order.
+ * **Product**: products of two or more factors.
 
 ### Models
 
 The VFL framework supports three basic model types:
 
- * **vfc**: variational feature classification.
- * **vfr**: variational feature regression, inferred noise precision.
- * **tauvfr**: variational feature regression, fixed noise precision.
+ * **VFC**: variational feature classification.
+ * **VFR**: variational feature regression, inferred noise precision.
+ * **TauVFR**: variational feature regression, fixed noise precision.
 
 ### Optimizers
 
 At present two optimizers ship with VFL:
 
- * **fg**: full-gradient optimization.
- * **mf**: mean-field optimization.
+ * **FullGradient**: full-gradient optimization.
+ * **MeanField**: mean-field optimization.
 
 ### Miscellaneous types
 
-The VFL framework also implements the following base types:
+The VFL framework also implements the following types that prove
+useful for inference and active learning:
 
- * **int**: signed long integers.
- * **float**: double-precision floats.
- * **string**: simple character strings.
- * **list**: ordered lists of objects.
- * **map**: associative arrays of objects, keyed by strings.
-
-As well as the following types that prove useful for inference
-and active learning:
-
- * **data**: datasets for organizing inputs and outputs.
- * **datum**: individual entries of dataset objects.
- * **timer**: high-resolution event timer.
- * **rng**: pseudorandom number generator (LCG).
- * **search**: gaussian process posterior variance search.
-
-Finally, two "library" objects are provided as well:
-
- * **std**: Assorted standard library methods.
- * **math**: Assorted mathmematical functions.
+ * **Data**: datasets for organizing inputs and outputs.
+ * **Datum**: individual entries of dataset objects.
+ * **Search**: gaussian process posterior variance search.
 
 ## Programming
 
-The VFL framework may be used in one of two ways:
-
- * [C99](http://en.wikipedia.org/wiki/C99) API
- * **vflang**
-
-Using **vfl** through the C application programming interface enables
-tight integration with any existing compiled programs or libraries,
-but requires a strong knowledge of C programming principles.
-
-Alternatively, **vfl** contains a lightweight interpreter that can
-recognize a simple object-oriented language (_"vflang"_), which
-enables direct access to the inference framework. Examples of
-both C and **vflang** programs are provided in [tests](tests/).
+The VFL framework is a Python C extension module. Example Python scripts
+utilizing VFL for a selection of inference problems are provided within
+[examples](examples/).
 
 ## Installation
 
-The **vfl** library and **vflang** interpreter are both written
-in C99-compliant source code (with GNU extensions). Compiling
-them requires [GCC](http://gcc.gnu.org),
-[flex](http://github.com/westes/flex), and
-[bison](http://www.gnu.org/software/bison).
+The **vfl** module is written in C99-compliant source code
+(with GNU extensions). Compiling it requires Python3.
 
 Installation using the default options may be done as follows:
 
 ```bash
 git clone git://github.com/geekysuavo/vfl.git
 cd vfl
-make
-sudo make install
+python3 setup.py build
+python3 setup.py test
+python3 setup.py install
 ```
 
-By default, **vfl** requires the
+By default, **vfl** does not require any external libraries. However,
+it can optionally be compiled and linked against the
 [ATLAS](http://math-atlas.sourceforge.net) library (with
 [CLAPACK](http://netlib.org/clapack/) support compiled in)
-for its linear algebra routines. This feature may be disabled
-as follows:
+for its linear algebra routines. This feature may be enabled
+at build-time as follows:
 
 ```bash
-sed -e 's,^\(USE_ATLAS\)=.*,\1=n,' -i lib/Makefile
-make again
+python3 setup.py --with-atlas build
 ```
 
-Also by default, **vflang** requires [libuv](http://libuv.org) for
-handling tcp/ip-based connections between interpreter servers and
-the clients that connect to them. To disable support for networked
-interpretation in **vflang**, do the following:
+In addition, the **Search** object can be compiled and linked against
+[OpenCL](https://en.wikipedia.org/wiki/OpenCL) to speed posterior
+predictive variance evaluation. Support for OpenCL may be enabled
+(again at build-time) as follows:
 
 ```bash
-sed -e 's,^\(USE_LIBUV\)=.*,\1=n,' -i bin/Makefile
-make again
-```
-
-In addition, the **search** object defaults to using
-[OpenCL](https://en.wikipedia.org/wiki/OpenCL), so
-compilation will require suitable headers, libraries,
-and drivers. Support for OpenCL may be disabled as follows:
-
-```bash
-sed -e 's,^\(USE_OPENCL\)=.*,\1=n,' -i lib/Makefile
-make again
-```
-
-Finally, the default installation directory may be modified using
-the usual suspects, _DESTDIR_ and _PREFIX_. By default, **vfl**
-will install into the **/usr/local** prefix. For example:
-
-```bash
-sudo make PREFIX=/opt/vfl install
+python3 setup.py --with-opencl build
 ```
 
 ## Licensing
@@ -154,5 +108,5 @@ The **vfl** library is released under the
 
 Enjoy!
 
-*~ Brad.*
+~ Brad.
 
