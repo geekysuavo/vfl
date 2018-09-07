@@ -1,29 +1,7 @@
 
 /* include the vfl header. */
 #include <vfl/vfl.h>
-
-/* Product: structure for holding product factors.
- */
-typedef struct {
-  /* factor superclass. */
-  Factor super;
-
-  /* subclass struct members:
-   *
-   *  product sub-factors:
-   *   @factors: array of factors in the product.
-   *   @F: number of factors in the product.
-   *
-   *  mean-field update variables:
-   *   @b0: backup vector of coefficients.
-   *   @B0: backup matrix of coefficients.
-   */
-  Factor **factors;
-  size_t F;
-  Vector *b0;
-  Matrix *B0;
-}
-Product;
+#include <vfl/factor/product.h>
 
 /* define documentation strings: */
 
@@ -37,19 +15,111 @@ PyDoc_STRVAR(
 "Update product factor parameters to match its member factors.\n"
 "\n");
 
-/* Product_update(): set the information matrix and parameter vector
- * of a product factor from the values of its underlying child factors.
+/* product_new_with_size(): allocate a new product factor with an array
+ * of a certain size, ready to be populated.
  *
  * arguments:
- *  @f: factor structure pointer.
+ *  @F: size of the new product factor's array.
+ *  @D, @P, @K: sizes to pass to factor_resize().
+ *
+ * returns:
+ *  new product factor, or NULL on failure.
+ */
+PyObject *product_new_with_size (size_t F, size_t D, size_t P, size_t K) {
+  /* allocate a new factor array. */
+  Factor **factors = malloc(F * sizeof(Factor*));
+  if (!factors) {
+    PyErr_SetNone(PyExc_MemoryError);
+    return NULL;
+  }
+
+  /* create a new product factor. */
+  PyObject *self = PyObject_CallObject((PyObject*) &Product_Type, NULL);
+  if (!self) {
+    free(factors);
+    return NULL;
+  }
+
+  /* resize the product factor. */
+  if (!factor_resize((Factor*) self, D, P, K)) {
+    Py_DECREF(self);
+    free(factors);
+    return NULL;
+  }
+
+  /* get the extended structure pointer. */
+  Product *fx = (Product*) self;
+
+  /* initialize the array contents. */
+  for (size_t i = 0; i < F; i++)
+    factors[i] = NULL;
+
+  /* store the factor array and count. */
+  fx->factors = factors;
+  fx->F = F;
+
+  /* return the new factor. */
+  return self;
+}
+
+/* product_get_size(): get the size of a product's factor array.
+ *
+ * arguments:
+ *  @self: object structure pointer.
+ *
+ * returns:
+ *  size of the factor array.
+ */
+size_t product_get_size (PyObject *self) {
+  /* return the factor count of the product factor. */
+  return (Product_Check(self) ? Product_GET_SIZE(self) : 0);
+}
+
+/* product_set_item(): store an item into a product's factor array.
+ *
+ * arguments:
+ *  @self: object structure pointer.
+ *  @i: index in the factor array.
+ *  @v: value to store into the array.
  *
  * returns:
  *  integer indicating success (1) or failure (0).
  */
-static int
-Product_update (Factor *f) {
-  /* get the extended structure pointer. */
-  Product *fx = (Product*) f;
+int product_set_item (PyObject *self, size_t i, PyObject *v) {
+  /* check that the object is a product. */
+  if (!self || !Product_Check(self))
+    return 0;
+
+  /* check that the value is a factor. */
+  if (!v || !Factor_Check(v))
+    return 0;
+
+  /* check that the index is in bounds. */
+  if (i >= Product_GET_SIZE(self))
+    return 0;
+
+  /* set the object and return success. */
+  Product_SET_ITEM(self, i, v);
+  return 1;
+}
+
+/* product_update(): set the information matrix and parameter vector
+ * of a product factor from the values of its underlying child factors.
+ *
+ * arguments:
+ *  @self: object structure pointer.
+ *
+ * returns:
+ *  integer indicating success (1) or failure (0).
+ */
+int product_update (PyObject *self) {
+  /* check that the object is a product. */
+  if (!Product_Check(self))
+    return 0;
+
+  /* get the extended structure pointers. */
+  Product *fx = (Product*) self;
+  Factor *f = (Factor*) self;
 
   /* update the combined information matrix and parameter vector. */
   for (size_t n = 0, p0 = 0; n < fx->F; n++) {
@@ -266,7 +336,7 @@ FACTOR_MEANFIELD (Product) {
                               NULL, NULL, NULL);
 
     /* update the parameter vector and information matrix. */
-    if (ret) Product_update(f);
+    if (ret) product_update((PyObject*) f);
 
     /* return the result of the finalizations. */
     return ret;
@@ -546,10 +616,12 @@ Product_seq_get (Product *self, Py_ssize_t i) {
 
 /* --- */
 
+/* Product_method_update(): update the internals of a product factor.
+ */
 static PyObject*
-Product_method_update (Factor *f, PyObject *args) {
+Product_method_update (PyObject *self, PyObject *args) {
   /* call the product factor update function. */
-  Product_update(f);
+  product_update(self);
   Py_RETURN_NONE;
 }
 

@@ -17,6 +17,14 @@
  */
 #define Factor_CheckExact(v) (Py_TYPE(v) == &Factor_Type)
 
+/* macros to blindly access the dimension, parameter and weight counts
+ * of Factor objects.
+ */
+#define Factor_MAX_DIM(v)     (((Factor*) (v))->d + ((Factor*) (v))->D)
+#define Factor_GET_DIMS(v)    (((Factor*) (v))->D)
+#define Factor_GET_PARMS(v)   (((Factor*) (v))->P)
+#define Factor_GET_WEIGHTS(v) (((Factor*) (v))->K)
+
 /* Factor_Type: globally available factor type structure.
  */
 PyAPI_DATA(PyTypeObject) Factor_Type;

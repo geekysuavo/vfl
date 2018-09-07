@@ -1,12 +1,28 @@
 
 /* include the vfl header. */
 #include <vfl/vfl.h>
+#include <vfl/factor/product.h>
 
 /* define documentation strings: */
 
 PyDoc_STRVAR(
   Factor_doc,
 "Factor() -> Factor object\n"
+"\n");
+
+PyDoc_STRVAR(
+  Factor_getset_dims_doc,
+"Number of dimensions of input space (read-only)\n"
+"\n");
+
+PyDoc_STRVAR(
+  Factor_getset_parms_doc,
+"Number of variational parameters (read-only)\n"
+"\n");
+
+PyDoc_STRVAR(
+  Factor_getset_weights_doc,
+"Number of linear weights (read-only)\n"
 "\n");
 
 PyDoc_STRVAR(
@@ -38,6 +54,30 @@ PyDoc_STRVAR(
   Factor_method_div_doc,
 "Kullback-Liebler divergence from another factor.\n"
 "\n");
+
+/* Factor_get_dims(): method for getting factor dimension counts.
+ */
+static PyObject*
+Factor_get_dims (Factor *self) {
+  /* return the value as an integer. */
+  return PyLong_FromSize_t(factor_dims(self));
+}
+
+/* Factor_get_parms(): method for getting factor parameter counts.
+ */
+static PyObject*
+Factor_get_parms (Factor *self) {
+  /* return the value as an integer. */
+  return PyLong_FromSize_t(factor_parms(self));
+}
+
+/* Factor_get_weights(): method for getting factor weight counts.
+ */
+static PyObject*
+Factor_get_weights (Factor *self) {
+  /* return the value as an integer. */
+  return PyLong_FromSize_t(factor_weights(self));
+}
 
 /* Factor_get_dim(): method for getting factor dimension indices.
  */
@@ -83,6 +123,97 @@ Factor_set_fixed (Factor *self, PyObject *value, void *closure) {
   self->fixed = (int) PyLong_AsLong(value);
   return 0;
 }
+
+/* --- */
+
+#define __max(a,b) ((a) > (b) ? (a) : (b))
+
+/* Factor_mul(): multiplication operator for factors.
+ */
+static PyObject*
+Factor_mul (PyObject *lhs, PyObject *rhs) {
+  /* output object. */
+  PyObject *obj = NULL;
+
+  /* check if either operand is already a product. */
+  if (Product_Check(lhs) && Product_Check(rhs)) { /* Product * Product. */
+    /* allocate a new pre-sized product. */
+    obj = product_new_with_size(
+            Product_GET_SIZE(lhs) + Product_GET_SIZE(rhs),
+            __max(Factor_MAX_DIM(lhs), Factor_MAX_DIM(rhs)),
+            Factor_GET_PARMS(lhs) + Factor_GET_PARMS(rhs),
+            __max(Factor_GET_WEIGHTS(lhs), Factor_GET_WEIGHTS(rhs)));
+
+    /* check for allocation failure. */
+    if (!obj)
+      return NULL;
+
+    /* store the left-hand factors. */
+    size_t i = 0;
+    for (size_t j = 0; j < Product_GET_SIZE(lhs); j++, i++)
+      Product_SET_ITEM(obj, i, Product_GET_ITEM(lhs, j));
+
+    /* store the right-hand factors. */
+    for (size_t j = 0; j < Product_GET_SIZE(rhs); j++, i++)
+      Product_SET_ITEM(obj, i, Product_GET_ITEM(rhs, j));
+  }
+  else if (Product_Check(lhs) && Factor_Check(rhs)) { /* Product * Factor */
+    /* allocate a new pre-sized product. */
+    obj = product_new_with_size(Product_GET_SIZE(lhs) + 1,
+            __max(Factor_MAX_DIM(lhs), Factor_MAX_DIM(rhs)),
+            Factor_GET_PARMS(lhs) + Factor_GET_PARMS(rhs),
+            __max(Factor_GET_WEIGHTS(lhs), Factor_GET_WEIGHTS(rhs)));
+
+    /* check for allocation failure. */
+    if (!obj)
+      return NULL;
+
+    /* store the factors. */
+    Product_SET_ITEM(obj, Product_GET_SIZE(obj) - 1, rhs);
+    for (size_t j = 0; j < Product_GET_SIZE(lhs); j++)
+      Product_SET_ITEM(obj, j, Product_GET_ITEM(lhs, j));
+  }
+  else if (Factor_Check(lhs) && Product_Check(rhs)) { /* Factor * Product */
+    /* allocate a new pre-sized product. */
+    obj = product_new_with_size(Product_GET_SIZE(rhs) + 1,
+            __max(Factor_MAX_DIM(lhs), Factor_MAX_DIM(rhs)),
+            Factor_GET_PARMS(lhs) + Factor_GET_PARMS(rhs),
+            __max(Factor_GET_WEIGHTS(lhs), Factor_GET_WEIGHTS(rhs)));
+
+    /* check for allocation failure. */
+    if (!obj)
+      return NULL;
+
+    /* store the factors. */
+    Product_SET_ITEM(obj, 0, lhs);
+    for (size_t j = 0; j < Product_GET_SIZE(rhs); j++)
+      Product_SET_ITEM(obj, j + 1, Product_GET_ITEM(rhs, j));
+  }
+  else if (Factor_Check(lhs) && Factor_Check(rhs)) { /* Factor * Factor. */
+    /* allocate a new pre-sized product. */
+    obj = product_new_with_size(2,
+            __max(Factor_MAX_DIM(lhs), Factor_MAX_DIM(rhs)),
+            Factor_GET_PARMS(lhs) + Factor_GET_PARMS(rhs),
+            __max(Factor_GET_WEIGHTS(lhs), Factor_GET_WEIGHTS(rhs)));
+
+    /* check for allocation failure. */
+    if (!obj)
+      return NULL;
+
+    /* store the two factors. */
+    Product_SET_ITEM(obj, 0, lhs);
+    Product_SET_ITEM(obj, 1, rhs);
+  }
+
+  /* none of the above type combinations matched. */
+  if (!obj)
+    PyErr_SetNone(PyExc_TypeError);
+
+  /* return the object, or null. */
+  return obj;
+}
+
+#undef __max
 
 /* --- */
 
@@ -225,9 +356,68 @@ Factor_call (Factor *self, PyObject *args, PyObject *kwargs) {
   return PyFloat_FromDouble(self->eval(self, dat->x, dat->p, i));
 }
 
+/* Factor_number: numeric operator definition structure for factors.
+ */
+static PyNumberMethods Factor_number = {
+  NULL,                                     /* nb_add                     */
+  NULL,                                     /* nb_subtract                */
+  (binaryfunc) Factor_mul,                  /* nb_multiply                */
+  NULL,                                     /* nb_remainder               */
+  NULL,                                     /* nb_divmod                  */
+  NULL,                                     /* nb_power                   */
+  NULL,                                     /* nb_negative                */
+  NULL,                                     /* nb_positive                */
+  NULL,                                     /* nb_absolute                */
+  NULL,                                     /* nb_bool                    */
+  NULL,                                     /* nb_invert                  */
+  NULL,                                     /* nb_lshift                  */
+  NULL,                                     /* nb_rshift                  */
+  NULL,                                     /* nb_and                     */
+  NULL,                                     /* nb_xor                     */
+  NULL,                                     /* nb_or                      */
+  NULL,                                     /* nb_int                     */
+  NULL,
+  NULL,                                     /* nb_float                   */
+  NULL,                                     /* nb_inplace_add             */
+  NULL,                                     /* nb_inplace_subtract        */
+  NULL,                                     /* nb_inplace_multiply        */
+  NULL,                                     /* nb_inplace_remainder       */
+  NULL,                                     /* nb_inplace_power           */
+  NULL,                                     /* nb_inplace_lshift          */
+  NULL,                                     /* nb_inplace_rshift          */
+  NULL,                                     /* nb_inplace_and             */
+  NULL,                                     /* nb_inplace_xor             */
+  NULL,                                     /* nb_inplace_or              */
+  NULL,                                     /* nb_floor_divide            */
+  NULL,                                     /* nb_true_divide             */
+  NULL,                                     /* nb_inplace_floor_divide    */
+  NULL,                                     /* nb_inplace_true_divide     */
+  NULL,                                     /* nb_index                   */
+  NULL,                                     /* nb_matrix_multiply         */
+  NULL,                                     /* nb_inplace_matrix_multiply */
+};
+
 /* Factor_getset: property definition structure for factors.
  */
 static PyGetSetDef Factor_getset[] = {
+  { "dims",
+    (getter) Factor_get_dims,
+    NULL,
+    Factor_getset_dims_doc,
+    NULL
+  },
+  { "parms",
+    (getter) Factor_get_parms,
+    NULL,
+    Factor_getset_parms_doc,
+    NULL
+  },
+  { "weights",
+    (getter) Factor_get_weights,
+    NULL,
+    Factor_getset_weights_doc,
+    NULL
+  },
   { "dim",
     (getter) Factor_get_dim,
     (setter) Factor_set_dim,
@@ -282,7 +472,7 @@ PyTypeObject Factor_Type = {
   0,                                             /* tp_setattr        */
   0,                                             /* tp_reserved       */
   (reprfunc) Factor_repr,                        /* tp_repr           */
-  0,                                             /* tp_as_number      */
+  &Factor_number,                                /* tp_as_number      */
   0,                                             /* tp_as_sequence    */
   0,                                             /* tp_as_mapping     */
   0,                                             /* tp_hash           */
