@@ -8,20 +8,21 @@
  * arguments:
  *  @fv: array of factors, or null.
  *  @M: size of the array of factors.
+ *  @Knew: weight count of an additional factor, or zero.
  *
  * returns:
  *  maximum weight count. if @fv is null, the count is zero.
  *  if any fv[j] is null, its weight count is treated as zero.
  */
 static inline size_t
-model_kmax (Factor **fv, size_t M) {
+model_kmax (Factor **fv, size_t M, size_t Knew) {
   /* find the largest weight count from all non-null factors. */
-  size_t kmax = 0;
+  size_t Kmax = Knew;
   for (size_t j = 0; j < M; j++)
-    kmax = (fv && fv[j] && fv[j]->K > kmax ? fv[j]->K : kmax);
+    Kmax = (fv && fv[j] && fv[j]->K > Kmax ? fv[j]->K : Kmax);
 
   /* return the identified value. */
-  return kmax;
+  return Kmax;
 }
 
 /* model_tmp(): determine the number of temporary scalars required
@@ -30,23 +31,24 @@ model_kmax (Factor **fv, size_t M) {
  * arguments:
  *  @fv: array of factors to use for weight counting.
  *  @P, @M, @K: new sizes to use for the computation.
+ *  @Knew: weight count of an additional factor, or zero.
  *
  * returns:
  *  required number of temporary scalars.
  */
 static inline size_t
-model_tmp (Factor **fv, size_t P, size_t M, size_t K) {
+model_tmp (Factor **fv, size_t P, size_t M, size_t K, size_t Knew) {
   /* in order to conserve memory, determine the largest number of
    * factor weights that will be updated at the same time.
    */
-  const size_t kmax = model_kmax(fv, M);
+  const size_t Kmax = model_kmax(fv, M, Knew);
 
   /* the scalars are laid out as follows:
    *  z: (K, 1)         | b: (max(k), 1)
    *  U: (max(k), K)    | B: (max(k), max(k))
    *  V: (max(k), K)    |
    */
-  const size_t ntmp = K + P + 2 * kmax * K;
+  const size_t ntmp = K + P + 2 * Kmax * K;
 
   /* return the computed scalar count. */
   return ntmp;
@@ -61,8 +63,8 @@ model_tmp (Factor **fv, size_t P, size_t M, size_t K) {
  *  integer indicating whether (1) or not (0) the refresh succeeded.
  */
 static inline int
-model_internal_refresh (Model *mdl, size_t D, size_t P,
-                                    size_t M, size_t K) {
+model_internal_refresh (Model *mdl, size_t D, size_t P, size_t M, size_t K,
+                        size_t Knew) {
   /* allocate new vectors. */
   Vector *wbar = vector_alloc(K);
   Vector *h = vector_alloc(K);
@@ -107,7 +109,7 @@ model_internal_refresh (Model *mdl, size_t D, size_t P,
   }
 
   /* allocate the temporary array. last chance to fail. */
-  tmp = vector_alloc(model_tmp(factors, P, M, K));
+  tmp = vector_alloc(model_tmp(factors, P, M, K, Knew));
   if (!tmp)
     goto fail;
 
@@ -343,7 +345,7 @@ int model_set_data (Model *mdl, Data *dat) {
     return 0;
 
   /* allocate new logistic parameters and temporary coefficients. */
-  const size_t ntmp = model_tmp(mdl->factors, mdl->P, mdl->M, mdl->K);
+  const size_t ntmp = model_tmp(mdl->factors, mdl->P, mdl->M, mdl->K, 0);
   Vector *tmp = vector_alloc(ntmp);
   Vector *xi = vector_alloc(dat->N);
   if (!tmp || !xi)
@@ -405,7 +407,7 @@ int model_set_factor (Model *mdl, size_t i, Factor *f) {
   }
 
   /* update the factor-dependent model internals. */
-  if (!model_internal_refresh(mdl, D, P, M, K))
+  if (!model_internal_refresh(mdl, D, P, M, K, f->K))
     return 0;
 
   /* create a prior copy of the factor. */
@@ -446,7 +448,7 @@ int model_add_factor (Model *mdl, Factor *f) {
   const size_t M = mdl->M + 1;
 
   /* update the factor-dependent model internals. */
-  if (!model_internal_refresh(mdl, D, P, M, K))
+  if (!model_internal_refresh(mdl, D, P, M, K, f->K))
     return 0;
 
   /* create a prior copy of the factor. */
@@ -481,7 +483,7 @@ int model_clear_factors (Model *mdl) {
     return 1;
 
   /* return the result of zeroing the factor count. */
-  return model_internal_refresh(mdl, 0, 0, 0, 0);
+  return model_internal_refresh(mdl, 0, 0, 0, 0, 0);
 }
 
 /* model_mean(): return the first moment of a model basis element.
