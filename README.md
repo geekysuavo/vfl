@@ -2,12 +2,7 @@
 # Variational Feature Learning
 
 A framework for approximate Bayesian inference in a large class of
-regression and classification models. The details of VFR/VFC are
-in preparation for submission in:
-
-> Worley, B., Nilges, M., Malliavin, T. E., _Variational Features for
-> Regression and Classification_, Journal of Machine Learning Research,
-> 2017.
+regression and classification models.
 
 ## Introduction
 
